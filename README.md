@@ -3,4 +3,4 @@ Analyse-Parlamentsreden
 
 Python-Projekt
 
-Schaut euch die Infos unter "Projects"->"Parlamentsreden"-> "ToDo an.
+Schaut euch die Infos unter "Projects"->"Parlamentsreden"-> "ToDo" an.
