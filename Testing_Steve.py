@@ -45,6 +45,30 @@ def filteredSentence(wordlist):
     return filtered_sentence
 
 
+#start with an empty list
+dl_protocol = []
+
+# make a new dic for datarow and add them to the list
+datarow = {'tag':'',
+       'top':'',
+       'thema':'',
+       'politiker': '',
+       'partei': '',
+       'redetext':''
+       }
+dl_protocol.append(datarow)
+print(dl_protocol)
+# Show all information about each datarow.
+for datarows in dl_protocol:
+    for k, v in datarow.items():
+        print(k + ": " + v)
+    print("\n")
+
+# neues dic für jeden neuen Datensatz
+
+datarow['tag']
+
+
 content = getContent()
 wordlist = listToTxt(content)
 filteredSentence(wordlist)
