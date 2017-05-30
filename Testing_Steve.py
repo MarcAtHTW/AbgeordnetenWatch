@@ -65,7 +65,7 @@ for datarows in dl_protocol:
 # neues dic für jeden neuen Datensatz
 
 datarow['tag']
-
+#test
 
 ''' xxxxxxxxxxxxxxxxxxxxxxxxxxx   Datenbank befuellen   xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx '''
 
