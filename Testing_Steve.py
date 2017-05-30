@@ -242,3 +242,4 @@ cleaned_Speech = clean_and_getFrequenz(wordlist)
 lex_div_with_and_without_stopwords(wordlist, cleaned_Speech)
 
 
+#test
