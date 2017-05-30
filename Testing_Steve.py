@@ -232,7 +232,8 @@ def lex_div_with_and_without_stopwords(wordlist, cleaned_speech):
     print("lexical diversity with stopwords:  {0:8.2f}".format(diversity_with_stopwords))           # Prozentsatz fuer die Sprachvielfalt mit stopwords
     print("lexical diversity without stopwords:  {0:8.2f}".format(diversity_without_stopwords))     # Prozentsatz fuer die Sprachvielfalt ohne stopwords
 
-
+#test
+#test123
 
 
 
