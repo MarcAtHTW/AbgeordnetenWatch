@@ -41,7 +41,7 @@ def contentToList(page_content):
     cleanList = []
     list_with_startelement_numbers = [] # enthält Start item aller Redetexte
     list_with_startEnd_numbers = []     # enthält Start und Ende item aller Redetexte
-    redetext = []
+    # hallo ihr
 
     for i in range(len(list)):
         list_element = list[i]
