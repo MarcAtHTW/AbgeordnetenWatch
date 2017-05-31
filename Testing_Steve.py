@@ -7,10 +7,8 @@ from nltk.corpus import stopwords
 import operator
 from nltk import sent_tokenize, word_tokenize
 from nltk import pos_tag
-from nltk import tag
-import chunker
+import xlrd
 from nltk import ne_chunk
-from nltk.tag import StanfordNERTagger
 
 '''
     Data extracting from Plenarprotokoll
@@ -42,6 +40,7 @@ def contentToList(page_content):
     list_with_startelement_numbers = [] # enthält Start item aller Redetexte
     list_with_startEnd_numbers = []     # enthält Start und Ende item aller Redetexte
     # hallo ihr
+    # meine dfsdkfsdfsd
 
     for i in range(len(list)):
         list_element = list[i]
@@ -65,6 +64,9 @@ def contentToList(page_content):
             words = word_tokenize(list_element)
 
             '''extracting Named Entities - Person, Organization,...'''
+            #st = StanfordPOSTagger('english-bidirectional-distsim.tagger')
+            #print(st.tag(words))
+
             tagged = pos_tag(words)
             print(tagged)
 
@@ -72,22 +74,61 @@ def contentToList(page_content):
             print(namedEnt)
             #namedEnt.draw()
 
+
             def extract_entity_names(namedEnt):
                 entityPers_names = []
-
                 if hasattr(namedEnt, 'label') and namedEnt.label:
-                    if namedEnt.label() == 'PERSON' or namedEnt.label() == 'ORGANIZATION':
+                    if namedEnt.label() == 'PERSON': #or namedEnt.label() == 'ORGANIZATION':
                         entityPers_names.append(' '.join([child[0] for child in namedEnt]))
                     else:
                         for child in namedEnt:
                             entityPers_names.extend(extract_entity_names(child))
-
                 return entityPers_names
-
             entityPerson_names = []
             entityPerson_names.extend(extract_entity_names(namedEnt))
             # Print all entity names
-            print("Person / Organization: " + str(entityPerson_names))
+            print("Person: " + str(entityPerson_names))
+
+            ''' Excel-sheet with all politicans '''
+            workbook = xlrd.open_workbook('C:\PycharmProjects\AbgeordnetenWatch\mdb.xls')
+            worksheet = workbook.sheet_by_name('Tabelle1')
+            # Value of 1st row and 1st column
+            value_of_first_col_Names = []
+            value_of_second_col_Party = []
+            first_col_Names = worksheet.col_values(0)
+            second_col_Party = worksheet.col_values(1)
+            print(first_col_Names)
+            print(second_col_Party)
+
+            matchers = first_col_Names
+            politican_name = ""
+            party_name = ""
+            for i in range(len(entityPerson_names)):
+                list_element = entityPerson_names[i]
+                for m in range(len(matchers)):
+                    matcher_element = matchers[m]
+                    if matcher_element in list_element:
+                        print("listen_eintrag", i, ": ", list_element)
+                        print("excel_eintrag_name", m, ": ", matcher_element)
+                        print("excel_eintrag_partei", m, ": ", second_col_Party[m])
+                        politican_name = matcher_element
+                        party_name = second_col_Party[m]
+
+                        ''' Eintrag in DB Name + Partei'''
+
+            ''' Anbindung API-Abgeordnetenwatch - JSON Data-Extract'''
+            # import urllib.request, json
+            # politican_name = politican_name.lower()
+            # print(politican_name)
+            # politican_name = politican_name.replace(' ','-')
+            # print(politican_name)
+            # with urllib.request.urlopen("https://www.abgeordnetenwatch.de/api/profile/"+politican_name+"/profile.json") as url:
+            #     data = json.loads(url.read().decode())
+            #     print(data)
+            #     print(data['profile']['personal']['first_name']+ " " +data['profile']['personal']['last_name'])
+            #     print(data['profile']['party'])
+
+            ''' Eintrag in DB Name + Partei'''
 
     print("Liste mit Startnummern: ", list_with_startelement_numbers)
     # jede zweite Startnummer (= Ende) um 1 mindern für Ende einer Rede
@@ -134,9 +175,6 @@ def contentToList(page_content):
 
         #textFile.write(list_element+"\n")
 
-
-    print(cleanList)
-    return cleanList
 
 
 
@@ -206,6 +244,7 @@ def lex_div_with_and_without_stopwords(wordlist, cleaned_speech):
     # Redetext mit stop words
     freq_CleandedSpeech_with_stopwords = FreqDist(cleaned_speech)           # methode FreqDist() - Ermittlung der Vorkommenshaeufigkeit der Woerter im gesaeuberten RedeText
     print(freq_CleandedSpeech_with_stopwords)
+    #freq_CleandedSpeech_with_stopwords.tabulate()                           # most high-frequency parts of speech
     count_and_viz_seldom_frequently(freq_CleandedSpeech_with_stopwords)     # Visualisieren der haufigsten und seltensten Woerter inclusive stopwords
 
     complete_text_with_doubles = list(freq_CleandedSpeech_with_stopwords)        # noch doppelte Woerter enthalten
@@ -218,6 +257,7 @@ def lex_div_with_and_without_stopwords(wordlist, cleaned_speech):
 
     clean_without_stopwords = [word for word in cleaned_speech if not word in stop_words]                       # herausfiltern der stopwords
     freq_Cleanded_without_stopwords =  FreqDist(clean_without_stopwords)                                        # Neuzuweisung: methode FreqDist() - Ermittlung der Vorkommenshaeufigkeit der Woerter im gesaeuberten RedeText ohne stopwords
+    #freq_Cleanded_without_stopwords.tabulate()                                                                  # most high-frequency parts of speech
     complete_text_with_doubles_without_stopwords = list(freq_Cleanded_without_stopwords)
     diff_words_without_doubles = set(complete_text_with_doubles_without_stopwords)                              # "diff_words_without_doubles" enthaelt keine doppelten Woerter mehr
     diversity_without_stopwords = len(diff_words_without_doubles) / float(len(complete_text_with_doubles_without_stopwords))
