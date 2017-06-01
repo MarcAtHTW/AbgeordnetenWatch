@@ -4,6 +4,3 @@ Analyse-Parlamentsreden
 Python-Projekt
 
 Schaut euch die Infos unter "Projects"->"Parlamentsreden"-> "ToDo" an.
-
-Testing - push (Steve)
-xxxx
