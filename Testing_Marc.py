@@ -18,7 +18,7 @@ from nltk import ne_chunk
 
 ''' get content fuer alle Seiten im Protokoll '''
 def getContent():
-    pdf_file = open('/root/PycharmProjects/AbgeordnetenWatch/Plenarprotokoll_18_232.pdf', 'rb')
+    pdf_file = open('Plenarprotokoll_18_232.pdf', 'rb')
     read_pdf = PyPDF2.PdfFileReader(pdf_file)
     page_content = ''
     for i in range(read_pdf.getNumPages()):
@@ -92,7 +92,7 @@ def contentToList(page_content):
             print("Person: " + str(entityPerson_names))
 
             ''' Excel-sheet with all politicans '''
-            workbook = xlrd.open_workbook('/root/PycharmProjects/AbgeordnetenWatch/mdb.xls')
+            workbook = xlrd.open_workbook('mdb.xls')
             worksheet = workbook.sheet_by_name('Tabelle1')
             # Value of 1st row and 1st column
             value_of_first_col_Names = []
