@@ -66,8 +66,8 @@ def contentToList(page_content):
             words = word_tokenize(list_element)
 
             '''extracting Named Entities - Person, Organization,...'''
-            jar = '/root/PycharmProjects/AbgeordnetenWatch/jars/stanford-postagger.jar'
-            model = '/root/PycharmProjects/AbgeordnetenWatch/jars/german-hgc.tagger'
+            jar = 'jars/stanford-postagger.jar'
+            model = 'jars/german-hgc.tagger'
             pos_tagger = StanfordPOSTagger(model, jar, encoding='utf8')
             text = pos_tagger.tag(words)
             print(text)
