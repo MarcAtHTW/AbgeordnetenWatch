@@ -32,9 +32,6 @@ def getContent():
 - zusätzliche Speicherung in txt-file
 '''
 def contentToList(page_content):
-    txtDir = "C:/PycharmProjects/AbgeordnetenWatch/pdftotxt/"
-    textFilename = txtDir + "Protokoll.txt"
-    #textFile = open(textFilename, "w")  # make text file
     list = sent_tokenize(page_content)
     # list = page_content.split(' ')
     print(list)
