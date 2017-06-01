@@ -2,11 +2,14 @@
 @author: Steve
 """
 import PyPDF2
+import datetime
+import sys
+import operator
+
 from nltk import FreqDist
 from nltk.corpus import stopwords
-import operator
+
 from nltk import sent_tokenize, word_tokenize
-from nltk import pos_tag
 from nltk import StanfordPOSTagger
 
 import xlrd
@@ -15,6 +18,21 @@ from nltk import ne_chunk
 '''
     Data extracting from Plenarprotokoll
 '''
+
+class Logger(object):
+    def __init__(self):
+        self.terminal = sys.stdout
+        self.log = open("log/console_output/output_log.txt'", 'w')
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)
+
+    def flush(self):
+        #this flush method is needed for python 3 compatibility.
+        #this handles the flush command by doing nothing.
+        #you might want to specify some extra behavior here.
+        pass
 
 ''' get content fuer alle Seiten im Protokoll '''
 def getContent():
@@ -66,7 +84,7 @@ def contentToList(page_content):
             jar = 'jars/stanford-postagger.jar'
             model = 'jars/german-hgc.tagger'
             pos_tagger = StanfordPOSTagger(model, jar, encoding='utf8')
-            text = pos_tagger.tag(words)
+            text = pos_tagger.tag(pos_tagger)
             print(text)
 
             namedEnt = ne_chunk(tagged)
@@ -271,6 +289,7 @@ def lex_div_with_and_without_stopwords(wordlist, cleaned_speech):
     print("lexical diversity with stopwords:  {0:8.2f}".format(diversity_with_stopwords))           # Prozentsatz fuer die Sprachvielfalt mit stopwords
     print("lexical diversity without stopwords:  {0:8.2f}".format(diversity_without_stopwords))     # Prozentsatz fuer die Sprachvielfalt ohne stopwords
 
+sys.stdout = Logger()
 content = getContent()
 wordlist = contentToList(content)
 cleaned_Speech = clean_and_getFrequenz(wordlist)
