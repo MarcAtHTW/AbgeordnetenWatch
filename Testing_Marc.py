@@ -22,7 +22,7 @@ from nltk import ne_chunk
 class Logger(object):
     def __init__(self):
         self.terminal = sys.stdout
-        self.log = open("log/console_output/output_log.txt'", 'w')
+        self.log = open("log/console-output/output_log.txt'", 'w')
 
     def write(self, message):
         self.terminal.write(message)
