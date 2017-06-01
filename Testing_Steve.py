@@ -1,14 +1,22 @@
 """
 @author: Steve
 """
+from unicodedata import name
+
 import PyPDF2
+import nltk
 from nltk import FreqDist
 from nltk.corpus import stopwords
 import operator
 from nltk import sent_tokenize, word_tokenize
+from nltk import StanfordPOSTagger
 from nltk import pos_tag
 import xlrd
 from nltk import ne_chunk
+
+#nltk.internals.config_java('C:/Programme/Java/jdk1.8.0_20/bin')
+import os
+os.environ['JAVAHOME'] = "C:/Program Files/Java/jdk1.8.0_20/bin/java.exe"
 
 '''
     Data extracting from Plenarprotokoll
@@ -23,7 +31,7 @@ party_name = ""
 
 ''' get content fuer alle Seiten im Protokoll '''
 def getContent():
-    pdf_file = open('C:\PycharmProjects\AbgeordnetenWatch\Plenarprotokoll_18_232.pdf', 'rb')
+    pdf_file = open('Plenarprotokoll_18_232.pdf', 'rb')
     read_pdf = PyPDF2.PdfFileReader(pdf_file)
     page_content = ''
     for i in range(read_pdf.getNumPages()):
@@ -37,6 +45,7 @@ def getContent():
 - zusätzliche Speicherung in txt-file
 '''
 def contentToList(page_content):
+    entity_polname_partyname = {}
     list = sent_tokenize(page_content)
     # list = page_content.split(' ')
     print(list)
@@ -46,15 +55,12 @@ def contentToList(page_content):
         list_element = list_element.replace("-", "")
         cleanList.append(list_element) # liste ohne -, \n
         #print("item at index", i, ":", list_element)       # alle Listenelemente
-        entity_polname_partyname = {}
         entity_polname_partyname = analyse_list_element(list_element, i)
-
     return entity_polname_partyname
 
 ''' analysiere Struktur list_element '''
 ''' Präsident Lammert übergibt "das Wort"... -> Name und Politiker '''
 def analyse_list_element(list_element, i):
-    entityPers_names = []
     entity_polname_partyname = {}
     matchers = ['Das Wort','das Wort']
     if any(m in list_element for m in matchers):
@@ -62,34 +68,50 @@ def analyse_list_element(list_element, i):
         start_Element_Rede = i + 1
         list_with_startelement_numbers.append(start_Element_Rede)
         print("Start_Index_Redetext: ", start_Element_Rede)
+
         '''- POS -> PartOfSpeech Verben, Nomen, ... in Listenelement mit matchers'''
         words = word_tokenize(list_element)
         '''extracting Named Entities - Person, Organization,...'''
-        #st = StanfordPOSTagger('english-bidirectional-distsim.tagger')
-        #print(st.tag(words))
-        tagged = pos_tag(words)
+        jar = 'jars\stanford-postagger.jar'
+        model = 'jars\german-hgc.tagger'
+        pos_tagger = StanfordPOSTagger(model, jar, encoding='utf8')
+        tagged = pos_tagger.tag(words)
         print(tagged)
-        namedEnt = ne_chunk(tagged)
+        chunkGram = r"""Chunk: {<NE>?}"""
+        chunkParser = nltk.RegexpParser(chunkGram)
+        namedEnt = chunkParser.parse(tagged)
         print(namedEnt)
         #namedEnt.draw()
+
         ''' extract entity names - anhand von labels'''
         entityPers_names = []
-        if hasattr(namedEnt, 'label') and namedEnt.label:
-            if namedEnt.label() == 'PERSON':  # or namedEnt.label() == 'ORGANIZATION':
-                entityPers_names.append(' '.join([child[0] for child in namedEnt]))
-            else:
-                for child in namedEnt:
-                    entityPers_names.extend((child))
-        print("Person: " + str(entityPers_names))
+
+        for subtree in namedEnt.subtrees(filter=lambda t: t.label() == 'Chunk'):
+            print(subtree)
+            entityPers_names.append(subtree[0])
+        # if hasattr(namedEnt, 'label') and namedEnt.label:
+        #     if namedEnt.label() == 'NE':  # or namedEnt.label() == 'ORGANIZATION':
+        #         entityPers_names.append(' '.join([child[0] for child in namedEnt]))
+        #     else:
+        #         for child in namedEnt:
+        #             entityPers_names.extend((child))
+
+        name = ''
+        for ne in entityPers_names:
+            name += ' ' + ne[0]
+        entityPers_names.append(name)
+
+        #print("Person: " + str(entityPers_names))
+        print("Person: " + str(name))
         entity_polname_partyname = check_name_party_in_xls(entityPers_names)
-    return entity_polname_partyname
+        return entity_polname_partyname
 
 ''' Abgleich mit Excelcheet'''
 def check_name_party_in_xls(namesOfEntities):
     politican_name = ''
     party_name = ''
     ''' Excel-sheet with all politicans '''
-    workbook = xlrd.open_workbook('C:\PycharmProjects\AbgeordnetenWatch\mdb.xls')
+    workbook = xlrd.open_workbook('mdb.xls')
     worksheet = workbook.sheet_by_name('Tabelle1')
     # Value of 1st row and 1st column
     value_of_first_col_Names = []
