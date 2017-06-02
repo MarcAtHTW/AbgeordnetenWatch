@@ -28,9 +28,7 @@ class Logger(object):
         self.log.write(message)
 
     def flush(self):
-        #this flush method is needed for python 3 compatibility.
-        #this handles the flush command by doing nothing.
-        #you might want to specify some extra behavior here.
+        #Diese Methode wird für die Python3-Kopatibilität benötigt
         pass
 
 ''' get content fuer alle Seiten im Protokoll '''
