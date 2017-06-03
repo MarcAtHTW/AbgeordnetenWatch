@@ -58,6 +58,7 @@ def contentToDict(page_content):
         #print("item at index", i, ":", list_element)       # alle Listenelemente
 
         analyse_list_element(list_element, i)
+
         set_number(i)
 
 def set_number(i):
