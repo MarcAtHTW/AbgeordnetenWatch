@@ -23,6 +23,7 @@ cleanList = []
 start_Element_Rede = 0
 list_with_startelement_numbers = []     # enthält Start item aller Redetexte
 list_with_startEnd_numbers = []         # enthält Start und Ende item aller Redetexte
+number_of_last_element = 0
 list_elements_till_first_speech = []    # enthält listenelemente bis zur ersten Rede
 dict_entity_polname_partyname = {}
 temp_dict_entity_polname_partyname = {}
@@ -57,7 +58,15 @@ def contentToDict(page_content):
         #print("item at index", i, ":", list_element)       # alle Listenelemente
 
         analyse_list_element(list_element, i)
+        set_number(i)
 
+def set_number(i):
+    global number_of_last_element
+    number_of_last_element = i
+
+def get_number():
+    global number_of_last_element
+    return number_of_last_element
 
 ''' analysiere Struktur list_element '''
 ''' Präsident Lammert übergibt "das Wort"... -> Name und Politiker '''
@@ -111,6 +120,7 @@ def analyse_list_element(list_element, i):
         if len(list_with_startelement_numbers) != 0:        # wenn bereits eine Startnummer (erste Rede) vorhanden
             print("Redeteil:", i, list_element)
         else:
+            global list_elements_till_first_speech
             list_elements_till_first_speech.append(list_element)  # Teile mit TOP, ZTOP,...
 
 ''' Abgleich mit Excelcheet'''
@@ -173,21 +183,23 @@ namesOfEntities = contentToDict(content)
 ''' Bestimmung von Start und Ende der Reden'''
 
 print("Liste mit Startnummern: ",list_with_startelement_numbers)
+print(len(list_with_startelement_numbers))
+
 liste_mit_Startnummern_und_End = []
 liste_mit_Endnummern = []
 i = 0
 x= 1
 while i < len(list_with_startelement_numbers)-1:
     liste_mit_Endnummern.insert(i, list_with_startelement_numbers[x]-1)
+    if i == len(list_with_startelement_numbers) - 2:
+        liste_mit_Endnummern.append(get_number())
     i += 1
     x += 1
-print(list_with_startelement_numbers)
-print(len(list_with_startelement_numbers))
 print('Liste mit Endnummern: ',liste_mit_Endnummern)
 print(len(liste_mit_Endnummern))
 
 i = 0
-while i < len(list_with_startelement_numbers)-1:
+while i <= len(list_with_startelement_numbers)-1:
     liste_mit_Startnummern_und_End.append(list_with_startelement_numbers[i])
     liste_mit_Startnummern_und_End.append(liste_mit_Endnummern[i])
     i += 1
@@ -221,8 +233,6 @@ print(len(dict_liste))
 
 # Ausgabe aller Reden
 for rede in alle_Reden:
-    print(politican_name)
-    print(party_name)
     print(rede)
 
 ''' Redeteil einem dict zuordnen in dict_liste'''
@@ -232,6 +242,9 @@ for dict in dict_liste:
     x += 1
 for dict in dict_liste:
     print(dict)
+    print(dict['polName'])
+    print(dict['partyName'])
+    print(dict['rede'])
 
 
 
