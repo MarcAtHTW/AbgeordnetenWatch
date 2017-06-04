@@ -10,11 +10,8 @@ from nltk.corpus import stopwords
 import operator
 from nltk import sent_tokenize, word_tokenize
 from nltk import StanfordPOSTagger
-from nltk import pos_tag
 import xlrd
-from nltk import ne_chunk
 
-#nltk.internals.config_java('C:/Programme/Java/jdk1.8.0_20/bin')
 import os
 os.environ['JAVAHOME'] = "C:/Program Files/Java/jdk1.8.0_20/bin/java.exe"
 
@@ -24,10 +21,15 @@ os.environ['JAVAHOME'] = "C:/Program Files/Java/jdk1.8.0_20/bin/java.exe"
 
 cleanList = []
 start_Element_Rede = 0
-list_with_startelement_numbers = []  # enthält Start item aller Redetexte
-list_with_startEnd_numbers = []  # enthält Start und Ende item aller Redetexte
+list_with_startelement_numbers = []     # enthält Start item aller Redetexte
+list_with_startEnd_numbers = []         # enthält Start und Ende item aller Redetexte
+number_of_last_element = 0
+list_elements_till_first_speech = []    # enthält listenelemente bis zur ersten Rede
+dict_entity_polname_partyname = {}
+temp_dict_entity_polname_partyname = {}
 politican_name = ""
 party_name = ""
+dict_liste = []
 
 ''' get content fuer alle Seiten im Protokoll '''
 def getContent():
@@ -44,8 +46,7 @@ def getContent():
 - Dabei entfernen von "\n" und "-" aus Listenelemente
 - zusätzliche Speicherung in txt-file
 '''
-def contentToList(page_content):
-    entity_polname_partyname = {}
+def contentToDict(page_content):
     list = sent_tokenize(page_content)
     # list = page_content.split(' ')
     print(list)
@@ -55,16 +56,26 @@ def contentToList(page_content):
         list_element = list_element.replace("-", "")
         cleanList.append(list_element) # liste ohne -, \n
         #print("item at index", i, ":", list_element)       # alle Listenelemente
-        entity_polname_partyname = analyse_list_element(list_element, i)
-    return entity_polname_partyname
+
+        analyse_list_element(list_element, i)
+
+        set_number(i)
+
+def set_number(i):
+    global number_of_last_element
+    number_of_last_element = i
+
+def get_number():
+    global number_of_last_element
+    return number_of_last_element
 
 ''' analysiere Struktur list_element '''
 ''' Präsident Lammert übergibt "das Wort"... -> Name und Politiker '''
 def analyse_list_element(list_element, i):
-    entity_polname_partyname = {}
-    matchers = ['Das Wort','das Wort']
+    temp_dict_empty_values = {'polName': '', 'partyName': ''}
+    matchers = ['Das Wort','das Wort','nächste Redner','nächster Redner','nächste Rednerin','spricht jetzt','Nächste Rednerin','Nächster Redner' ,'Letzter Redner', 'nächste Wortmeldung']
     if any(m in list_element for m in matchers):
-        print("item at index", i, ":", list_element)    # Listenelemente, die matchers enthalten
+        print("\nWechsel Redner", i, ":", list_element)    # Listenelemente, die matchers enthalten
         start_Element_Rede = i + 1
         list_with_startelement_numbers.append(start_Element_Rede)
         print("Start_Index_Redetext: ", start_Element_Rede)
@@ -77,63 +88,78 @@ def analyse_list_element(list_element, i):
         pos_tagger = StanfordPOSTagger(model, jar, encoding='utf8')
         tagged = pos_tagger.tag(words)
         print(tagged)
-        chunkGram = r"""Chunk: {<NE>?}"""
+        chunkGram = r"""Eigenname: {<NE>?}"""
         chunkParser = nltk.RegexpParser(chunkGram)
         namedEnt = chunkParser.parse(tagged)
-        print(namedEnt)
+        print("chunkParser: ",namedEnt)
         #namedEnt.draw()
-
-        ''' extract entity names - anhand von labels'''
-        entityPers_names = []
-
-        for subtree in namedEnt.subtrees(filter=lambda t: t.label() == 'Chunk'):
+        ''' extract entity names - anhand von label - NE => Eigenname'''
+        entityPers_names_subtree = []
+        for subtree in namedEnt.subtrees(filter=lambda t: t.label() == 'Eigenname'):
             print(subtree)
-            entityPers_names.append(subtree[0])
-        # if hasattr(namedEnt, 'label') and namedEnt.label:
-        #     if namedEnt.label() == 'NE':  # or namedEnt.label() == 'ORGANIZATION':
-        #         entityPers_names.append(' '.join([child[0] for child in namedEnt]))
-        #     else:
-        #         for child in namedEnt:
-        #             entityPers_names.extend((child))
-
+            entityPers_names_subtree.append(subtree[0])
+        print('entityPers_names_subtree: ',entityPers_names_subtree)
+        entityPers_names = []
         name = ''
-        for ne in entityPers_names:
+        for ne in entityPers_names_subtree:
             name += ' ' + ne[0]
         entityPers_names.append(name)
+        print("Person: ",entityPers_names)
+        print("Person:",str(name))
 
-        #print("Person: " + str(entityPers_names))
-        print("Person: " + str(name))
-        entity_polname_partyname = check_name_party_in_xls(entityPers_names)
-        return entity_polname_partyname
+        # Abfrage: Leeres oder gefülltes Dict ( Namen und Partei)
+        temp_dict_entity_polname_partyname = check_name_party_in_xls(entityPers_names)
+        print('dictionary: ', temp_dict_entity_polname_partyname)
+
+        # Hinzufügen von leeren und gefüllten Dict in dict_liste
+        dict_liste.append(temp_dict_entity_polname_partyname)
+        print('dict_liste: ', dict_liste)
+
+    # Listenelement ist entweder 'Anfang bis zur ersten Rede' oder 'Redeteil'
+    else:
+        Rede = []
+        if len(list_with_startelement_numbers) != 0:        # wenn bereits eine Startnummer (erste Rede) vorhanden
+            print("Redeteil:", i, list_element)
+        else:
+            global list_elements_till_first_speech
+            list_elements_till_first_speech.append(list_element)  # Teile mit TOP, ZTOP,...
 
 ''' Abgleich mit Excelcheet'''
 def check_name_party_in_xls(namesOfEntities):
+    temp_dict_entity_polname_partyname = {'polName': '', 'partyName': ''}
+    print('Abgleich pos-Name mit EXCEL-Eintrag')
     politican_name = ''
     party_name = ''
     ''' Excel-sheet with all politicans '''
     workbook = xlrd.open_workbook('mdb.xls')
     worksheet = workbook.sheet_by_name('Tabelle1')
-    # Value of 1st row and 1st column
-    value_of_first_col_Names = []
-    value_of_second_col_Party = []
-    first_col_Names = worksheet.col_values(0)
-    second_col_Party = worksheet.col_values(1)
-    print(first_col_Names)
-    print(second_col_Party)
+    first_col_Names = worksheet.col_values(0)  # Spalte mit Namen, die KEINE Bindestriche enthalten
+    second_col_Names = worksheet.col_values(1)  # Spalte mit Namen, die Bindestriche enthalten
+    third_col_Party = worksheet.col_values(2)
+    #print(first_col_Names)
+    #print(second_col_Names)
+    #print(third_col_Party)
     matchers = first_col_Names
     for i in range(len(namesOfEntities)):
-        list_element = namesOfEntities[i]
+        name = namesOfEntities[i]
         for m in range(len(matchers)):
             matcher_element = matchers[m]
-            if matcher_element in list_element:
-                print("listen_eintrag", i, ": ", list_element)
+            if matcher_element.__contains__(name) or name.__contains__(matcher_element):
+                print("listen_eintrag", i, ": ", name)
                 print("excel_eintrag_name", m, ": ", matcher_element)
-                print("excel_eintrag_partei", m, ": ", second_col_Party[m])
-                politican_name = matcher_element
-                party_name = second_col_Party[m]
+                print("excel_eintrag_name_mit_Bindestrich", m, ": ", second_col_Names[m])
+                print("excel_eintrag_partei", m, ": ", third_col_Party[m])
+                politican_name = second_col_Names[m]
+                party_name = third_col_Party[m]
+                temp_dict_entity_polname_partyname = {'polName': politican_name, 'partyName': party_name}
+                print('wwwwwwwwwwwwwwwwwwwwwwww: ',temp_dict_entity_polname_partyname['polName'])
+                print('wwwwwwwwwwwwwwwwwwwwwwww: ',temp_dict_entity_polname_partyname['partyName'])
 
                 ''' Eintrag in DB Name + Partei'''
-    return {'polName': politican_name,'partyName': party_name}
+
+    # Rückgabe eine leeren Dict oder gefüllten Dict, falls Excel-Eintrag vorhanden ist
+    return temp_dict_entity_polname_partyname
+
 
 ''' Anbindung API-Abgeordnetenwatch - JSON Data-Extract'''
 # def api_json():
@@ -152,30 +178,42 @@ def check_name_party_in_xls(namesOfEntities):
 
 
 content = getContent()
-namesOfEntities = contentToList(content)
+namesOfEntities = contentToDict(content)
 
 
+''' Bestimmung von Start und Ende der Reden'''
 
-print("Liste mit Startnummern: ", list_with_startelement_numbers)
-# jede zweite Startnummer (= Ende) um 1 mindern für Ende einer Rede
-# [start:end:stop]
-# print(list_with_startelement_numbers[1::2])
-for value in range(1, len(list_with_startelement_numbers), 2):
-    list_with_startelement_numbers[value] = list_with_startelement_numbers[value]-1
-    #print(list_with_startelement_numbers)
-list_with_startEnd_numbers = list_with_startelement_numbers      # list_with_startEnd_numbers enthält Start und Ende item(Nummern) aller Redetexte
-print("Liste mit Start + Endnummern: ", list_with_startEnd_numbers)
+print("Liste mit Startnummern: ",list_with_startelement_numbers)
+print(len(list_with_startelement_numbers))
 
-for item in range(len(cleanList)):
-    element = cleanList[item]
-    #print("item at index", item, ":", element)
+liste_mit_Startnummern_und_End = []
+liste_mit_Endnummern = []
+i = 0
+x= 1
+while i < len(list_with_startelement_numbers)-1:
+    liste_mit_Endnummern.insert(i, list_with_startelement_numbers[x]-1)
+    if i == len(list_with_startelement_numbers) - 2:
+        liste_mit_Endnummern.append(get_number())
+    i += 1
+    x += 1
+print('Liste mit Endnummern: ',liste_mit_Endnummern)
+print(len(liste_mit_Endnummern))
+
+i = 0
+while i <= len(list_with_startelement_numbers)-1:
+    liste_mit_Startnummern_und_End.append(list_with_startelement_numbers[i])
+    liste_mit_Startnummern_und_End.append(liste_mit_Endnummern[i])
+    i += 1
+print('Liste mit Start-und Endnummern: ',liste_mit_Startnummern_und_End)
+print(len(liste_mit_Startnummern_und_End))
+
+''' alle Reden in einer Liste halten'''
 
 alle_Reden = []
 x = 0
 y = 1
 start = 1
-print(len(list_with_startEnd_numbers))
-end = len(list_with_startEnd_numbers)-1
+end = len(liste_mit_Startnummern_und_End)-1
 active = True
 while active:
     print("x: ", x)
@@ -185,18 +223,32 @@ while active:
         active = False
         print("false")
     else:
-        alle_Reden.append(cleanList[list_with_startEnd_numbers[x]:list_with_startEnd_numbers[y]])  # [alle zwischen Start:Ende]
+        alle_Reden.append(cleanList[liste_mit_Startnummern_und_End[x]:liste_mit_Startnummern_und_End[y]])  # [alle zwischen Start:Ende]
         #print("weiter")
         #print("start: ", start)
     x += 2
     y += 2
     start += 2
+print(len(alle_Reden))
+print(len(dict_liste))
 
 # Ausgabe aller Reden
 for rede in alle_Reden:
-    print(politican_name)
-    print(party_name)
     print(rede)
+
+''' Redeteil einem dict zuordnen in dict_liste'''
+x= 0
+for dict in dict_liste:
+    dict['rede'] = alle_Reden[x]
+    x += 1
+for dict in dict_liste:
+    print(dict)
+    print(dict['polName'])
+    print(dict['partyName'])
+    print(dict['rede'])
+
+
+
 
     ''' DB-Eintrag für Politiker-Rede'''
     ''' enthält noch Beifall/ Zwischenrufe'''
@@ -208,32 +260,6 @@ for rede in alle_Reden:
 
 
 
-
-
-
-''' xxxxxxxxxxxxxxxxxxxxxxxxxxx   Dictionary befuellen   xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx '''
-#start with an empty list
-dl_protocol = []
-
-# make a new dic for datarow and add them to the list
-datarow = {'tag':'',
-       'top':'',
-       'thema':'',
-       'politiker': '',
-       'partei': '',
-       'redetext':''
-       }
-dl_protocol.append(datarow)
-print(dl_protocol)
-# Show all information about each datarow.
-for datarows in dl_protocol:
-    for k, v in datarow.items():
-        print(k + ": " + v)
-    print("\n")
-
-# neues dic für jeden neuen Datensatz
-
-datarow['tag']
 
 
 ''' xxxxxxxxxxxxxxxxxxxxxxxxxxx   Datenbank befuellen   xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx '''
