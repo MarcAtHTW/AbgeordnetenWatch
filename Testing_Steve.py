@@ -1,8 +1,6 @@
 """
 @author: Steve
 """
-from unicodedata import name
-
 import PyPDF2
 import nltk
 from nltk import FreqDist
@@ -11,7 +9,6 @@ import operator
 from nltk import sent_tokenize, word_tokenize
 from nltk import StanfordPOSTagger
 import xlrd
-
 import os
 os.environ['JAVAHOME'] = "C:/Program Files/Java/jdk1.8.0_20/bin/java.exe"
 
@@ -40,6 +37,12 @@ def getContent():
         print(i)
         pages = read_pdf.getPage(i)
         page_content += pages.extractText()
+    # text =open('18232-data.txt','rb')
+    # page_content = ''
+    # for line in text:
+    #     print(line)
+    #     page_content += str(line)
+
     return page_content
 '''
 - function fuer content-splitt und vorhalten in Liste
@@ -58,7 +61,6 @@ def contentToDict(page_content):
         #print("item at index", i, ":", list_element)       # alle Listenelemente
 
         analyse_list_element(list_element, i)
-
         set_number(i)
 
 def set_number(i):
