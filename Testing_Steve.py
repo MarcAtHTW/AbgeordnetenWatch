@@ -125,6 +125,8 @@ def analyse_list_element(list_element, i):
         else:
             global list_elements_till_first_speech
             list_elements_till_first_speech.append(list_element)  # Teile mit TOP, ZTOP,...
+            print('global-> erste Zeilen: ', list_element)
+
 
 ''' Abgleich mit Excelcheet'''
 def check_name_party_in_xls(namesOfEntities):
@@ -257,7 +259,10 @@ for dict in dict_liste:
 
     print("\n")
 
-
+# matchers = ['...']
+# for element in list_elements_till_first_speech():
+#     if matchers in element:
+#         print(element)
 
 
 
