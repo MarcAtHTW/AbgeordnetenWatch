@@ -1,5 +1,6 @@
 from selenium import webdriver
 
+
 chrome_options = webdriver.ChromeOptions()
 chrome_options.add_argument('--no-sandbox')
 chrome = webdriver.Chrome('/usr/bin/chromedriver', chrome_options=chrome_options)
@@ -8,6 +9,13 @@ chrome.get('http://www.bundestag.de/ajax/filterlist/de/dokumente/protokolle/-/44
 from bs4 import BeautifulSoup
 
 def rebuild_topic(topic, whitespaces_to_jump):
+    '''
+    Nimmt den Tagesordnungspunkt auseinander und gibt den 'TOP X' zurück
+
+    :param topic: Tagesordnungspunkt (z.B. 'TOP 40 Bundeswehreinsatz im Mittelmeer')
+    :param whitespaces_to_jump: Spaces die es zu überspringen gilt, bis der Tagesordnungspunktname erreicht wurde (meistens 2)
+    :return: z.B. 'TOP 40 Bundeswehreinsatz im Mittelmeer' wird übergeben mit whitespaces_to_jump = 2 -> returned 'TOP 40'
+    '''
     found_spaces = 0
     new_topic = ''
     for letter in str(topic):
@@ -20,14 +28,19 @@ def rebuild_topic(topic, whitespaces_to_jump):
     return new_topic.strip()
 
 def get_topic_name_from_topic_number(top, topic):
+    '''
+    Entfernt die 'TOP X' Nummer aus dem Tagesordnungspunkt und gibt dann nur den/die eigentlichen Namen/Beschreibung zurück
+
+    :param top: z.B.: 'TOP 40'
+    :param topic: z.B. 'TOP 40 Bundeswehreinsatz im Mittelmeer'
+    :return: Tagesordnungspunkt-Beschreibung z.B.: 'Bundeswehreinsatz im Mittelmeer'
+    '''
     topic_name = topic.replace(top, '')
     topic_name = topic_name.strip()
     return topic_name
 
 soup=BeautifulSoup(chrome.page_source,'lxml')
 
-# for link in soup.find_all('a'):
-#     print(link.get('href',None),link.get_text())
 dict = {'num_Sitzung': '', 'num_Wahlperiode': '', 'dat_Sitzung': '', 'top': {}}
 liste_dict = []
 liste_top = []
@@ -42,9 +55,6 @@ for item in soup.find_all('strong'):
         #print(para.get_text())
         liste_top.append(item.get_text())
     liste_alle.append(item.get_text())
-# print(liste_alle)
-# print(liste_dict)
-# print(liste_top)
 
 liste_nummern_sitzungsstart = []
 liste_nummern_sitzungsende = []
@@ -66,7 +76,6 @@ while active:
     eine_Sitzung = []
     if start > end:
         active = False
-        #print("false")
     else:
         eine_Sitzung.append(liste_alle[liste_nummern_sitzungsstart[x]:liste_nummern_sitzungsende[x]])  # [alle zwischen Start:Ende]
 
@@ -90,7 +99,7 @@ topics.index
 
 dict_rede       = {}
 dict_sitzung    = {}
-list_redner = []
+list_redner     = []
 top_counter     = -1
 
 top_zwischenspeicher = ''
@@ -102,6 +111,7 @@ for i in range(len(topics)):
     #print(topic)
     if topic.__contains__('TOP'):
         top_counter = top_counter +1
+        list_redner = []
         top_zwischenspeicher = topic
         top_number_key = rebuild_topic(topic, 2)
         top_name = get_topic_name_from_topic_number(top_number_key, topic)
