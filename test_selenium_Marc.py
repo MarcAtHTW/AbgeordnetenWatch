@@ -1,12 +1,17 @@
 from selenium import webdriver
-
-
-chrome_options = webdriver.ChromeOptions()
-chrome_options.add_argument('--no-sandbox')
-chrome = webdriver.Chrome('/usr/bin/chromedriver', chrome_options=chrome_options)
-chrome.get('http://www.bundestag.de/ajax/filterlist/de/dokumente/protokolle/-/442112/h_6810466be65964217012227c14bad20f?limit=1')
-
 from bs4 import BeautifulSoup
+
+def start_scraping_with_chrome(url):
+    '''
+    Scrapt eine Webseite mit dem Google-Chrome-Browser anhand einer übergebenen URL
+    :param url: String - URL
+    :return: Selenium-Chrome-Webdriver-Objekt
+    '''
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_argument('--no-sandbox')
+    chrome = webdriver.Chrome('/usr/bin/chromedriver', chrome_options=chrome_options)
+    chrome.get(url)
+    return chrome
 
 def rebuild_topic(topic, whitespaces_to_jump):
     '''
@@ -39,90 +44,129 @@ def get_topic_name_from_topic_number(top, topic):
     topic_name = topic_name.strip()
     return topic_name
 
-soup=BeautifulSoup(chrome.page_source,'lxml')
 
-dict = {'num_Sitzung': '', 'num_Wahlperiode': '', 'dat_Sitzung': '', 'top': {}}
-liste_dict = []
-liste_top = []
-liste_alle =[]
+def get_alle_tops_and_alle_sitzungen_from_soup(soup):
+    '''
+    Holt alle TOP's und die Metadaten der vorhandenen Sitzungen aus der Suppe
 
-for item in soup.find_all('strong'):
-    print(item.get_text())
-    if item.get_text().__contains__('Wahlperiode'):
-        dict = {'num_Sitzung': item.get_text()[7:10], 'num_Wahlperiode': item.get_text()[21:23], 'dat_Sitzung': item.get_text()[38:48]}
-        liste_dict.append(dict)
-    if item.get_text().__contains__('TOP'):
-        #print(para.get_text())
-        liste_top.append(item.get_text())
-    liste_alle.append(item.get_text())
+    :param soup: Beautiful-Soup-Objekt
+    :return: Dictionary
+    '''
+    dict = {'num_Sitzung': '', 'num_Wahlperiode': '', 'dat_Sitzung': '', 'top': {}}
+    liste_dict = []
+    liste_top = []
+    alle_tops_list =[]
 
-liste_nummern_sitzungsstart = []
-liste_nummern_sitzungsende = []
-for i, j in enumerate(liste_alle):
-    if j == '\n  TOP Sitzungseröffnung ':
-        liste_nummern_sitzungsstart.append(i)
-for i, j in enumerate(liste_alle):
-    if j == '\n  TOP Sitzungsende ':
-        liste_nummern_sitzungsende.append(i)
-print(liste_nummern_sitzungsstart)
-print(liste_nummern_sitzungsende)
-eine_Sitzung = []
-alle = []
-x = 0
-start = 0
-end = len(liste_nummern_sitzungsende)-1
-active = True
-while active:
+    for item in soup.find_all('strong'):
+        #print(item.get_text())
+        if item.get_text().__contains__('Wahlperiode'):
+            dict = {'num_Sitzung': item.get_text()[7:10], 'num_Wahlperiode': item.get_text()[21:23], 'dat_Sitzung': item.get_text()[38:48]}
+            liste_dict.append(dict)
+        if item.get_text().__contains__('TOP'):
+            #print(para.get_text())
+            liste_top.append(item.get_text())
+        alle_tops_list.append(item.get_text())
+    return {'TOPs' : alle_tops_list, 'Alle_Sitzungen':liste_dict}
+
+
+def get_alle_sitzungen_mit_start_und_ende_der_topic(alle_tops_list, alle_sitzungen):
+    '''
+    Gibt alle Sitzungen zurück samt Topics, deren Rednern, sowie die Sitzungsmetadaten. (SItzungsnummer, Datum, Wahlperiode)
+
+    :param alle_tops_list:
+    :param alle_sitzungen:
+    :return:
+    '''
+    liste_nummern_sitzungsstart = []
+    liste_nummern_sitzungsende = []
+    for i, j in enumerate(alle_tops_list):
+        if j == '\n  TOP Sitzungseröffnung ':
+            liste_nummern_sitzungsstart.append(i)
+    for i, j in enumerate(alle_tops_list):
+        if j == '\n  TOP Sitzungsende ':
+            liste_nummern_sitzungsende.append(i)
+
     eine_Sitzung = []
-    if start > end:
-        active = False
-    else:
-        eine_Sitzung.append(liste_alle[liste_nummern_sitzungsstart[x]:liste_nummern_sitzungsende[x]])  # [alle zwischen Start:Ende]
+    alle = []
+    x = 0
+    start = 0
+    end = len(liste_nummern_sitzungsende) - 1
+    active = True
+    while active:
+        eine_Sitzung = []
+        if start > end:
+            active = False
+        else:
+            eine_Sitzung.append(alle_tops_list[liste_nummern_sitzungsstart[x]:liste_nummern_sitzungsende[
+                x]])  # [alle zwischen Start:Ende]
 
-        liste_dict[x]['top'] = eine_Sitzung
-    x += 1
-    start += 1
-    alle.append(eine_Sitzung)
-# print(len(alle))
-# print(eine_Sitzung)
-# print(alle)
-# print(dict)
-# print(liste_dict)
-print(liste_dict[0]['top'])
+            alle_sitzungen[x]['top'] = eine_Sitzung
+        x += 1
+        start += 1
+        alle.append(eine_Sitzung)
 
-topics = liste_dict[0]['top'][0]
-beginn = '\n  TOP Sitzungseröffnung '
-lam = 'Lammert, Prof. Dr. Norbert'
-topics.remove(beginn)
-topics.remove(lam)
-topics.index
+    return alle_sitzungen
 
-dict_rede       = {}
-dict_sitzung    = {}
-list_redner     = []
-top_counter     = -1
+def sort_topics_to_sitzung(alle_sitzungen):
+    dict_sitzungen = {}
 
-top_zwischenspeicher = ''
+    for sitzung in alle_sitzungen:
+        tops            = sitzung['top'][0]
+        sitzungs_datum  = sitzung['dat_Sitzung']
+        wahlperiode     = sitzung['num_Wahlperiode']
+        sitzungs_nummer = sitzung['num_Sitzung']
 
-for i in range(len(topics)):
+        tops.index
+        dict_rede       = {}
+        dict_sitzung    = {}
+        list_redner     = []
+        top_counter     = -1
 
-    topic = topics[i]
-    topic = topic.strip()
-    #print(topic)
-    if topic.__contains__('TOP'):
-        top_counter = top_counter +1
-        list_redner = []
-        top_zwischenspeicher = topic
-        top_number_key = rebuild_topic(topic, 2)
-        top_name = get_topic_name_from_topic_number(top_number_key, topic)
-        dict_rede = {top_number_key: top_name}
-    else:
-        list_redner.append(topic)
+        top_zwischenspeicher = ''
+        dict_topics = {}
+        for i in range(len(tops)):
 
-    dict_sitzung[top_counter] = {
-                    'Sitzung 283':dict_rede,
-                    'Redner': list_redner
-                }
+            topic = tops[i]
+            topic = topic.strip()
 
-print(dict_sitzung)
+            #print(topic)
+            if topic.__contains__('TOP'):
+                top_counter = top_counter +1
+                list_redner = []
+
+                top_number_key = rebuild_topic(topic, 2)
+                top_name = get_topic_name_from_topic_number(top_number_key, topic)
+                #topic= {top_number_key: top_name}
+                dict_topics[top_number_key] = {'Tagesordnungspunkt': top_name}
+
+            else:
+                list_redner.append(topic)
+
+            dict_topics[top_number_key]['Redner'] = list_redner
+
+        dict_sitzung = {
+                        'Sitzungsdatum' : sitzungs_datum,
+                        'Wahlperiode'   : wahlperiode,
+                        'TOPs'           : dict_topics
+                    }
+
+        dict_sitzungen['Sitzung ' + sitzungs_nummer] = dict_sitzung
+
+    return dict_sitzungen
+
+chrome = start_scraping_with_chrome('http://www.bundestag.de/ajax/filterlist/de/dokumente/protokolle/-/442112/h_6810466be65964217012227c14bad20f?limit=1')
+soup=BeautifulSoup(chrome.page_source,'lxml')
+alle_tops_und_alle_sitzungen = get_alle_tops_and_alle_sitzungen_from_soup(soup)
+
+alle_tops_list = alle_tops_und_alle_sitzungen['TOPs']
+alle_sitzungen = alle_tops_und_alle_sitzungen['Alle_Sitzungen']
+
+alle_sitzungen_mit_start_und_ende_der_topic = get_alle_sitzungen_mit_start_und_ende_der_topic(alle_tops_list, alle_sitzungen)
+
+#topics_einer_sitzung = alle_sitzungen_mit_start_und_ende_der_topic[0]['top'][0]
+#sitzung = sort_topics_to_sitzung(topics_einer_sitzung)
+
+sortierte_sitzungen = sort_topics_to_sitzung(alle_sitzungen_mit_start_und_ende_der_topic)
+
+
 print('test')
