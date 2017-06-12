@@ -1,12 +1,31 @@
 from selenium import webdriver
-url='C:/Python36-32/BrowserDriver'
+url="C:/Python36-32/BrowserDriver/chromedriver.exe"
 
-browser = webdriver.Firefox(url)
-browser.get("http://www.bundestag.de/ajax/filterlist/de/dokumente/protokolle/-/442112/h_6810466be65964217012227c14bad20f?limit=1")
+chrome_options = webdriver.ChromeOptions()
+chrome_options.add_argument('--no-sandbox')
+chrome = webdriver.Chrome(url,chrome_options = chrome_options)
+chrome.get("http://www.bundestag.de/ajax/filterlist/de/dokumente/protokolle/-/442112/h_6810466be65964217012227c14bad20f?limit=1")
 
 from bs4 import BeautifulSoup
 
-soup=BeautifulSoup(browser.page_source,'lxml')
+def rebuild_topic(topic, whitespaces_to_jump):
+    found_spaces = 0
+    new_topic = ''
+    for letter in str(topic):
+        if letter != ' ' and found_spaces < whitespaces_to_jump:
+            new_topic = new_topic + letter
+
+        elif letter == ' ' and found_spaces < whitespaces_to_jump:
+            new_topic = new_topic + letter
+            found_spaces = found_spaces + 1
+    return new_topic.strip()
+
+def get_topic_name_from_topic_number(top, topic):
+    topic_name = topic.replace(top, '')
+    topic_name = topic_name.strip()
+    return topic_name
+
+soup=BeautifulSoup(chrome.page_source,'lxml')
 
 # for link in soup.find_all('a'):
 #     print(link.get('href',None),link.get_text())
@@ -51,7 +70,6 @@ while active:
         #print("false")
     else:
         eine_Sitzung.append(liste_alle[liste_nummern_sitzungsstart[x]:liste_nummern_sitzungsende[x]])  # [alle zwischen Start:Ende]
-
         liste_dict[x]['top'] = eine_Sitzung
     x += 1
     start += 1
@@ -68,21 +86,32 @@ beginn = '\n  TOP Sitzungseröffnung '
 lam = 'Lammert, Prof. Dr. Norbert'
 topics.remove(beginn)
 topics.remove(lam)
-
 topics.index
-zwischen_dict = {}
-redner_dict = []
-liste_zwischen_dict = []
+
+dict_rede       = {}
+dict_sitzung    = {}
+list_redner = []
+top_counter     = -1
+
 top_zwischenspeicher = ''
+
 for i in range(len(topics)):
+
     topic = topics[i]
     topic = topic.strip()
-    print(topic)
     if topic.__contains__('TOP'):
+        top_counter = top_counter +1
         top_zwischenspeicher = topic
-        zwischen_dict['Tagesordnungspunkt'] = topic
-        liste_zwischen_dict.append(zwischen_dict['Tagesordnungspunkt'])
+        top_number_key = rebuild_topic(topic, 2)
+        top_name = get_topic_name_from_topic_number(top_number_key, topic)
+        dict_rede = {top_number_key: top_name}
     else:
-        zwischen_dict['Redner'] = redner_dict.append(topic)
+        list_redner.append(topic)
 
-print(zwischen_dict)
+    dict_sitzung[top_counter] = {
+                    'Sitzung 283':dict_rede,
+                    'Redner': list_redner
+                }
+
+print(dict_sitzung)
+print('test')

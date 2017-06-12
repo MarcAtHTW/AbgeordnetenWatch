@@ -1,5 +1,6 @@
 from selenium import webdriver
 from bs4 import BeautifulSoup
+import os
 
 def start_scraping_with_chrome(url):
     '''
@@ -9,8 +10,9 @@ def start_scraping_with_chrome(url):
     '''
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument('--no-sandbox')
-    chrome = webdriver.Chrome('/usr/bin/chromedriver', chrome_options=chrome_options)
+    chrome = webdriver.Chrome('C:/Python36-32/BrowserDriver/chromedriver.exe', chrome_options=chrome_options)
     chrome.get(url)
+
     return chrome
 
 def rebuild_topic(topic, whitespaces_to_jump):
@@ -147,7 +149,7 @@ def sort_topics_to_sitzung(alle_sitzungen):
             else:
                 '''
                 Füge alle Redner einer Topic, der entsprechenden Topic hinzu, prüfe jedoch vorher, ob sich der jeweilige
-                Redner bereits in der Liste befindet und füge ihn nur hinzu, sofern er nich nicht drin ist.
+                Redner bereits in der Liste befindet und füge ihn nur hinzu, sofern er noch nicht drin ist.
                 '''
                 allready_in_list = False
                 for redner in list_redner:
