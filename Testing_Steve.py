@@ -23,7 +23,7 @@ number_of_last_element = 0
 list_elements_till_first_speech = []    # enthält listenelemente bis zur ersten Rede
 politican_name = ""
 party_name = ""
-dict_liste = []
+
 
 
 def get_content():
@@ -204,24 +204,50 @@ def get_all_speeches(liste_mit_Startnummern_und_End):
         print(rede)
     return alle_Reden_einer_Sitzung
 
-
-
-    ''' Redeteil einem dict zuordnen in dict_liste'''
+def clean_speeches(alle_Reden_einer_Sitzung):
+    '''
+    Holt alle Zwischenrufe, Beifälle, Unruhe, etc. aus einer Rede
+    :return: dictionary rede
+    '''
+    liste_reden_dict = []
+    dict_stoerung = {}
+    liste_beifaelle = []
+    liste_widersprueche = []
+    liste_unruhe = []
+    liste_wortmeldungen = []
+    matchers = ['Beifall', 'Widerspruch', 'Unruhe', 'Wortmeldung']
+    import re
     x= 0
-    for dict in dict_liste:
-        dict['rede'] = alle_Reden_einer_Sitzung[x]
-        x += 1
-    for dict in dict_liste:
-        print(dict)
-        print(dict['polName'])
-        print(dict['partyName'])
-        print(dict['rede'])
-    return alle_Reden_einer_Sitzung
+    # gehe jede Rede durch
+    # wenn (...) kommt dann entferne diesen Teil aus Rede
+    # entfernten Teil analysieren und zwischen speichern
+    for rede in alle_Reden_einer_Sitzung:
+        if any(m in rede for m in matchers):
+            # suche, schneide aus
+            re.compile(".*((.*)).*").match("rede").groups()
+
+
+            if ...__contains__('Beifall'):
+                liste_beifaelle.append(...)
+            elif ...__contains__('Widerspruch'):
+                liste_widersprueche.append(...)
+            elif ...__contains__('Unruhe'):
+                liste_unruhe.append(...)
+            else ...__contains__('Wortmeldung')
+            liste_wortmeldungen.append(...)
+
+    # dictionary befüllen
+    dict_stoerung['Beifall']
+    dict_stoerung['Widerspruch']
+    dict_stoerung['Unruhe']
+    dict_stoerung['Wortmeldung']
+
 
 content = get_content()
 names_of_entities = split_and_analyse_content(content)
 start_end_nummern_liste = get_start_and_end_of_a_speech()
 liste_alle_reden = get_all_speeches(start_end_nummern_liste)
+clean_speeches(liste_alle_reden)
 
 
 
