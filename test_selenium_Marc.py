@@ -44,13 +44,12 @@ def get_topic_name_from_topic_number(top, topic):
     topic_name = topic_name.strip()
     return topic_name
 
-
 def get_alle_tops_and_alle_sitzungen_from_soup(soup):
     '''
-    Holt alle TOP's und die Metadaten der vorhandenen Sitzungen aus der Suppe
+    Holt alle Tagesordnungspunkte und die Metadaten der vorhandenen Sitzungen aus der "Wundervollen Suppe"
 
     :param soup: Beautiful-Soup-Objekt
-    :return: Dictionary
+    :return: Dictionary - Mit allen unbearbeiteten TOPs (Liste); Sitzungsmetadaten (Dictionary)
     '''
     dict = {'num_Sitzung': '', 'num_Wahlperiode': '', 'dat_Sitzung': '', 'top': {}}
     liste_dict = []
@@ -68,14 +67,14 @@ def get_alle_tops_and_alle_sitzungen_from_soup(soup):
         alle_tops_list.append(item.get_text())
     return {'TOPs' : alle_tops_list, 'Alle_Sitzungen':liste_dict}
 
-
 def get_alle_sitzungen_mit_start_und_ende_der_topic(alle_tops_list, alle_sitzungen):
     '''
-    Gibt alle Sitzungen zurück samt Topics, deren Rednern, sowie die Sitzungsmetadaten. (SItzungsnummer, Datum, Wahlperiode)
+    Gibt alle Sitzungen zurück samt Topics, deren Rednern, sowie die Sitzungsmetadaten. (Sitzungsnummer, Datum, Wahlperiode)
+    Vereint hierbei die unbearbeiteten Topics mit den Sitzungsmetadaten.
 
-    :param alle_tops_list:
-    :param alle_sitzungen:
-    :return:
+    :param alle_tops_list: Liste - Tgesordnungspunkte
+    :param alle_sitzungen: Liste - Sitzungsmetadaten
+    :return: Liste
     '''
     liste_nummern_sitzungsstart = []
     liste_nummern_sitzungsende = []
@@ -108,6 +107,13 @@ def get_alle_sitzungen_mit_start_und_ende_der_topic(alle_tops_list, alle_sitzung
     return alle_sitzungen
 
 def sort_topics_to_sitzung(alle_sitzungen):
+    '''
+    Bearbeitet die Tagesordnungspunkte, sortiert die Redner den entsprechenden Tagesordnungspunkten zu. Zuordnung der
+    Sitzungs-Metadaten in die entsprechende Sitzung.
+
+    :param alle_sitzungen:
+    :return:
+    '''
     dict_sitzungen = {}
 
     for sitzung in alle_sitzungen:
@@ -134,13 +140,21 @@ def sort_topics_to_sitzung(alle_sitzungen):
                 top_counter = top_counter +1
                 list_redner = []
 
-                top_number_key = rebuild_topic(topic, 2)
-                top_name = get_topic_name_from_topic_number(top_number_key, topic)
-                #topic= {top_number_key: top_name}
+                top_number_key  = rebuild_topic(topic, 2)
+                top_name        = get_topic_name_from_topic_number(top_number_key, topic)
                 dict_topics[top_number_key] = {'Tagesordnungspunkt': top_name}
 
             else:
-                list_redner.append(topic)
+                '''
+                Füge alle Redner einer Topic, der entsprechenden Topic hinzu, prüfe jedoch vorher, ob sich der jeweilige
+                Redner bereits in der Liste befindet und füge ihn nur hinzu, sofern er nich nicht drin ist.
+                '''
+                allready_in_list = False
+                for redner in list_redner:
+                    if redner == topic:
+                        allready_in_list = True
+                if allready_in_list == False:
+                    list_redner.append(topic)
 
             dict_topics[top_number_key]['Redner'] = list_redner
 
@@ -154,6 +168,7 @@ def sort_topics_to_sitzung(alle_sitzungen):
 
     return dict_sitzungen
 
+
 chrome = start_scraping_with_chrome('http://www.bundestag.de/ajax/filterlist/de/dokumente/protokolle/-/442112/h_6810466be65964217012227c14bad20f?limit=1')
 soup=BeautifulSoup(chrome.page_source,'lxml')
 alle_tops_und_alle_sitzungen = get_alle_tops_and_alle_sitzungen_from_soup(soup)
@@ -163,10 +178,6 @@ alle_sitzungen = alle_tops_und_alle_sitzungen['Alle_Sitzungen']
 
 alle_sitzungen_mit_start_und_ende_der_topic = get_alle_sitzungen_mit_start_und_ende_der_topic(alle_tops_list, alle_sitzungen)
 
-#topics_einer_sitzung = alle_sitzungen_mit_start_und_ende_der_topic[0]['top'][0]
-#sitzung = sort_topics_to_sitzung(topics_einer_sitzung)
-
 sortierte_sitzungen = sort_topics_to_sitzung(alle_sitzungen_mit_start_und_ende_der_topic)
-
 
 print('test')
