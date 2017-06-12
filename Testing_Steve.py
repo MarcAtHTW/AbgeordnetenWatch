@@ -243,6 +243,7 @@ def clean_speeches(alle_Reden_einer_Sitzung):
     dict_stoerung['Wortmeldung']
 
 
+
 content = get_content()
 names_of_entities = split_and_analyse_content(content)
 start_end_nummern_liste = get_start_and_end_of_a_speech()
