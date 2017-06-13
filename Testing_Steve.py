@@ -209,48 +209,62 @@ def clean_speeches(alle_Reden_einer_Sitzung):
     Holt alle Zwischenrufe, Beifälle, Unruhe, etc. aus einer Rede
     :return: dictionary rede
     '''
-    print('clean_speeches')
-    liste_beifaelle = []
-    liste_widersprueche = []
-    liste_unruhe = []
-    liste_wortmeldungen = []
-    matchers = ['Beifall', 'Widerspruch', 'Unruhe', 'Wortmeldung']
-    import re
+    print('clean_speeches xxxxxxxxxxxxxxxxxxxxxxxx')
 
+
+    import re
     # gehe jede Rede durch
     # wenn (...) kommt dann entferne diesen Teil aus Rede
     # entfernten Teil analysieren und zwischen speichern
     regex = re.compile(".*?\((.*?)\)")
-    for rede in alle_Reden_einer_Sitzung:
-        for item in rede:
-            if any(m in item for m in matchers):
-                # suche, schneide aus
-                liste_treffer = []
-                liste_treffer = re.findall(regex, item)
-                print(liste_treffer)
-                clean_rede = item
-                for i in liste_treffer:
-                    if i.__contains__('Beifall'):
-                        liste_beifaelle.append(i)
-                    elif i.__contains__('Widerruf'):
-                        liste_widersprueche.append(i)
-                    elif i.__contains__('Unruhe'):
-                        liste_unruhe.append(i)
-                    else:
-                        liste_wortmeldungen.append(i)
-                    clean_rede = clean_rede.replace('(' + i + ')', '')
-                print('liste_beifaelle: ', liste_beifaelle)
-                print('liste_widersprueche', liste_widersprueche)
-                print('liste_unruhe', liste_unruhe)
-                print('liste_wortmeldungen', liste_wortmeldungen)
-                print('clean_rede', clean_rede)
+    liste_dictionary_reden_einer_sitzung = []
 
+    for rede in alle_Reden_einer_Sitzung:
+        clean_rede = []
+        liste_beifaelle = []
+        liste_widersprueche = []
+        liste_unruhe = []
+        liste_wortmeldungen = []
+        result_dictionary = {}
+
+        for item in rede:
+            # suche, schneide aus
+            liste_treffer = []
+            liste_treffer = re.findall(regex, item)
+            clean_item = item
+            for i in liste_treffer:
+                if i.__contains__('Beifall'):
+                    liste_beifaelle.append(i)
+                elif i.__contains__('Widerruf'):
+                    liste_widersprueche.append(i)
+                elif i.__contains__('Unruhe'):
+                    liste_unruhe.append(i)
+                else:
+                    liste_wortmeldungen.append(i)
+                clean_item = clean_item.replace('(' + i + ')', '')
+
+            clean_rede.append(clean_item)
+
+        result_dictionary = {
+
+                                'Rede'          : clean_rede,
+                                'Beifälle'      : liste_beifaelle,
+                                'Widerruf'      : liste_widersprueche,
+                                'Wortmeldungen' : liste_wortmeldungen
+        }
+
+        liste_dictionary_reden_einer_sitzung.append(result_dictionary)
+        #print(clean_rede)
+
+    return liste_dictionary_reden_einer_sitzung
 
 content = get_content()
 names_of_entities = split_and_analyse_content(content)
 start_end_nummern_liste = get_start_and_end_of_a_speech()
 liste_alle_reden = get_all_speeches(start_end_nummern_liste)
-clean_speeches(liste_alle_reden)
+
+redeliste = clean_speeches(liste_alle_reden)
+print(redeliste)
 
 
 
