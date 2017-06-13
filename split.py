@@ -16,8 +16,8 @@ x = 0
 # entfernten Teil analysieren und zwischen speichern
 
 regex = re.compile(".*?\((.*?)\)")
+clean_rede = []
 for item in rede:
-    clean_rede = rede
     if any(m in item for m in matchers):
         # suche, schneide aus
         liste_treffer = []
@@ -33,12 +33,7 @@ for item in rede:
             else:
                 liste_wortmeldungen
             clean_item = clean_item.replace('('+i+')', '')
-        print(clean_item)
-        # clean_rede.append(clean_item)
-        # print(liste_beifaelle)
-        # print(liste_widersprueche)
-        # print(clean_rede)
-
+        clean_rede.append(clean_item)
     else:
         clean_rede.append(item)
 print(clean_rede)
