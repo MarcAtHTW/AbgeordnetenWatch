@@ -93,33 +93,33 @@ def analyse_content_element(list_element, i):
         start_Element_Rede = i + 1
         list_with_startelement_numbers.append(start_Element_Rede)
         print("Start_Index_Redetext: ", start_Element_Rede)
-        ''' - POS -> PartOfSpeech Verben, Nomen, ... in Listenelement mit matchers'''
-        words = word_tokenize(list_element)
-        '''extracting Named Entities - Person, Organization,...'''
-        jar = 'jars\stanford-postagger.jar'
-        model = 'jars\german-hgc.tagger'
-        pos_tagger = StanfordPOSTagger(model, jar, encoding='utf8')
-        tagged = pos_tagger.tag(words)
-        print(tagged)
-        chunkGram = r"""Eigenname: {<NE>?}"""
-        chunkParser = nltk.RegexpParser(chunkGram)
-        namedEnt = chunkParser.parse(tagged)
-        print("chunkParser: ",namedEnt)
-        #namedEnt.draw()
-        ''' extract entity names - anhand von label - NE => Eigenname'''
-        entityPers_names_subtree = []
-        for subtree in namedEnt.subtrees(filter=lambda t: t.label() == 'Eigenname'):
-            print(subtree)
-            entityPers_names_subtree.append(subtree[0])
-        print('entityPers_names_subtree: ',entityPers_names_subtree)
-        entityPers_names \
-            = []
-        name = ''
-        for ne in entityPers_names_subtree:
-            name += ' ' + ne[0]
-        entityPers_names.append(name)
-        print("Person: ",entityPers_names)
-        print("Person:",str(name))
+        # ''' - POS -> PartOfSpeech Verben, Nomen, ... in Listenelement mit matchers'''
+        # words = word_tokenize(list_element)
+        # '''extracting Named Entities - Person, Organization,...'''
+        # jar = 'jars\stanford-postagger.jar'
+        # model = 'jars\german-hgc.tagger'
+        # pos_tagger = StanfordPOSTagger(model, jar, encoding='utf8')
+        # tagged = pos_tagger.tag(words)
+        # print(tagged)
+        # chunkGram = r"""Eigenname: {<NE>?}"""
+        # chunkParser = nltk.RegexpParser(chunkGram)
+        # namedEnt = chunkParser.parse(tagged)
+        # print("chunkParser: ",namedEnt)
+        # #namedEnt.draw()
+        # ''' extract entity names - anhand von label - NE => Eigenname'''
+        # entityPers_names_subtree = []
+        # for subtree in namedEnt.subtrees(filter=lambda t: t.label() == 'Eigenname'):
+        #     print(subtree)
+        #     entityPers_names_subtree.append(subtree[0])
+        # print('entityPers_names_subtree: ',entityPers_names_subtree)
+        # entityPers_names \
+        #     = []
+        # name = ''
+        # for ne in entityPers_names_subtree:
+        #     name += ' ' + ne[0]
+        # entityPers_names.append(name)
+        # print("Person: ",entityPers_names)
+        # print("Person:",str(name))
 
     # Listenelement ist entweder 'Anfang bis zur ersten Rede' oder 'Redeteil'
     else:
@@ -209,39 +209,41 @@ def clean_speeches(alle_Reden_einer_Sitzung):
     Holt alle Zwischenrufe, Beifälle, Unruhe, etc. aus einer Rede
     :return: dictionary rede
     '''
-    liste_reden_dict = []
-    dict_stoerung = {}
+    print('clean_speeches')
     liste_beifaelle = []
     liste_widersprueche = []
     liste_unruhe = []
     liste_wortmeldungen = []
     matchers = ['Beifall', 'Widerspruch', 'Unruhe', 'Wortmeldung']
     import re
-    x= 0
+
     # gehe jede Rede durch
     # wenn (...) kommt dann entferne diesen Teil aus Rede
     # entfernten Teil analysieren und zwischen speichern
+    regex = re.compile(".*?\((.*?)\)")
     for rede in alle_Reden_einer_Sitzung:
-        if any(m in rede for m in matchers):
-            # suche, schneide aus
-            re.compile(".*((.*)).*").match("rede").groups()
-
-
-            if ...__contains__('Beifall'):
-                liste_beifaelle.append(...)
-            elif ...__contains__('Widerspruch'):
-                liste_widersprueche.append(...)
-            elif ...__contains__('Unruhe'):
-                liste_unruhe.append(...)
-            else ...__contains__('Wortmeldung')
-            liste_wortmeldungen.append(...)
-
-    # dictionary befüllen
-    dict_stoerung['Beifall']
-    dict_stoerung['Widerspruch']
-    dict_stoerung['Unruhe']
-    dict_stoerung['Wortmeldung']
-
+        for item in rede:
+            if any(m in item for m in matchers):
+                # suche, schneide aus
+                liste_treffer = []
+                liste_treffer = re.findall(regex, item)
+                print(liste_treffer)
+                clean_rede = item
+                for i in liste_treffer:
+                    if i.__contains__('Beifall'):
+                        liste_beifaelle.append(i)
+                    elif i.__contains__('Widerruf'):
+                        liste_widersprueche.append(i)
+                    elif i.__contains__('Unruhe'):
+                        liste_unruhe.append(i)
+                    else:
+                        liste_wortmeldungen.append(i)
+                    clean_rede = clean_rede.replace('(' + i + ')', '')
+                print('liste_beifaelle: ', liste_beifaelle)
+                print('liste_widersprueche', liste_widersprueche)
+                print('liste_unruhe', liste_unruhe)
+                print('liste_wortmeldungen', liste_wortmeldungen)
+                print('clean_rede', clean_rede)
 
 
 content = get_content()
