@@ -264,7 +264,7 @@ def clean_speeches(alle_Reden_einer_Sitzung):
                     dict_widersprueche['ende_index_widerspruch'] = ''
                     dict_widersprueche['redeteil_zuvor'] = ''
                     dict_widersprueche['reaktion_danach'] = ''
-                    liste_widersprueche.append(i)                   # Hinzufügen aller Widersprüche einer Rede
+                    liste_widersprueche.append(dict_widersprueche)  # Hinzufügen aller Widersprüche einer Rede
 
                 elif i.__contains__('Unruhe'):                      # Hinzufügen aller Unruhen einer Rede
                     dict_unruhe['unruhetext'] = i
@@ -272,7 +272,7 @@ def clean_speeches(alle_Reden_einer_Sitzung):
                     dict_unruhe['ende_index_unruhe'] = ''
                     dict_unruhe['redeteil_zuvor'] = ''
                     dict_unruhe['reaktion_danach'] = ''
-                    liste_unruhe.append(i)
+                    liste_unruhe.append(dict_unruhe)
 
                 else:
                     dict_wortmeldungen['wortmeldungtext'] = i
@@ -280,7 +280,7 @@ def clean_speeches(alle_Reden_einer_Sitzung):
                     dict_wortmeldungen['ende_index_wortmeldung'] = ''
                     dict_wortmeldungen['redeteil_zuvor'] = ''
                     dict_wortmeldungen['raktion_danach'] = ''
-                    liste_wortmeldungen.append(i)                   # Hinzufügen aller Wortmeldungen einer Rede
+                    liste_wortmeldungen.append(dict_wortmeldungen)  # Hinzufügen aller Wortmeldungen einer Rede
 
                 clean_item = clean_item.replace('(' + i + ')', '')  # Entfernen von (...)
                 clean_item = clean_item.replace('('+i+'!', '')
