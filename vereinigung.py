@@ -454,6 +454,7 @@ def sort_topics_to_sitzung(alle_sitzungen):
 
         top_zwischenspeicher = ''
         dict_topics = {}
+        topic_id = 0
         for i in range(len(tops)):
 
             topic = tops[i]
@@ -463,17 +464,18 @@ def sort_topics_to_sitzung(alle_sitzungen):
             if topic.__contains__('TOP'):
                 top_counter = top_counter + 1
                 list_redner = []
-
                 top_number_key = rebuild_topic(topic, 2)
                 if top_number_key != 'TOP':
+                    topic_id += 1
                     top_name = get_topic_name_from_topic_number(top_number_key, topic)
-                    dict_topics[top_number_key] = {'Tagesordnungspunkt': top_name}
+                    dict_topics[top_number_key] = {'Tagesordnungspunkt': top_name, 'TOP_ID':topic_id}
 
             else:
 
                 list_redner.append(topic)
 
             if top_number_key != 'TOP':
+
                 dict_topics[top_number_key]['Redner'] = list_redner
 
         dict_sitzung = {
