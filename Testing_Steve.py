@@ -217,10 +217,9 @@ def clean_speeches(alle_Reden_einer_Sitzung):
     liste_dictionary_reden_einer_sitzung = []
 
     for rede in alle_Reden_einer_Sitzung:
-        char1 = '('
-        char2 = '!'
+
         index = 0
-        clean_rede = []
+        clean_rede = ''
         liste_beifaelle = []
         liste_widersprueche = []
         liste_unruhe = []
@@ -231,60 +230,55 @@ def clean_speeches(alle_Reden_einer_Sitzung):
         dict_wortmeldungen = {}
         result_dictionary = {}
         temp_liste_treffer = []
+        eine_rede_als_kompletten_string = ''
 
-        for item in rede:
-            index += 1
-            # suche, schneide aus
-            liste_treffer = []
-            liste_treffer = re.findall(regex, item)
-            temp_liste_treffer.append(liste_treffer)
-            #print('temp_liste_treffer: ', temp_liste_treffer)
-            if item.__contains__(char1) and item.__contains__(char2):
-                item_between_chars = item[item.find(char1) + 1:item.find(char2)]
-                #for x in temp_liste_treffer:
-                    # any(item_between_chars in s for s in x):
-                liste_treffer.append(item_between_chars)
-                    #else:
-                        #pass
-            clean_item = item
-            print(clean_item)
+        eine_rede_als_kompletten_string = ' '.join(rede)
+        print('XXXX string_Rede: ',eine_rede_als_kompletten_string)
 
-            for i in liste_treffer:
-                if i.__contains__('Beifall'):
-                    dict_beifaelle['beifalltext'] = i
-                    dict_beifaelle['start_index_beifall'] = ''
-                    dict_beifaelle['ende_index_beifall'] = ''
-                    dict_beifaelle['redeteil_zuvor'] = ''
-                    dict_beifaelle['reaktion_danach'] = ''
-                    liste_beifaelle.append(dict_beifaelle)          # Hinzufügen aller Beifälle einer Rede
+        index += 1
+        # suche indices von Störungen
+        for match in re.finditer(regex, eine_rede_als_kompletten_string):
+            print('indices_Rede_unterbrechungen_alle: ',match.span())
+        liste_treffer = []
+        liste_treffer = re.findall(regex, eine_rede_als_kompletten_string)
+        temp_liste_treffer.append(liste_treffer)
 
-                elif i.__contains__('Widerspruch'):
-                    dict_widersprueche['widerspruchtext'] = i
-                    dict_widersprueche['start_index_widerspruch'] = ''
-                    dict_widersprueche['ende_index_widerspruch'] = ''
-                    dict_widersprueche['redeteil_zuvor'] = ''
-                    dict_widersprueche['reaktion_danach'] = ''
-                    liste_widersprueche.append(dict_widersprueche)  # Hinzufügen aller Widersprüche einer Rede
+        for i in liste_treffer:
+            if i.__contains__('Beifall'):
+                dict_beifaelle['beifalltext'] = i
+                dict_beifaelle['start_index_beifall'] = ''
+                dict_beifaelle['ende_index_beifall'] = ''
+                dict_beifaelle['redeteil_zuvor'] = ''
+                dict_beifaelle['reaktion_danach'] = ''
+                liste_beifaelle.append(dict_beifaelle)          # Hinzufügen aller Beifälle einer Rede
 
-                elif i.__contains__('Unruhe'):                      # Hinzufügen aller Unruhen einer Rede
-                    dict_unruhe['unruhetext'] = i
-                    dict_unruhe['start_index_unruhe'] = ''
-                    dict_unruhe['ende_index_unruhe'] = ''
-                    dict_unruhe['redeteil_zuvor'] = ''
-                    dict_unruhe['reaktion_danach'] = ''
-                    liste_unruhe.append(dict_unruhe)
+            elif i.__contains__('Widerspruch'):
+                dict_widersprueche['widerspruchtext'] = i
+                dict_widersprueche['start_index_widerspruch'] = ''
+                dict_widersprueche['ende_index_widerspruch'] = ''
+                dict_widersprueche['redeteil_zuvor'] = ''
+                dict_widersprueche['reaktion_danach'] = ''
+                liste_widersprueche.append(dict_widersprueche)  # Hinzufügen aller Widersprüche einer Rede
 
-                else:
-                    dict_wortmeldungen['wortmeldungtext'] = i
-                    dict_wortmeldungen['start_index_wortmeldung'] = ''
-                    dict_wortmeldungen['ende_index_wortmeldung'] = ''
-                    dict_wortmeldungen['redeteil_zuvor'] = ''
-                    dict_wortmeldungen['raktion_danach'] = ''
-                    liste_wortmeldungen.append(dict_wortmeldungen)  # Hinzufügen aller Wortmeldungen einer Rede
+            elif i.__contains__('Unruhe'):                      # Hinzufügen aller Unruhen einer Rede
+                dict_unruhe['unruhetext'] = i
+                dict_unruhe['start_index_unruhe'] = ''
+                dict_unruhe['ende_index_unruhe'] = ''
+                dict_unruhe['redeteil_zuvor'] = ''
+                dict_unruhe['reaktion_danach'] = ''
+                liste_unruhe.append(dict_unruhe)
 
-                clean_item = clean_item.replace('(' + i + ')', '')  # Entfernen von (...)
-                clean_item = clean_item.replace('('+i+'!', '')
-            clean_rede.append(clean_item)
+            else:
+                dict_wortmeldungen['wortmeldungtext'] = i
+                dict_wortmeldungen['start_index_wortmeldung'] = ''
+                dict_wortmeldungen['ende_index_wortmeldung'] = ''
+                dict_wortmeldungen['redeteil_zuvor'] = ''
+                dict_wortmeldungen['raktion_danach'] = ''
+                liste_wortmeldungen.append(dict_wortmeldungen)  # Hinzufügen aller Wortmeldungen einer Rede
+
+                eine_rede_als_kompletten_string.replace('(' + i + ')', '')  # Entfernen von (...)
+            #clean_item = clean_item.replace('('+i+'!', '')
+        clean_rede = eine_rede_als_kompletten_string
 
         result_dictionary = {
                                 'rede'          : clean_rede,
@@ -301,6 +295,8 @@ def clean_speeches(alle_Reden_einer_Sitzung):
         print('5: ', liste_wortmeldungen)
         print('6: ', clean_rede)
     return liste_dictionary_reden_einer_sitzung
+
+
 
 content = get_content()
 names_of_entities = split_and_analyse_content(content)
