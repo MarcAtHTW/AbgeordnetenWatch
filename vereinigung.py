@@ -1,4 +1,3 @@
-### Start Testing_Steve ###
 import PyPDF2
 import nltk
 from nltk import FreqDist
@@ -7,7 +6,10 @@ import operator
 from nltk import sent_tokenize, word_tokenize
 from nltk import StanfordPOSTagger
 import os
+from selenium import webdriver
+from bs4 import BeautifulSoup
 
+### Start Testing_Steve ###
 os.environ['JAVAHOME'] = "C:/Program Files/Java/jdk1.8.0_20/bin/java.exe"
 
 '''
@@ -39,7 +41,6 @@ def get_content():
         page_content += pages.extractText()
     return page_content
 
-
 def split_and_analyse_content(page_content):
     '''
     Seiteninhalte des Protokolls werden zu Sätze, die wiederum zu Listenelemente werden
@@ -59,7 +60,6 @@ def split_and_analyse_content(page_content):
         analyse_content_element(list_element, i)
         set_number(i)
 
-
 def set_number(i):
     '''
     Setzt number of listelement
@@ -69,7 +69,6 @@ def set_number(i):
     global number_of_last_element
     number_of_last_element = i
 
-
 def get_number():
     '''
     Gibt number of listelement
@@ -77,7 +76,6 @@ def get_number():
     '''
     global number_of_last_element
     return number_of_last_element
-
 
 def analyse_content_element(list_element, i):
     '''
@@ -134,7 +132,6 @@ def analyse_content_element(list_element, i):
             list_elements_till_first_speech.append(list_element)  # Teile mit TOP, ZTOP,...
             print('global-> erste Zeilen: ', list_element)
 
-
 def api_abgeordnetenwatch(politican_name):
     '''
     Anbindung an API-Abgeordnetenwatch um sich JSON abzugreifen und weitere Daten zur Person abzugreifen
@@ -150,7 +147,6 @@ def api_abgeordnetenwatch(politican_name):
         politiker_name = data['profile']['personal']['first_name'] + " " + data['profile']['personal']['last_name']
         partei = data['profile']['party']
     return politican_name, partei
-
 
 def get_start_and_end_of_a_speech():
     '''
@@ -180,7 +176,6 @@ def get_start_and_end_of_a_speech():
     print('Liste mit Start-und Endnummern: ', liste_mit_Startnummern_und_End)
     print(len(liste_mit_Startnummern_und_End))
     return liste_mit_Startnummern_und_End
-
 
 def get_all_speeches(liste_mit_Startnummern_und_End):
     '''
@@ -212,7 +207,6 @@ def get_all_speeches(liste_mit_Startnummern_und_End):
     # for rede in alle_Reden_einer_Sitzung:
     # print(rede)
     return alle_Reden_einer_Sitzung
-
 
 def clean_speeches(alle_Reden_einer_Sitzung):
     '''
@@ -306,23 +300,10 @@ def clean_speeches(alle_Reden_einer_Sitzung):
         print('6: ', clean_rede)
     return liste_dictionary_reden_einer_sitzung
 
-
-content = get_content()
-names_of_entities = split_and_analyse_content(content)
-start_end_nummern_liste = get_start_and_end_of_a_speech()
-liste_alle_reden = get_all_speeches(start_end_nummern_liste)
-
-print(start_end_nummern_liste)
-redeliste = clean_speeches(liste_alle_reden)
-print(redeliste)
-
 ### ENDE Testing_Steve ###
 
+
 ### START Testing_Marc ###
-
-from selenium import webdriver
-from bs4 import BeautifulSoup
-
 
 def start_scraping_with_chrome(url):
     '''
@@ -374,7 +355,6 @@ def rebuild_topic(topic, whitespaces_to_jump):
                 found_spaces = found_spaces + 1
     return new_topic.strip()
 
-
 def get_topic_name_from_topic_number(top, topic):
     '''
     Entfernt die 'TOP X' Nummer aus dem Tagesordnungspunkt und gibt dann nur den/die eigentlichen Namen/Beschreibung zurück
@@ -386,7 +366,6 @@ def get_topic_name_from_topic_number(top, topic):
     topic_name = topic.replace(top, '')
     topic_name = topic_name.strip()
     return topic_name
-
 
 def get_alle_tops_and_alle_sitzungen_from_soup(soup):
     '''
@@ -411,7 +390,6 @@ def get_alle_tops_and_alle_sitzungen_from_soup(soup):
             liste_top.append(item.get_text())
         alle_tops_list.append(item.get_text())
     return {'TOPs': alle_tops_list, 'Alle_Sitzungen': liste_dict}
-
 
 def get_alle_sitzungen_mit_start_und_ende_der_topic(alle_tops_list, alle_sitzungen):
     '''
@@ -451,7 +429,6 @@ def get_alle_sitzungen_mit_start_und_ende_der_topic(alle_tops_list, alle_sitzung
         alle.append(eine_Sitzung)
 
     return alle_sitzungen
-
 
 def sort_topics_to_sitzung(alle_sitzungen):
     '''
@@ -493,25 +470,9 @@ def sort_topics_to_sitzung(alle_sitzungen):
                     dict_topics[top_number_key] = {'Tagesordnungspunkt': top_name}
 
             else:
-                '''
-                Füge alle Redner einer Topic, der entsprechenden Topic hinzu, prüfe jedoch vorher, ob sich der jeweilige
-                Redner bereits in der Liste befindet und füge ihn nur hinzu, sofern er noch darin enthalten ist.
 
-                allready_in_list = False
-                for redner in list_redner:
-                    if redner == topic:
-                        allready_in_list = True
-                if allready_in_list == False:
-                '''
                 list_redner.append(topic)
-            '''
-            if len(list_redner) != 0:    
-                if len(list_redner) > 1:
-                    list_redner.remove(list_redner[0])
-                    list_redner.remove(list_redner[-1])
-                elif len(list_redner)< 2:
-                    list_redner.remove(list_redner[0])            
-            '''
+
             if top_number_key != 'TOP':
                 dict_topics[top_number_key]['Redner'] = list_redner
 
@@ -524,7 +485,6 @@ def sort_topics_to_sitzung(alle_sitzungen):
         dict_sitzungen['Sitzung ' + sitzungs_nummer] = dict_sitzung
 
     return dict_sitzungen
-
 
 def delete_first_and_last_speecher_from_list(dict_sitzungen):
     for sitzung in sorted(dict_sitzungen):
@@ -545,6 +505,7 @@ def sort_reden_eines_tops_in_tagesordnungspunkt(reden_eines_tops, tagesordnungsp
         list_sorted_redner_temp.append(dict_temp_redner)
         i += 1
     cleaned_sortierte_sitzungen['TOPs'][tagesordnungspunkt]['Redner'] = list_sorted_redner_temp
+    return cleaned_sortierte_sitzungen
 
 def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung):
     laenge_der_redeliste = len(redeliste)
@@ -562,45 +523,40 @@ def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung):
             reden_eines_tagesordnungspunkts.append(reden.pop(0))
             i += 1
 
-        sort_reden_eines_tops_in_tagesordnungspunkt(reden_eines_tagesordnungspunkts, top, cleaned_sortierte_sitzung)
+        final_cleaned_sortierte_sitzung = sort_reden_eines_tops_in_tagesordnungspunkt(reden_eines_tagesordnungspunkts, top, cleaned_sortierte_sitzung)
+    return final_cleaned_sortierte_sitzung
 
+#    for rede in reden_eines_tagesordnungspunkts:
+#        for list_eintrag_redner in tops[top]['Redner']:
+#            redner = {list_eintrag_redner:rede}
 
-    for rede in reden_eines_tagesordnungspunkts:
-        for list_eintrag_redner in tops[top]['Redner']:
-            redner = {list_eintrag_redner:rede}
-'''
+### ENDE Testing_Marc ###
 
-def hole_reden_eines_tagesordnungspunkts(redeliste, anzahl_reden):
-    reden_eines_tagesordnungspunkts = []
-    counter = 0
+### Start Using Functions Steve
+content = get_content()
+names_of_entities = split_and_analyse_content(content)
+start_end_nummern_liste = get_start_and_end_of_a_speech()
+liste_alle_reden = get_all_speeches(start_end_nummern_liste)
 
-    for rede in redeliste:
-        if counter < anzahl_reden:
-            counter += 1
-            reden_eines_tagesordnungspunkts.append(rede)
+#print(start_end_nummern_liste)
+redeliste = clean_speeches(liste_alle_reden)
+#print(redeliste)
+### ENDE Using Functions Steve
 
-    return reden_eines_tagesordnungspunkts
-'''
-
+### START Using Functions Marc
 chrome = start_scraping_with_chrome('http://www.bundestag.de/ajax/filterlist/de/dokumente/protokolle/-/442112/h_6810466be65964217012227c14bad20f?limit=1')
 soup = BeautifulSoup(chrome.page_source, 'lxml')
 alle_tops_und_alle_sitzungen = get_alle_tops_and_alle_sitzungen_from_soup(soup)
 
 alle_tops_list = alle_tops_und_alle_sitzungen['TOPs']
 alle_sitzungen = alle_tops_und_alle_sitzungen['Alle_Sitzungen']
-
-alle_sitzungen_mit_start_und_ende_der_topic = get_alle_sitzungen_mit_start_und_ende_der_topic(alle_tops_list,
-                                                                                              alle_sitzungen)
-
+alle_sitzungen_mit_start_und_ende_der_topic = get_alle_sitzungen_mit_start_und_ende_der_topic(alle_tops_list, alle_sitzungen)
 sortierte_sitzungen = sort_topics_to_sitzung(alle_sitzungen_mit_start_und_ende_der_topic)
 cleaned_sortierte_sitzungen = delete_first_and_last_speecher_from_list(sortierte_sitzungen)
-
 print('Scraping beendet')
-
-### ENDE Testing_Marc ###
+### ENDE Using Functions Marc
 
 ### START spaßige teil###
-
 '''
 START Test mit nur einer Sitzung
 '''
@@ -620,18 +576,9 @@ print("Anzahl vorhandene Reden in Redeliste: " + str(len(redeliste)))
 #print(temp_top_liste)
 
 merged_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, sitzung_232)
-
-
+print('Skript "Vereinigung" beendet')
 '''
 ENDE Test mit nur einer Sitzung
 '''
-
-
-def konkateniere_redeliste_zu_redestring(redeliste):
-    pass
-
-
-#ToDo: Redeliste zu einer zusammenhängenden Rede vereinen. -> mit Schleife konkatenieren und "\n" anhängen.
-
 
 ### ENDE spaßige teil###
