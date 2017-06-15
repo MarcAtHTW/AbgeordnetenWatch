@@ -15,7 +15,7 @@ os.environ['JAVAHOME'] = "C:/Program Files/Java/jdk1.8.0_20/bin/java.exe"
     Data extracting from Plenarprotokoll
 '''
 ''' Globals '''
-cleanList = []                          # Vorhalten von Redeteilen
+indexierte_liste = []                          # Vorhalten von Redeteilen
 start_Element_Rede = 0
 list_with_startelement_numbers = []     # enthält Start item aller Redetexte
 list_with_startEnd_numbers = []         # enthält Start und Ende item aller Redetexte
@@ -55,7 +55,7 @@ def split_and_analyse_content(page_content):
         list_element = list[i]
         list_element = list_element.replace("\n", "")
         list_element = list_element.replace("-", "")
-        cleanList.append(list_element) # liste ohne -, \n
+        indexierte_liste.append(list_element) # liste ohne -, \n
         #print("item at index", i, ":", list_element)       # alle Listenelemente
         analyse_content_element(list_element, i)
         set_number(i)
@@ -194,75 +194,116 @@ def get_all_speeches(liste_mit_Startnummern_und_End):
             active = False
             print("false")
         else:
-            alle_Reden_einer_Sitzung.append(cleanList[liste_mit_Startnummern_und_End[x]:liste_mit_Startnummern_und_End[y]])  # [alle zwischen Start:Ende]
+            alle_Reden_einer_Sitzung.append(indexierte_liste[liste_mit_Startnummern_und_End[x]:liste_mit_Startnummern_und_End[y]])  # [alle zwischen Start:Ende]
         x += 2
         y += 2
         start += 2
     print(len(alle_Reden_einer_Sitzung))
     # Ausgabe aller Reden
-    for rede in alle_Reden_einer_Sitzung:
-        print(rede)
+    #for rede in alle_Reden_einer_Sitzung:
+        #print(rede)
     return alle_Reden_einer_Sitzung
 
 def clean_speeches(alle_Reden_einer_Sitzung):
     '''
     Holt alle Zwischenrufe, Beifälle, Unruhe, etc. aus einer Rede
-    :return: dictionary rede
+    :return: liste_dictionary_reden_einer_sitzung
     '''
-    print('clean_speeches xxxxxxxxxxxxxxxxxxxxxxxx')
-
-
     import re
     # gehe jede Rede durch
     # wenn (...) kommt dann entferne diesen Teil aus Rede
-    # entfernten Teil analysieren und zwischen speichern
+    # entfernten Teil analysieren und zwischenspeichern
     regex = re.compile(".*?\((.*?)\)")
     liste_dictionary_reden_einer_sitzung = []
 
     for rede in alle_Reden_einer_Sitzung:
-        clean_rede = []
+
+        index = 0
+        clean_rede = ''
         liste_beifaelle = []
         liste_widersprueche = []
         liste_unruhe = []
         liste_wortmeldungen = []
+        dict_beifaelle = {}
+        dict_widersprueche = {}
+        dict_unruhe = {}
+        dict_wortmeldungen = {}
         result_dictionary = {}
+        temp_liste_treffer = []
+        eine_rede_als_kompletten_string = ''
 
-        for item in rede:
-            # suche, schneide aus
-            liste_treffer = []
-            liste_treffer = re.findall(regex, item)
-            clean_item = item
-            for i in liste_treffer:
-                if i.__contains__('Beifall'):
-                    liste_beifaelle.append(i)
-                elif i.__contains__('Widerruf'):
-                    liste_widersprueche.append(i)
-                elif i.__contains__('Unruhe'):
-                    liste_unruhe.append(i)
-                else:
-                    liste_wortmeldungen.append(i)
-                clean_item = clean_item.replace('(' + i + ')', '')
+        eine_rede_als_kompletten_string = ' '.join(rede)
+        print('XXXX string_Rede: ',eine_rede_als_kompletten_string)
 
-            clean_rede.append(clean_item)
+        index += 1
+        # suche indices von Störungen
+        for match in re.finditer(regex, eine_rede_als_kompletten_string):
+            print('indices_Rede_unterbrechungen_alle: ',match.span())
+        liste_treffer = []
+        liste_treffer = re.findall(regex, eine_rede_als_kompletten_string)
+        temp_liste_treffer.append(liste_treffer)
+
+        for i in liste_treffer:
+            if i.__contains__('Beifall'):
+                dict_beifaelle['beifalltext'] = i
+                dict_beifaelle['start_index_beifall'] = ''
+                dict_beifaelle['ende_index_beifall'] = ''
+                dict_beifaelle['redeteil_zuvor'] = ''
+                dict_beifaelle['reaktion_danach'] = ''
+                liste_beifaelle.append(dict_beifaelle)          # Hinzufügen aller Beifälle einer Rede
+
+            elif i.__contains__('Widerspruch'):
+                dict_widersprueche['widerspruchtext'] = i
+                dict_widersprueche['start_index_widerspruch'] = ''
+                dict_widersprueche['ende_index_widerspruch'] = ''
+                dict_widersprueche['redeteil_zuvor'] = ''
+                dict_widersprueche['reaktion_danach'] = ''
+                liste_widersprueche.append(dict_widersprueche)  # Hinzufügen aller Widersprüche einer Rede
+
+            elif i.__contains__('Unruhe'):                      # Hinzufügen aller Unruhen einer Rede
+                dict_unruhe['unruhetext'] = i
+                dict_unruhe['start_index_unruhe'] = ''
+                dict_unruhe['ende_index_unruhe'] = ''
+                dict_unruhe['redeteil_zuvor'] = ''
+                dict_unruhe['reaktion_danach'] = ''
+                liste_unruhe.append(dict_unruhe)
+
+            else:
+                dict_wortmeldungen['wortmeldungtext'] = i
+                dict_wortmeldungen['start_index_wortmeldung'] = ''
+                dict_wortmeldungen['ende_index_wortmeldung'] = ''
+                dict_wortmeldungen['redeteil_zuvor'] = ''
+                dict_wortmeldungen['raktion_danach'] = ''
+                liste_wortmeldungen.append(dict_wortmeldungen)  # Hinzufügen aller Wortmeldungen einer Rede
+
+                eine_rede_als_kompletten_string.replace('(' + i + ')', '')  # Entfernen von (...)
+            #clean_item = clean_item.replace('('+i+'!', '')
+        clean_rede = eine_rede_als_kompletten_string
 
         result_dictionary = {
-
-                                'Rede'          : clean_rede,
-                                'Beifälle'      : liste_beifaelle,
-                                'Widerruf'      : liste_widersprueche,
-                                'Wortmeldungen' : liste_wortmeldungen
+                                'rede'          : clean_rede,
+                                'beifälle'      : liste_beifaelle,
+                                'widerspruch'   : liste_widersprueche,
+                                'unruhe'        : liste_unruhe,
+                                'wortmeldungen' : liste_wortmeldungen
         }
 
         liste_dictionary_reden_einer_sitzung.append(result_dictionary)
         #print(clean_rede)
-
+        print('3: ', liste_beifaelle)
+        print('4: ', liste_widersprueche)
+        print('5: ', liste_wortmeldungen)
+        print('6: ', clean_rede)
     return liste_dictionary_reden_einer_sitzung
+
+
 
 content = get_content()
 names_of_entities = split_and_analyse_content(content)
 start_end_nummern_liste = get_start_and_end_of_a_speech()
 liste_alle_reden = get_all_speeches(start_end_nummern_liste)
 
+print(start_end_nummern_liste)
 redeliste = clean_speeches(liste_alle_reden)
 print(redeliste)
 
