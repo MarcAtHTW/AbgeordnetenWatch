@@ -235,13 +235,21 @@ def clean_speeches(alle_Reden_einer_Sitzung):
         eine_rede_als_kompletten_string = ' '.join(rede)
         print('XXXX string_Rede: ',eine_rede_als_kompletten_string)
 
-        index += 1
-        # suche indices von Störungen
-        for match in re.finditer(regex, eine_rede_als_kompletten_string):
-            print('indices_Rede_unterbrechungen_alle: ',match.span())
         liste_treffer = []
         liste_treffer = re.findall(regex, eine_rede_als_kompletten_string)
         temp_liste_treffer.append(liste_treffer)
+
+        index += 1
+        # suche indices von Störungen
+
+        indices = []
+        for eintrag in liste_treffer:
+            print('Eintrag: ',eintrag)
+            m = re.search(eintrag, eine_rede_als_kompletten_string)
+            iter = re.finditer(eintrag, eine_rede_als_kompletten_string)
+            indices += [[m.start(0), m.end(0)] for m in iter]
+
+        print('dddddddd: ',indices)
 
         for i in liste_treffer:
             if i.__contains__('Beifall'):
