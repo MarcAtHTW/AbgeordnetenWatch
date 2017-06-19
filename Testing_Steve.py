@@ -9,6 +9,8 @@ import operator
 from nltk import sent_tokenize, word_tokenize
 from nltk import StanfordPOSTagger
 import os
+import xlsxwriter
+import re
 os.environ['JAVAHOME'] = "C:/Program Files/Java/jdk1.8.0_20/bin/java.exe"
 
 '''
@@ -209,7 +211,6 @@ def clean_speeches(alle_Reden_einer_Sitzung):
     Holt alle Zwischenrufe, Beifälle, Unruhe, etc. aus einer Rede
     :return: liste_dictionary_reden_einer_sitzung
     '''
-    import re
     # gehe jede Rede durch
     # wenn (...) kommt dann entferne diesen Teil aus Rede
     # entfernten Teil analysieren und zwischenspeichern
@@ -218,91 +219,90 @@ def clean_speeches(alle_Reden_einer_Sitzung):
 
     for rede in alle_Reden_einer_Sitzung:
 
-        index = 0
+        counter_beifaelle = 0
+        counter_wortmeldungen = 0
         clean_rede = ''
         liste_beifaelle = []
-        liste_widersprueche = []
-        liste_unruhe = []
         liste_wortmeldungen = []
         dict_beifaelle = {}
-        dict_widersprueche = {}
-        dict_unruhe = {}
         dict_wortmeldungen = {}
         result_dictionary = {}
-        temp_liste_treffer = []
-        eine_rede_als_kompletten_string = ''
-
-        eine_rede_als_kompletten_string = ' '.join(rede)
-        print('XXXX string_Rede: ',eine_rede_als_kompletten_string)
-
+        string_rede = ''
         liste_treffer = []
-        liste_treffer = re.findall(regex, eine_rede_als_kompletten_string)
-        temp_liste_treffer.append(liste_treffer)
 
-        index += 1
-        # suche indices von Störungen
-
-
-
-        indices = []
-        for eintrag in liste_treffer:
-            print('Eintrag: ',eintrag)
-            iter = re.finditer(eintrag, eine_rede_als_kompletten_string)
-            for i in iter:
-                print(i.start(),i.end())
+        string_rede = ' '.join(rede)
+        liste_treffer = re.findall(regex, string_rede)
 
         for i in liste_treffer:
+            print('Eintrag: ',i)
             if i.__contains__('Beifall'):
-                dict_beifaelle['beifalltext'] = i
-                dict_beifaelle['start_index_beifall'] = ''
-                dict_beifaelle['ende_index_beifall'] = ''
-                dict_beifaelle['redeteil_zuvor'] = ''
-                dict_beifaelle['reaktion_danach'] = ''
-                liste_beifaelle.append(dict_beifaelle)          # Hinzufügen aller Beifälle einer Rede
-
-            elif i.__contains__('Widerspruch'):
-                dict_widersprueche['widerspruchtext'] = i
-                dict_widersprueche['start_index_widerspruch'] = ''
-                dict_widersprueche['ende_index_widerspruch'] = ''
-                dict_widersprueche['redeteil_zuvor'] = ''
-                dict_widersprueche['reaktion_danach'] = ''
-                liste_widersprueche.append(dict_widersprueche)  # Hinzufügen aller Widersprüche einer Rede
-
-            elif i.__contains__('Unruhe'):                      # Hinzufügen aller Unruhen einer Rede
-                dict_unruhe['unruhetext'] = i
-                dict_unruhe['start_index_unruhe'] = ''
-                dict_unruhe['ende_index_unruhe'] = ''
-                dict_unruhe['redeteil_zuvor'] = ''
-                dict_unruhe['reaktion_danach'] = ''
-                liste_unruhe.append(dict_unruhe)
-
+                counter_beifaelle += 1
+                liste_beifaelle.append(i)          # Hinzufügen aller Beifälle einer Rede
             else:
-                dict_wortmeldungen['wortmeldungtext'] = i
-                dict_wortmeldungen['start_index_wortmeldung'] = ''
-                dict_wortmeldungen['ende_index_wortmeldung'] = ''
-                dict_wortmeldungen['redeteil_zuvor'] = ''
-                dict_wortmeldungen['raktion_danach'] = ''
-                liste_wortmeldungen.append(dict_wortmeldungen)  # Hinzufügen aller Wortmeldungen einer Rede
+                counter_wortmeldungen += 1
+                liste_wortmeldungen.append(i)  # Hinzufügen aller Wortmeldungen einer Rede
 
-                eine_rede_als_kompletten_string.replace('(' + i + ')', '')  # Entfernen von (...)
-            #clean_item = clean_item.replace('('+i+'!', '')
-        clean_rede = eine_rede_als_kompletten_string
+            string_rede = string_rede.replace('(' + i + ')', '')
 
-        result_dictionary = {
-                                'rede'          : clean_rede,
-                                'beifälle'      : liste_beifaelle,
-                                'widerspruch'   : liste_widersprueche,
-                                'unruhe'        : liste_unruhe,
-                                'wortmeldungen' : liste_wortmeldungen
+        string_beifaelle = ' ; '.join(liste_beifaelle)
+        string_wortmeldungen = ' ; '.join(liste_wortmeldungen)
+
+        result_dictionary_einer_rede = {
+                                'clean_rede'            :   string_rede,
+                                'beifaelle'             :   string_beifaelle,
+                                'anzahl_beifaelle'      :   counter_beifaelle,
+                                'wortmeldungen'         :   string_wortmeldungen,
+                                'anzahl_wortmeldungen'  :   counter_wortmeldungen
         }
-
-        liste_dictionary_reden_einer_sitzung.append(result_dictionary)
-        #print(clean_rede)
-        print('3: ', liste_beifaelle)
-        print('4: ', liste_widersprueche)
-        print('5: ', liste_wortmeldungen)
-        print('6: ', clean_rede)
+        liste_dictionary_reden_einer_sitzung.append(result_dictionary_einer_rede)
     return liste_dictionary_reden_einer_sitzung
+
+def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
+    # Create a workbook and add a worksheet.
+    workbook = xlsxwriter.Workbook('bundestag_protokolle.xlsx')
+    worksheet = workbook.add_worksheet()
+
+    # Add a bold format to use to highlight cells.
+    bold = workbook.add_format({'bold': 1})
+
+    # Adjust the column width.
+    worksheet.set_column(1, 1, 15)
+
+    # Write data headers.
+    # worksheet.write('A1', 'Sitzungsnummer', bold)
+    # worksheet.write('B1', 'Sitzungsdatum', bold)
+    # worksheet.write('C1', 'Wahlperiode', bold)
+    # worksheet.write('D1', 'Tagesordnungspunkt', bold)
+    # worksheet.write('E1', 'Tagesordnungspunktbezeichnung', bold)
+    # worksheet.write('F1', 'Redner', bold)
+    # worksheet.write('G1', 'Rede', bold)
+    #
+    # worksheet.write('H1', 'beifaelle', bold)
+    # worksheet.write('I1', 'anzahl_beifaelle', bold)
+    # worksheet.write('J1', 'wortmeldungen', bold)
+    # worksheet.write('K1', 'anzahl_wortmeldungen', bold)
+
+    worksheet.write('A1', 'Rede', bold)
+    worksheet.write('B1', 'beifaelle', bold)
+    worksheet.write('C1', 'anzahl_beifaelle', bold)
+    worksheet.write('D1', 'wortmeldungen', bold)
+    worksheet.write('E1', 'anzahl_wortmeldungen', bold)
+
+    # Start from the first cell below the headers.
+    row = 1
+    col = 0
+    for dict in liste_dictionary_reden_einer_sitzung:
+        for key in dict.keys():
+            if isinstance(dict[key], list):
+                for item in dict[key]:
+                    worksheet.write(row, col, item)
+            else:
+             worksheet.write(row, col, dict[key])
+        row += 1
+        col = 0
+
+    workbook.close()
+
 
 
 
@@ -314,7 +314,7 @@ liste_alle_reden = get_all_speeches(start_end_nummern_liste)
 print(start_end_nummern_liste)
 redeliste = clean_speeches(liste_alle_reden)
 print(redeliste)
-
+create_protocol_workbook(redeliste)
 
 
 

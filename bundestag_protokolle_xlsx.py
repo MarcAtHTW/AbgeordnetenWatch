@@ -23,29 +23,10 @@ def create_protocol_workbook():
     worksheet.write('F1', 'Redner', bold)
     worksheet.write('G1', 'Rede', bold)
 
-    worksheet.write('H1', 'beifalltext', bold)
-    worksheet.write('I1', 'start_index_beifall', bold)
-    worksheet.write('J1', 'ende_index_beifall', bold)
-    worksheet.write('K1', 'redeteil_zuvor', bold)
-    worksheet.write('L1', 'reaktion_danach', bold)
-
-    worksheet.write('M1', 'widerspruchtext', bold)
-    worksheet.write('N1', 'start_index_widerspruch', bold)
-    worksheet.write('O1', 'ende_index_widerspruch', bold)
-    worksheet.write('P1', 'redeteil_zuvor', bold)
-    worksheet.write('Q1', 'reaktion_danach', bold)
-
-    worksheet.write('R1', 'unruhetext', bold)
-    worksheet.write('S1', 'start_index_unruhe', bold)
-    worksheet.write('T1', 'ende_index_unruhe', bold)
-    worksheet.write('U1', 'redeteil_zuvor', bold)
-    worksheet.write('V1', 'reaktion_danach', bold)
-
-    worksheet.write('W1', 'wortmeldungtext', bold)
-    worksheet.write('X1', 'start_index_wortmeldung', bold)
-    worksheet.write('Y1', 'ende_index_wortmeldung', bold)
-    worksheet.write('Z1', 'redeteil_zuvor', bold)
-    worksheet.write('AA1', 'reaktion_danach', bold)
+    worksheet.write('H1', 'beifaelle', bold)
+    worksheet.write('I1', 'anzahl_beifaelle', bold)
+    worksheet.write('J1', 'wortmeldungen', bold)
+    worksheet.write('K1', 'anzahl_wortmeldungen', bold)
 
     # data we want to write to the worksheet.
     data = (
@@ -71,21 +52,6 @@ def create_protocol_workbook():
          #worksheet.write_number(row, col,)
          row += 1
 
-    # Add a line sparkline (the default) with markers.
-    worksheet.add_sparkline('F2', {'range': 'Sheet1!A2:E2',
-                                   'markers': True})
-
-
-    # Add a column sparkline with non-default style.
-    worksheet.add_sparkline('F3', {'range': 'Sheet1!A3:E3',
-                                   'type': 'column',
-                                   'style': 12})
-
-
-    # Add a win/loss sparkline with negative values highlighted.
-    worksheet.add_sparkline('F4', {'range': 'Sheet1!A4:E4',
-                                   'type': 'win_loss',
-                                   'negative_points': True})
 
     workbook.close()
 
