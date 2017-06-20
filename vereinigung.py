@@ -8,6 +8,7 @@ from nltk import StanfordPOSTagger
 import os
 from selenium import webdriver
 from bs4 import BeautifulSoup
+from operator import itemgetter
 
 ### Start Testing_Steve ###
 os.environ['JAVAHOME'] = "C:/Program Files/Java/jdk1.8.0_20/bin/java.exe"
@@ -32,7 +33,9 @@ def get_content():
 
     :return: page_content
     '''
-    pdf_file = open('Plenarprotokoll_18_232.pdf', 'rb')
+    #pdf_file = open('Plenarprotokoll_18_232.pdf', 'rb')
+    pdf_file = open('Plenarprotokoll_18_229.pdf', 'rb')
+
     read_pdf = PyPDF2.PdfFileReader(pdf_file)
     page_content = ''
     for i in range(read_pdf.getNumPages()):
@@ -87,8 +90,10 @@ def analyse_content_element(list_element, i):
     :return:
     '''
     temp_dict_empty_values = {'polName': '', 'partyName': ''}
-    matchers = ['Das Wort', 'das Wort', 'nächste Redner', 'nächster Redner', 'nächste Rednerin', 'spricht jetzt',
-                'Nächste Rednerin', 'Nächster Redner', 'Letzter Redner', 'nächste Wortmeldung']
+    matchers = [' erteile zu Beginn das Wort','Das Wort hat ', ' das Wort.', ' Redner das Wort', ' Rednerin das Wort', ' übergebe das Wort', ' nächste Redner', 'nächster Redner', 'nächste Rednerin', 'spricht jetzt',
+                'Nächste Rednerin', 'Nächste Rednerin ist', 'Nächster Redner', 'Letzter Redner', 'Letzte Rednerin',  'letzter Redner', 'letzte Rednerin','nächste Wortmeldung', 'Nächste', 'Nächster',
+                'spricht als Nächster', 'spricht als Nächste', '(Heiterkeit)für die SPD', 'Wort dem']
+
     if any(m in list_element for m in matchers):
         print("\nWechsel Redner", i, ":", list_element)  # Listenelemente, die matchers enthalten
         start_Element_Rede = i + 1
@@ -291,13 +296,13 @@ def clean_speeches(alle_Reden_einer_Sitzung):
             'unruhe': liste_unruhe,
             'wortmeldungen': liste_wortmeldungen
         }
-
-        liste_dictionary_reden_einer_sitzung.append(result_dictionary)
-        # print(clean_rede)
-        print('3: ', liste_beifaelle)
-        print('4: ', liste_widersprueche)
-        print('5: ', liste_wortmeldungen)
-        print('6: ', clean_rede)
+        if result_dictionary['rede'] != '':
+            liste_dictionary_reden_einer_sitzung.append(result_dictionary)
+            # print(clean_rede)
+            print('3: ', liste_beifaelle)
+            print('4: ', liste_widersprueche)
+            print('5: ', liste_wortmeldungen)
+            print('6: ', clean_rede)
     return liste_dictionary_reden_einer_sitzung
 
 ### ENDE Testing_Steve ###
@@ -430,6 +435,24 @@ def get_alle_sitzungen_mit_start_und_ende_der_topic(alle_tops_list, alle_sitzung
 
     return alle_sitzungen
 
+def sort_dict_topics_via_topic_id(dict_topics):
+    if len(dict_topics) >1:
+        dict_temp = {}
+        list_sorted_topics = []
+        for topic in sorted(dict_topics):
+            topic_name = str(topic)
+            topic_id = dict_topics[topic_name]['TOP_ID']
+            dict_temp[topic_name] = topic_id
+
+        for item in sorted(dict_temp.items(), key=lambda x: x[1]):
+            temp_item = dict_topics[item[0]]
+            temp_item['Top_Key'] = item[0]
+            list_sorted_topics.append(temp_item)
+
+        return list_sorted_topics
+
+
+
 def sort_topics_to_sitzung(alle_sitzungen):
     '''
     Bearbeitet die Tagesordnungspunkte, sortiert die Redner den entsprechenden Tagesordnungspunkten zu. Zuordnung der
@@ -455,8 +478,8 @@ def sort_topics_to_sitzung(alle_sitzungen):
         top_zwischenspeicher = ''
         dict_topics = {}
         topic_id = 0
+        topic_number_key_cache = ''
         for i in range(len(tops)):
-
             topic = tops[i]
             topic = topic.strip()
 
@@ -465,8 +488,10 @@ def sort_topics_to_sitzung(alle_sitzungen):
                 top_counter = top_counter + 1
                 list_redner = []
                 top_number_key = rebuild_topic(topic, 2)
+                topic_number_key_cache = top_number_key
                 if top_number_key != 'TOP':
                     topic_id += 1
+                    topic_number_key_cache = topic
                     top_name = get_topic_name_from_topic_number(top_number_key, topic)
                     dict_topics[top_number_key] = {'Tagesordnungspunkt': top_name, 'TOP_ID':topic_id}
 
@@ -477,11 +502,11 @@ def sort_topics_to_sitzung(alle_sitzungen):
             if top_number_key != 'TOP':
 
                 dict_topics[top_number_key]['Redner'] = list_redner
-
+        list_sorted_topics = sort_dict_topics_via_topic_id(dict_topics)
         dict_sitzung = {
             'Sitzungsdatum': sitzungs_datum,
             'Wahlperiode': wahlperiode,
-            'TOPs': dict_topics
+            'TOPs': list_sorted_topics
         }
 
         dict_sitzungen['Sitzung ' + sitzungs_nummer] = dict_sitzung
@@ -490,23 +515,25 @@ def sort_topics_to_sitzung(alle_sitzungen):
 
 def delete_first_and_last_speecher_from_list(dict_sitzungen):
     for sitzung in sorted(dict_sitzungen):
-        temp_speecher_dict = dict_sitzungen[sitzung]['TOPs']
-        for top in sorted(temp_speecher_dict):
-            if len(temp_speecher_dict[top]['Redner']) >1:
-                temp_top_liste = temp_speecher_dict[top]['Redner']
+        temp_speecher_list = dict_sitzungen[sitzung]['TOPs']
+        top_counter = 0
+        for top in temp_speecher_list:
+            if len(temp_speecher_list[top_counter]['Redner']) >1:
+                temp_top_liste = temp_speecher_list[top_counter]['Redner']
                 temp_top_liste.remove(temp_top_liste[0])
                 temp_top_liste.remove(temp_top_liste[len(temp_top_liste) - 1])
+                top_counter += 1
 
     return dict_sitzungen
 
-def sort_reden_eines_tops_in_tagesordnungspunkt(reden_eines_tops, tagesordnungspunkt, cleaned_sortierte_sitzungen):
+def sort_reden_eines_tops_in_tagesordnungspunkt(reden_eines_tops, top_counter, cleaned_sortierte_sitzungen):
     i = 0
     list_sorted_redner_temp =[]
-    for redner in cleaned_sortierte_sitzungen['TOPs'][tagesordnungspunkt]['Redner']:
-        dict_temp_redner = {redner: reden_eines_tops[i]}
+    for redner in cleaned_sortierte_sitzungen['TOPs'][top_counter]['Redner']:
+        dict_temp_redner = {str(redner): reden_eines_tops[i]}
         list_sorted_redner_temp.append(dict_temp_redner)
         i += 1
-    cleaned_sortierte_sitzungen['TOPs'][tagesordnungspunkt]['Redner'] = list_sorted_redner_temp
+    cleaned_sortierte_sitzungen['TOPs'][top_counter]['Redner'] = list_sorted_redner_temp
     return cleaned_sortierte_sitzungen
 
 def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung):
@@ -515,17 +542,22 @@ def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung):
     reden = redeliste
 
 
-    for top in sorted(tops):
-        reden_eines_tagesordnungspunkts = []
+    j = 0
+    top_counter = 0
+    for top in tops:
         i = 0
-        anzahl_redner_in_topic = len(tops[top]['Redner'])
-        print('Anzahl Redner in Tagesordnungspunkt "' + top + '" : ' + str(anzahl_redner_in_topic))
+        reden_eines_tagesordnungspunkts = []
+
+        anzahl_redner_in_topic = len(tops[top_counter]['Redner'])
+        print('Anzahl Redner in Tagesordnungspunkt "' + tops[top_counter]['Tagesordnungspunkt'] + '" : ' + str(anzahl_redner_in_topic))
 
         while i < anzahl_redner_in_topic:
             reden_eines_tagesordnungspunkts.append(reden.pop(0))
             i += 1
 
-        final_cleaned_sortierte_sitzung = sort_reden_eines_tops_in_tagesordnungspunkt(reden_eines_tagesordnungspunkts, top, cleaned_sortierte_sitzung)
+        final_cleaned_sortierte_sitzung = sort_reden_eines_tops_in_tagesordnungspunkt(reden_eines_tagesordnungspunkts, j, cleaned_sortierte_sitzung)
+        j += 1
+        top_counter += 1
     return final_cleaned_sortierte_sitzung
 
 #    for rede in reden_eines_tagesordnungspunkts:
@@ -562,22 +594,24 @@ print('Scraping beendet')
 '''
 START Test mit nur einer Sitzung
 '''
-sitzung_232 = cleaned_sortierte_sitzungen['Sitzung 232']
+sitzung_229 = cleaned_sortierte_sitzungen['Sitzung 229']
 
-temp_speecher_dict = sitzung_232['TOPs']
+temp_speecher_list = sitzung_229['TOPs']
 temp_top_liste = []
 
 i=0
-for top in sorted(temp_speecher_dict):
-    temp_top_liste.append(temp_speecher_dict[top]['Redner'])
-    i = i + len(temp_speecher_dict[top]['Redner'])
+j = 0
+for top in temp_speecher_list:
+    temp_top_liste.append(temp_speecher_list[j]['Redner'])
+    i = i + len(temp_speecher_list[j]['Redner'])
+    j +=1
 
 print("Anzahl einsortierte Redner: " + str(i))
 print("Anzahl vorhandene Reden in Redeliste: " + str(len(redeliste)))
 #print(len(temp_top_liste))
 #print(temp_top_liste)
 
-merged_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, sitzung_232)
+merged_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, sitzung_229)
 print('Skript "Vereinigung" beendet')
 '''
 ENDE Test mit nur einer Sitzung
