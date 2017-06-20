@@ -2,7 +2,7 @@
 
 import os
 import sys
-import csv
+import bundestag_protokolle_xlsx
 import re  # reguläre Ausdrücke, brauchen wir später
 from bs4 import BeautifulSoup  # BeautifulSoup: unser Werkzeug der Wahl
 import urllib.request
@@ -27,7 +27,7 @@ def lotse_scrapen():
     f = open("datadump.csv", 'wt', newline='\n')
     try:
         fieldnames = ['type', 'name', 'contact', 'address', 'tel', 'web', 'infos']
-        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter=';', extrasaction='raise')
+        writer = bundestag_protokolle_xlsx.DictWriter(f, fieldnames=fieldnames, delimiter=';', extrasaction='raise')
         writer.writerow({fn: fn for fn in fieldnames})
         for entry in alles:
             try:

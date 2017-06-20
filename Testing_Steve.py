@@ -9,6 +9,8 @@ import operator
 from nltk import sent_tokenize, word_tokenize
 from nltk import StanfordPOSTagger
 import os
+import xlsxwriter
+import re
 os.environ['JAVAHOME'] = "C:/Program Files/Java/jdk1.8.0_20/bin/java.exe"
 
 '''
@@ -32,7 +34,7 @@ def get_content():
     
     :return: page_content
     '''
-    pdf_file = open('Plenarprotokoll_18_232.pdf', 'rb')
+    pdf_file = open('Plenarprotokoll_18_229.pdf', 'rb')
     read_pdf = PyPDF2.PdfFileReader(pdf_file)
     page_content = ''
     for i in range(read_pdf.getNumPages()):
@@ -87,7 +89,14 @@ def analyse_content_element(list_element, i):
     :return: 
     '''
     temp_dict_empty_values = {'polName': '', 'partyName': ''}
-    matchers = ['Das Wort','das Wort','nächste Redner','nächster Redner','nächste Rednerin','spricht jetzt','Nächste Rednerin','Nächster Redner' ,'Letzter Redner', 'nächste Wortmeldung']
+    matchers = ['Das Wort hat', 'das Wort.', 'erteile zu Beginn das Wort',
+                'Redner das Wort', 'Rednerin das Wort', 'übergebe das Wort',
+                'gebe das Wort''nächste Redner','nächster Redner','nächste Rednerin',
+                'spricht jetzt','Nächste Rednerin ist','Nächster Redner ist' ,'Letzter Redner',
+                'Letzte Rednerin', 'letzter Redner','letzte Rednerin', 'nächste Wortmeldung',
+                'Nächste', 'Nächster','spricht als Nächster', 'spricht als Nächste',
+                'zunächst das Wort', 'zu Beginn das Wort', 'Wort dem',
+                'Nächste Rednerin ist die Kollegin', 'Nächster Redner ist der Kollege', '(Heiterkeit)für die SPD']
     if any(m in list_element for m in matchers):
         print("\nWechsel Redner", i, ":", list_element)    # Listenelemente, die matchers enthalten
         start_Element_Rede = i + 1
@@ -209,100 +218,195 @@ def clean_speeches(alle_Reden_einer_Sitzung):
     Holt alle Zwischenrufe, Beifälle, Unruhe, etc. aus einer Rede
     :return: liste_dictionary_reden_einer_sitzung
     '''
-    import re
     # gehe jede Rede durch
     # wenn (...) kommt dann entferne diesen Teil aus Rede
     # entfernten Teil analysieren und zwischenspeichern
     regex = re.compile(".*?\((.*?)\)")
     liste_dictionary_reden_einer_sitzung = []
+    rede_id = 1
 
     for rede in alle_Reden_einer_Sitzung:
 
-        index = 0
+        counter_beifaelle = 0
+        counter_wortmeldungen = 0
         clean_rede = ''
         liste_beifaelle = []
-        liste_widersprueche = []
-        liste_unruhe = []
         liste_wortmeldungen = []
         dict_beifaelle = {}
-        dict_widersprueche = {}
-        dict_unruhe = {}
         dict_wortmeldungen = {}
         result_dictionary = {}
-        temp_liste_treffer = []
-        eine_rede_als_kompletten_string = ''
-
-        eine_rede_als_kompletten_string = ' '.join(rede)
-        print('XXXX string_Rede: ',eine_rede_als_kompletten_string)
-
+        string_rede = ''
         liste_treffer = []
-        liste_treffer = re.findall(regex, eine_rede_als_kompletten_string)
-        temp_liste_treffer.append(liste_treffer)
 
-        index += 1
-        # suche indices von Störungen
-
-        indices = []
-        for eintrag in liste_treffer:
-            print('Eintrag: ',eintrag)
-            m = re.search(eintrag, eine_rede_als_kompletten_string)
-            iter = re.finditer(eintrag, eine_rede_als_kompletten_string)
-            indices += [[m.start(0), m.end(0)] for m in iter]
-
-        print('dddddddd: ',indices)
+        string_rede = ' '.join(rede)
+        liste_treffer = re.findall(regex, string_rede)
 
         for i in liste_treffer:
+            print('Eintrag: ',i)
             if i.__contains__('Beifall'):
-                dict_beifaelle['beifalltext'] = i
-                dict_beifaelle['start_index_beifall'] = ''
-                dict_beifaelle['ende_index_beifall'] = ''
-                dict_beifaelle['redeteil_zuvor'] = ''
-                dict_beifaelle['reaktion_danach'] = ''
-                liste_beifaelle.append(dict_beifaelle)          # Hinzufügen aller Beifälle einer Rede
+                counter_beifaelle += 1
+                liste_beifaelle.append(i)          # Hinzufügen aller Beifälle einer Rede
+            else:
+                counter_wortmeldungen += 1
+                liste_wortmeldungen.append(i)  # Hinzufügen aller Wortmeldungen einer Rede
 
-            elif i.__contains__('Widerspruch'):
-                dict_widersprueche['widerspruchtext'] = i
-                dict_widersprueche['start_index_widerspruch'] = ''
-                dict_widersprueche['ende_index_widerspruch'] = ''
-                dict_widersprueche['redeteil_zuvor'] = ''
-                dict_widersprueche['reaktion_danach'] = ''
-                liste_widersprueche.append(dict_widersprueche)  # Hinzufügen aller Widersprüche einer Rede
+            string_rede = string_rede.replace('(' + i + ')', '')
 
-            elif i.__contains__('Unruhe'):                      # Hinzufügen aller Unruhen einer Rede
-                dict_unruhe['unruhetext'] = i
-                dict_unruhe['start_index_unruhe'] = ''
-                dict_unruhe['ende_index_unruhe'] = ''
-                dict_unruhe['redeteil_zuvor'] = ''
-                dict_unruhe['reaktion_danach'] = ''
-                liste_unruhe.append(dict_unruhe)
+        #string_beifaelle = ' ; '.join(liste_beifaelle)
+        #string_wortmeldungen = ' ; '.join(liste_wortmeldungen)
+
+        ### Analyse Redetext - Haufigkeit und lexikalische Diversitaet
+        liste_speech_word_tokenized = speech_to_words_if_word_isalpha(string_rede)
+        list_seldom_words_without_stopwords, list_frequently_words_without_stopwords = lex_div_without_stopwords(liste_speech_word_tokenized)
+        string_seldom_words = ' ; '.join(list_seldom_words_without_stopwords)
+        string_frequently_words = ' ; '.join(list_frequently_words_without_stopwords)
+
+        result_dictionary_einer_rede = {
+                                'sitzungsnummer'        : 'sss',
+                                'sitzungsdatum'         : 'rrr',
+                                'wahlperiode'           : 'fff',
+                                'tagesordnungspunkt'    : 'zzz',
+                                'tagesordnungspunktbezeichnung': 'dfdedf',
+                                'redner'                : '234567',
+                                'rede_id_sitzungen'     :   rede_id,
+                                'rede_id'               :   rede_id,
+                                'clean_rede'            :   string_rede,
+                                'beifaelle'             :   liste_beifaelle,
+                                'anzahl_beifaelle'      :   counter_beifaelle,
+                                'wortmeldungen'         :   liste_wortmeldungen,
+                                'anzahl_wortmeldungen'  :   counter_wortmeldungen,
+                                '10_seldom_words'       :   string_seldom_words,
+                                '10_frequently_words'   :   string_frequently_words
+
+        }
+        liste_dictionary_reden_einer_sitzung.append(result_dictionary_einer_rede)
+        rede_id += 1
+    return liste_dictionary_reden_einer_sitzung
+
+
+def speech_to_words_if_word_isalpha(string_speech):
+    words = word_tokenize(str(string_speech))
+    # RedeText enthealt noch  „!“, „,“, „.“ und Doppelungen und so weiter
+    print("Anzahl aller Woerter und Zeichen: " + str(len(words)))
+    # saebern des RedeTextes von Zeichen !!! ABER !!! doppelte Woerter lassen, da die Haeufigkeit spaeter gezaehlt werden soll
+    liste_speech_word_tokenized = [word for word in words if word.isalpha()]
+    print("Anzahl aller Woerter - AUCH DOPPELTE ohne Zeichen: " + str(len(liste_speech_word_tokenized)))
+    return liste_speech_word_tokenized
+
+def count_seldom_frequently(freq_CleandedSpeech):
+    # 10 haeufigsten und seltensten Woerter einer gesaeuberten Rede
+    dc_sort = (sorted(freq_CleandedSpeech.items(), key= operator.itemgetter(1), reverse = True))   # sortiertes dictionary - beginnend mit groeßter Haeufigkeit
+    print(dc_sort[:10])                         # 10 haeufigsten Woerter (Wort: Anzahl)
+    print([str(w[0]) for w in dc_sort[:10]])    # 10 haeufigsten Woerter (nur Wort)
+    list_frequently_words = [str(w[0]) for w in dc_sort[:10]]
+    print(dc_sort[-10:])                        # 10 seltensten Woerter (Wort: Anzahl)
+    print([str(w[0]) for w in dc_sort[-10:]])   # 10 seltensten Woerter (nur Wort)
+    list_seldom_words = [str(w[0]) for w in dc_sort[-10:]]
+
+    # Wir koennen uns auch eine kummulative Verteilungsfunktion grafisch anzeigen lassen. Dazu können wir die plot()-Methode
+    # auf dem fdist1-Objekt anwenden. Dazu muss jedoch das Modul matplotlib installiert sein!
+    #freq_CleandedSpeech.plot(10, cumulative=True)
+    return list_seldom_words, list_frequently_words
+
+def lex_div_without_stopwords(liste_speech_word_tokenized):
+    ###### Lexikalische Diversität eines Redners - Vielzahl von Ausdrucksmöglichkeiten #######
+    # Die Diversität ist ein Maß für die Sprachvielfalt. Sie ist definiert als Quotient der „verschiedenen Wörter“ dividiert durch die „Gesamtanzahl von Wörtern“ eines Textes.
+
+    # Redetext ohne stop words
+    stop_words = set(stopwords.words("german"))
+    #print("\n" + "STOPWORDS: " + "\n" + str(stop_words) + "\n")
+    word_list_extension = ['Dass', 'dass', 'Der', 'Die', 'Das', 'Dem', 'Den']
+    for word in word_list_extension:
+        stop_words.add(word)
+
+    clean_without_stopwords = [word for word in liste_speech_word_tokenized if not word in stop_words]                       # herausfiltern der stopwords
+    freq_Cleanded_without_stopwords =  FreqDist(clean_without_stopwords)                                        # Neuzuweisung: methode FreqDist() - Ermittlung der Vorkommenshaeufigkeit der Woerter im gesaeuberten RedeText ohne stopwords
+    #freq_Cleanded_without_stopwords.tabulate()                                                                  # most high-frequency parts of speech
+    complete_text_with_doubles_without_stopwords = list(freq_Cleanded_without_stopwords)
+    diff_words_without_doubles = set(complete_text_with_doubles_without_stopwords)                              # "diff_words_without_doubles" enthaelt keine doppelten Woerter mehr
+    #diversity_without_stopwords = len(diff_words_without_doubles) / float(len(complete_text_with_doubles_without_stopwords))
+
+    print(freq_Cleanded_without_stopwords)
+    list_seldom_words_without_stopwords, list_frequently_words_without_stopwords = count_seldom_frequently(freq_Cleanded_without_stopwords)  # Visualisieren der haufigsten und seltensten Woerter ohne stopwords
+    print('rrrrrrrrrrrrrrrrr: ',list_seldom_words_without_stopwords)
+    print('rrrrrrrrrrrrrrrrr: ',list_frequently_words_without_stopwords)
+    name = "Redner: " + 'xxxxxxxxxxxxxxxxxxxx'
+    print(name)
+    #print("different words:    {0:8d}".format(len(diff_words)))                                    # Anzahl unterschiedlich einmalig genutzter Woerter
+    #print("words:              {0:8d}".format(len(wordlist)))                                       # Anzahl genutzter Woerter
+    #print("lexical diversity without stopwords:  {0:8.2f}".format(diversity_without_stopwords))     # Prozentsatz fuer die Sprachvielfalt ohne stopwords
+
+    return list_seldom_words_without_stopwords, list_frequently_words_without_stopwords
+
+def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
+    # Create a workbook and add a worksheet.
+    workbook = xlsxwriter.Workbook('bundestag_protokolle.xlsx')
+    sitzungsdaten = workbook.add_worksheet('Sitzungsdaten')
+    rededaten = workbook.add_worksheet('Rededaten')
+
+    # Add a bold format to use to highlight cells.
+    bold = workbook.add_format({'bold': 1})
+
+    # Adjust the column width.
+    sitzungsdaten.set_column(1, 1, 15)
+    rededaten.set_column(1, 1, 15)
+
+    # Write data headers.
+    sitzungsdaten.write('A1', 'Sitzungsnummer', bold)
+    sitzungsdaten.write('B1', 'Sitzungsdatum', bold)
+    sitzungsdaten.write('C1', 'Wahlperiode', bold)
+    sitzungsdaten.write('D1', 'Tagesordnungspunkt', bold)
+    sitzungsdaten.write('E1', 'Tagesordnungspunktbezeichnung', bold)
+    sitzungsdaten.write('F1', 'Redner', bold)
+    sitzungsdaten.write('G1', 'rede_id_sitzungen', bold)
+
+    rededaten.write('A1', 'rede_id', bold)
+    rededaten.write('B1', 'clean_rede', bold)
+    rededaten.write('C1', 'beifaelle', bold)
+    rededaten.write('D1', 'anzahl_beifaelle', bold)
+    rededaten.write('E1', 'wortmeldungen', bold)
+    rededaten.write('F1', 'anzahl_wortmeldungen', bold)
+    rededaten.write('G1', '10_seldom_words', bold)
+    rededaten.write('H1', '10_frequently_words', bold)
+
+
+    # writing in worksheet 'Sitzungsdaten'
+    row = 1
+    col = 0
+    for dict in liste_dictionary_reden_einer_sitzung:
+        for key in ['sitzungsnummer', 'sitzungsdatum', 'wahlperiode', 'tagesordnungspunkt', 'tagesordnungspunktbezeichnung', 'redner', 'rede_id_sitzungen']:
+            if isinstance(dict[key], list):
+                for item in dict[key]:
+                    sitzungsdaten.write(row, col, item)
+                    row += 1
+                #col += 1
+            else:
+                sitzungsdaten.write(row, col, dict[key])
+            col += 1
+        row += 1
+        col = 0
+
+    # writing in worksheet 'Rededaten'
+    row = 1
+    row_listeneintrag = 1
+    temp_row = 1
+    col = 0
+    for dict in liste_dictionary_reden_einer_sitzung:
+        for key in ['rede_id', 'clean_rede', 'beifaelle', 'anzahl_beifaelle', 'wortmeldungen', 'anzahl_wortmeldungen', '10_seldom_words', '10_frequently_words']:
+            if isinstance(dict[key], list):
+                for item in dict[key]:
+                    rededaten.write(row, col, item)
+                    row += 1
+
 
             else:
-                dict_wortmeldungen['wortmeldungtext'] = i
-                dict_wortmeldungen['start_index_wortmeldung'] = ''
-                dict_wortmeldungen['ende_index_wortmeldung'] = ''
-                dict_wortmeldungen['redeteil_zuvor'] = ''
-                dict_wortmeldungen['raktion_danach'] = ''
-                liste_wortmeldungen.append(dict_wortmeldungen)  # Hinzufügen aller Wortmeldungen einer Rede
+                rededaten.write(temp_row, col, dict[key])
+            col += 1
+        row += 1
+        temp_row += 1
+        col = 0
 
-                eine_rede_als_kompletten_string.replace('(' + i + ')', '')  # Entfernen von (...)
-            #clean_item = clean_item.replace('('+i+'!', '')
-        clean_rede = eine_rede_als_kompletten_string
-
-        result_dictionary = {
-                                'rede'          : clean_rede,
-                                'beifälle'      : liste_beifaelle,
-                                'widerspruch'   : liste_widersprueche,
-                                'unruhe'        : liste_unruhe,
-                                'wortmeldungen' : liste_wortmeldungen
-        }
-
-        liste_dictionary_reden_einer_sitzung.append(result_dictionary)
-        #print(clean_rede)
-        print('3: ', liste_beifaelle)
-        print('4: ', liste_widersprueche)
-        print('5: ', liste_wortmeldungen)
-        print('6: ', clean_rede)
-    return liste_dictionary_reden_einer_sitzung
+    workbook.close()
 
 
 
@@ -314,83 +418,5 @@ liste_alle_reden = get_all_speeches(start_end_nummern_liste)
 print(start_end_nummern_liste)
 redeliste = clean_speeches(liste_alle_reden)
 print(redeliste)
+create_protocol_workbook(redeliste)
 
-
-
-
-
-
-
-
-
-
-''' xxxxxxxxxxxxxxxxxxxxxxxxxxx   Datenbank befuellen   xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx '''
-
-
-
-
-
-
-
-
-
-''' xxxxxxxxxxxxxxxxxxxxxxxxx   Analyse Redetext - Haufigkeit und lexikalische Diversitaet   xxxxxxxxxxxxxxxxxxxxxxxxxxxx '''
-
-def clean_and_getFrequenz(wordlist):
-    words = word_tokenize(str(wordlist))
-    # RedeText enthealt noch  „!“, „,“, „.“ und Doppelungen und so weiter
-    print("Anzahl aller Woerter und Zeichen: " + str(len(words)))
-    # saebern des RedeTextes von Zeichen !!! ABER !!! doppelte Woerter lassen, da die Haeufigkeit spaeter gezaehlt werden soll
-    cleaned_speech = [word for word in words if word.isalpha()]
-    print("Anzahl aller Woerter - AUCH DOPPELTE ohne Zeichen: " + str(len(cleaned_speech)))
-    return cleaned_speech
-
-def count_and_viz_seldom_frequently(freq_CleandedSpeech):
-    # 30 haeufigsten und seltensten Woerter einer gesaeuberten Rede
-    dc_sort = (sorted(freq_CleandedSpeech.items(), key= operator.itemgetter(1), reverse = True))   # sortiertes dictionary - beginnend mit groeßter Haeufigkeit
-    print(dc_sort[:30])                         # 30 haeufigsten Woerter (Wort: Anzahl)
-    print([str(w[0]) for w in dc_sort[:30]])    # 30 haeufigsten Woerter (nur Wort)
-    print(dc_sort[-30:])                        # 30 seltensten Woerter (Wort: Anzahl)
-    print([str(w[0]) for w in dc_sort[-30:]])   # 30 seltensten Woerter (nur Wort)
-
-    # Wir koennen uns auch eine kummulative Verteilungsfunktion grafisch anzeigen lassen. Dazu können wir die plot()-Methode
-    # auf dem fdist1-Objekt anwenden. Dazu muss jedoch das Modul matplotlib installiert sein!
-    freq_CleandedSpeech.plot(30, cumulative=True)
-
-def lex_div_with_and_without_stopwords(wordlist, cleaned_speech):
-    ###### Lexikalische Diversität eines Redners - Vielzahl von Ausdrucksmöglichkeiten #######
-    # Die Diversität ist ein Maß für die Sprachvielfalt. Sie ist definiert als Quotient der „verschiedenen Wörter“ dividiert durch die „Gesamtanzahl von Wörtern“ eines Textes.
-
-    # Redetext mit stop words
-    freq_CleandedSpeech_with_stopwords = FreqDist(cleaned_speech)           # methode FreqDist() - Ermittlung der Vorkommenshaeufigkeit der Woerter im gesaeuberten RedeText
-    print(freq_CleandedSpeech_with_stopwords)
-    #freq_CleandedSpeech_with_stopwords.tabulate()                           # most high-frequency parts of speech
-    count_and_viz_seldom_frequently(freq_CleandedSpeech_with_stopwords)     # Visualisieren der haufigsten und seltensten Woerter inclusive stopwords
-
-    complete_text_with_doubles = list(freq_CleandedSpeech_with_stopwords)        # noch doppelte Woerter enthalten
-    diff_words = set(complete_text_with_doubles)                                 # "diff_words" enthaelt keine doppelten Woerter mehr
-    diversity_with_stopwords = len(diff_words) / float(len(complete_text_with_doubles))
-
-    # Redetext ohne stop words
-    stop_words = set(stopwords.words("german"))
-    print("\n" + "STOPWORDS: " + "\n" + str(stop_words) + "\n")
-
-    clean_without_stopwords = [word for word in cleaned_speech if not word in stop_words]                       # herausfiltern der stopwords
-    freq_Cleanded_without_stopwords =  FreqDist(clean_without_stopwords)                                        # Neuzuweisung: methode FreqDist() - Ermittlung der Vorkommenshaeufigkeit der Woerter im gesaeuberten RedeText ohne stopwords
-    #freq_Cleanded_without_stopwords.tabulate()                                                                  # most high-frequency parts of speech
-    complete_text_with_doubles_without_stopwords = list(freq_Cleanded_without_stopwords)
-    diff_words_without_doubles = set(complete_text_with_doubles_without_stopwords)                              # "diff_words_without_doubles" enthaelt keine doppelten Woerter mehr
-    diversity_without_stopwords = len(diff_words_without_doubles) / float(len(complete_text_with_doubles_without_stopwords))
-
-    print(freq_Cleanded_without_stopwords)
-    count_and_viz_seldom_frequently(freq_Cleanded_without_stopwords)  # Visualisieren der haufigsten und seltensten Woerter ohne stopwords
-
-    name = "Redner: " + 'xxxxxxxxxxxxxxxxxxxx'
-    print(name)
-    print("different words:    {0:8d}".format(len(diff_words)))                                     # Anzahl unterschiedlich einmalig genutzter Woerter
-    print("words:              {0:8d}".format(len(wordlist)))                                       # Anzahl genutzter Woerter
-    print("lexical diversity with stopwords:  {0:8.2f}".format(diversity_with_stopwords))           # Prozentsatz fuer die Sprachvielfalt mit stopwords
-    print("lexical diversity without stopwords:  {0:8.2f}".format(diversity_without_stopwords))     # Prozentsatz fuer die Sprachvielfalt ohne stopwords
-
-# cleaned_Speech = clean_and_getFrequenz(wordlist)
-# lex_div_with_and_without_stopwords(wordlist, cleaned_Speech)
