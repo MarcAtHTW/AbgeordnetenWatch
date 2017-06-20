@@ -95,7 +95,7 @@ def analyse_content_element(list_element, i):
                 'spricht jetzt','Nächste Rednerin ist','Nächster Redner ist' ,'Letzter Redner',
                 'Letzte Rednerin', 'letzter Redner','letzte Rednerin', 'nächste Wortmeldung',
                 'Nächste', 'Nächster','spricht als Nächster', 'spricht als Nächste',
-                'zunächst das Wort', 'zu Beginn das Wort',
+                'zunächst das Wort', 'zu Beginn das Wort', 'Wort dem',
                 'Nächste Rednerin ist die Kollegin', 'Nächster Redner ist der Kollege', '(Heiterkeit)für die SPD']
     if any(m in list_element for m in matchers):
         print("\nWechsel Redner", i, ":", list_element)    # Listenelemente, die matchers enthalten
@@ -257,7 +257,7 @@ def clean_speeches(alle_Reden_einer_Sitzung):
 
         ### Analyse Redetext - Haufigkeit und lexikalische Diversitaet
         liste_speech_word_tokenized = speech_to_words_if_word_isalpha(string_rede)
-        list_seldom_words_without_stopwords, list_frequently_words_without_stopwords = lex_div_with_and_without_stopwords(string_rede, liste_speech_word_tokenized)
+        list_seldom_words_without_stopwords, list_frequently_words_without_stopwords = lex_div_without_stopwords(liste_speech_word_tokenized)
         string_seldom_words = ' ; '.join(list_seldom_words_without_stopwords)
         string_frequently_words = ' ; '.join(list_frequently_words_without_stopwords)
 
@@ -308,15 +308,18 @@ def count_seldom_frequently(freq_CleandedSpeech):
     #freq_CleandedSpeech.plot(10, cumulative=True)
     return list_seldom_words, list_frequently_words
 
-def lex_div_with_and_without_stopwords(wordlist, cleaned_speech):
+def lex_div_without_stopwords(liste_speech_word_tokenized):
     ###### Lexikalische Diversität eines Redners - Vielzahl von Ausdrucksmöglichkeiten #######
     # Die Diversität ist ein Maß für die Sprachvielfalt. Sie ist definiert als Quotient der „verschiedenen Wörter“ dividiert durch die „Gesamtanzahl von Wörtern“ eines Textes.
 
     # Redetext ohne stop words
     stop_words = set(stopwords.words("german"))
     #print("\n" + "STOPWORDS: " + "\n" + str(stop_words) + "\n")
+    word_list_extension = ['Dass', 'dass', 'Der', 'Die', 'Das', 'Dem', 'Den']
+    for word in word_list_extension:
+        stop_words.add(word)
 
-    clean_without_stopwords = [word for word in cleaned_speech if not word in stop_words]                       # herausfiltern der stopwords
+    clean_without_stopwords = [word for word in liste_speech_word_tokenized if not word in stop_words]                       # herausfiltern der stopwords
     freq_Cleanded_without_stopwords =  FreqDist(clean_without_stopwords)                                        # Neuzuweisung: methode FreqDist() - Ermittlung der Vorkommenshaeufigkeit der Woerter im gesaeuberten RedeText ohne stopwords
     #freq_Cleanded_without_stopwords.tabulate()                                                                  # most high-frequency parts of speech
     complete_text_with_doubles_without_stopwords = list(freq_Cleanded_without_stopwords)
