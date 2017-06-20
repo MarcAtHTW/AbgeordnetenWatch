@@ -614,7 +614,8 @@ print("Anzahl vorhandene Reden in Redeliste: " + str(len(redeliste)))
 merged_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, sitzung_229)
 print('Skript "Vereinigung" beendet')
 '''
-ENDE Test mit nur einer Sitzung
+
+ENDE Test mit nur einer Sitzung (229)
 '''
 
 ### ENDE spaßige teil###
