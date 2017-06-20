@@ -9,6 +9,8 @@ import os
 from selenium import webdriver
 from bs4 import BeautifulSoup
 from operator import itemgetter
+import xlsxwriter
+import re
 
 ### Start Testing_Steve ###
 os.environ['JAVAHOME'] = "C:/Program Files/Java/jdk1.8.0_20/bin/java.exe"
@@ -213,96 +215,292 @@ def get_all_speeches(liste_mit_Startnummern_und_End):
     # print(rede)
     return alle_Reden_einer_Sitzung
 
+    '''
+    def clean_speeches(alle_Reden_einer_Sitzung):
+        
+        Holt alle Zwischenrufe, Beifälle, Unruhe, etc. aus einer Rede
+        :return: liste_dictionary_reden_einer_sitzung
+        
+        import re
+        # gehe jede Rede durch
+        # wenn (...) kommt dann entferne diesen Teil aus Rede
+        # entfernten Teil analysieren und zwischenspeichern
+        regex = re.compile(".*?\((.*?)\)")
+        liste_dictionary_reden_einer_sitzung = []
+    
+        for rede in alle_Reden_einer_Sitzung:
+    
+            index = 0
+            clean_rede = ''
+            liste_beifaelle = []
+            liste_widersprueche = []
+            liste_unruhe = []
+            liste_wortmeldungen = []
+            dict_beifaelle = {}
+            dict_widersprueche = {}
+            dict_unruhe = {}
+            dict_wortmeldungen = {}
+            result_dictionary = {}
+            temp_liste_treffer = []
+            eine_rede_als_kompletten_string = ''
+    
+            eine_rede_als_kompletten_string = ' '.join(rede)
+            print('XXXX string_Rede: ', eine_rede_als_kompletten_string)
+    
+            index += 1
+            # suche indices von Störungen
+            for match in re.finditer(regex, eine_rede_als_kompletten_string):
+                print('indices_Rede_unterbrechungen_alle: ', match.span())
+            liste_treffer = []
+            liste_treffer = re.findall(regex, eine_rede_als_kompletten_string)
+            temp_liste_treffer.append(liste_treffer)
+    
+            for i in liste_treffer:
+                if i.__contains__('Beifall'):
+                    dict_beifaelle['beifalltext'] = i
+                    dict_beifaelle['start_index_beifall'] = ''
+                    dict_beifaelle['ende_index_beifall'] = ''
+                    dict_beifaelle['redeteil_zuvor'] = ''
+                    dict_beifaelle['reaktion_danach'] = ''
+                    liste_beifaelle.append(dict_beifaelle)  # Hinzufügen aller Beifälle einer Rede
+    
+                elif i.__contains__('Widerspruch'):
+                    dict_widersprueche['widerspruchtext'] = i
+                    dict_widersprueche['start_index_widerspruch'] = ''
+                    dict_widersprueche['ende_index_widerspruch'] = ''
+                    dict_widersprueche['redeteil_zuvor'] = ''
+                    dict_widersprueche['reaktion_danach'] = ''
+                    liste_widersprueche.append(dict_widersprueche)  # Hinzufügen aller Widersprüche einer Rede
+    
+                elif i.__contains__('Unruhe'):  # Hinzufügen aller Unruhen einer Rede
+                    dict_unruhe['unruhetext'] = i
+                    dict_unruhe['start_index_unruhe'] = ''
+                    dict_unruhe['ende_index_unruhe'] = ''
+                    dict_unruhe['redeteil_zuvor'] = ''
+                    dict_unruhe['reaktion_danach'] = ''
+                    liste_unruhe.append(dict_unruhe)
+    
+                else:
+                    dict_wortmeldungen['wortmeldungtext'] = i
+                    dict_wortmeldungen['start_index_wortmeldung'] = ''
+                    dict_wortmeldungen['ende_index_wortmeldung'] = ''
+                    dict_wortmeldungen['redeteil_zuvor'] = ''
+                    dict_wortmeldungen['raktion_danach'] = ''
+                    liste_wortmeldungen.append(dict_wortmeldungen)  # Hinzufügen aller Wortmeldungen einer Rede
+    
+                    eine_rede_als_kompletten_string.replace('(' + i + ')', '')  # Entfernen von (...)
+                    # clean_item = clean_item.replace('('+i+'!', '')
+            clean_rede = eine_rede_als_kompletten_string
+    
+            result_dictionary = {
+                'rede': clean_rede,
+                'beifälle': liste_beifaelle,
+                'widerspruch': liste_widersprueche,
+                'unruhe': liste_unruhe,
+                'wortmeldungen': liste_wortmeldungen
+            }
+            if result_dictionary['rede'] != '':
+                liste_dictionary_reden_einer_sitzung.append(result_dictionary)
+                # print(clean_rede)
+                print('3: ', liste_beifaelle)
+                print('4: ', liste_widersprueche)
+                print('5: ', liste_wortmeldungen)
+                print('6: ', clean_rede)
+        return liste_dictionary_reden_einer_sitzung
+'''
+
+def speech_to_words_if_word_isalpha(string_speech):
+    words = word_tokenize(str(string_speech))
+    # RedeText enthealt noch  „!“, „,“, „.“ und Doppelungen und so weiter
+    print("Anzahl aller Woerter und Zeichen: " + str(len(words)))
+    # saebern des RedeTextes von Zeichen !!! ABER !!! doppelte Woerter lassen, da die Haeufigkeit spaeter gezaehlt werden soll
+    liste_speech_word_tokenized = [word for word in words if word.isalpha()]
+    print("Anzahl aller Woerter - AUCH DOPPELTE ohne Zeichen: " + str(len(liste_speech_word_tokenized)))
+    return liste_speech_word_tokenized
+
+def count_seldom_frequently(freq_CleandedSpeech):
+    # 10 haeufigsten und seltensten Woerter einer gesaeuberten Rede
+    dc_sort = (sorted(freq_CleandedSpeech.items(), key= operator.itemgetter(1), reverse = True))   # sortiertes dictionary - beginnend mit groeßter Haeufigkeit
+    print(dc_sort[:10])                         # 10 haeufigsten Woerter (Wort: Anzahl)
+    print([str(w[0]) for w in dc_sort[:10]])    # 10 haeufigsten Woerter (nur Wort)
+    list_frequently_words = [str(w[0]) for w in dc_sort[:10]]
+    print(dc_sort[-10:])                        # 10 seltensten Woerter (Wort: Anzahl)
+    print([str(w[0]) for w in dc_sort[-10:]])   # 10 seltensten Woerter (nur Wort)
+    list_seldom_words = [str(w[0]) for w in dc_sort[-10:]]
+
+    # Wir koennen uns auch eine kummulative Verteilungsfunktion grafisch anzeigen lassen. Dazu können wir die plot()-Methode
+    # auf dem fdist1-Objekt anwenden. Dazu muss jedoch das Modul matplotlib installiert sein!
+    #freq_CleandedSpeech.plot(10, cumulative=True)
+    return list_seldom_words, list_frequently_words
+
+def lex_div_without_stopwords(liste_speech_word_tokenized):
+    ###### Lexikalische Diversität eines Redners - Vielzahl von Ausdrucksmöglichkeiten #######
+    # Die Diversität ist ein Maß für die Sprachvielfalt. Sie ist definiert als Quotient der „verschiedenen Wörter“ dividiert durch die „Gesamtanzahl von Wörtern“ eines Textes.
+
+    # Redetext ohne stop words
+    stop_words = set(stopwords.words("german"))
+    #print("\n" + "STOPWORDS: " + "\n" + str(stop_words) + "\n")
+    word_list_extension = ['Dass', 'dass', 'Der', 'Die', 'Das', 'Dem', 'Den']
+    for word in word_list_extension:
+        stop_words.add(word)
+
+    clean_without_stopwords = [word for word in liste_speech_word_tokenized if not word in stop_words]                       # herausfiltern der stopwords
+    freq_Cleanded_without_stopwords =  FreqDist(clean_without_stopwords)                                        # Neuzuweisung: methode FreqDist() - Ermittlung der Vorkommenshaeufigkeit der Woerter im gesaeuberten RedeText ohne stopwords
+    #freq_Cleanded_without_stopwords.tabulate()                                                                  # most high-frequency parts of speech
+    complete_text_with_doubles_without_stopwords = list(freq_Cleanded_without_stopwords)
+    diff_words_without_doubles = set(complete_text_with_doubles_without_stopwords)                              # "diff_words_without_doubles" enthaelt keine doppelten Woerter mehr
+    #diversity_without_stopwords = len(diff_words_without_doubles) / float(len(complete_text_with_doubles_without_stopwords))
+
+    print(freq_Cleanded_without_stopwords)
+    list_seldom_words_without_stopwords, list_frequently_words_without_stopwords = count_seldom_frequently(freq_Cleanded_without_stopwords)  # Visualisieren der haufigsten und seltensten Woerter ohne stopwords
+    print('rrrrrrrrrrrrrrrrr: ',list_seldom_words_without_stopwords)
+    print('rrrrrrrrrrrrrrrrr: ',list_frequently_words_without_stopwords)
+    name = "Redner: " + 'xxxxxxxxxxxxxxxxxxxx'
+    print(name)
+    #print("different words:    {0:8d}".format(len(diff_words)))                                    # Anzahl unterschiedlich einmalig genutzter Woerter
+    #print("words:              {0:8d}".format(len(wordlist)))                                       # Anzahl genutzter Woerter
+    #print("lexical diversity without stopwords:  {0:8.2f}".format(diversity_without_stopwords))     # Prozentsatz fuer die Sprachvielfalt ohne stopwords
+
+    return list_seldom_words_without_stopwords, list_frequently_words_without_stopwords
+
+def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
+    # Create a workbook and add a worksheet.
+    workbook = xlsxwriter.Workbook('bundestag_protokolle.xlsx')
+    sitzungsdaten = workbook.add_worksheet('Sitzungsdaten')
+    rededaten = workbook.add_worksheet('Rededaten')
+
+    # Add a bold format to use to highlight cells.
+    bold = workbook.add_format({'bold': 1})
+
+    # Adjust the column width.
+    sitzungsdaten.set_column(1, 1, 15)
+    rededaten.set_column(1, 1, 15)
+
+    # Write data headers.
+    sitzungsdaten.write('A1', 'Sitzungsnummer', bold)
+    sitzungsdaten.write('B1', 'Sitzungsdatum', bold)
+    sitzungsdaten.write('C1', 'Wahlperiode', bold)
+    sitzungsdaten.write('D1', 'Tagesordnungspunkt', bold)
+    sitzungsdaten.write('E1', 'Tagesordnungspunktbezeichnung', bold)
+    sitzungsdaten.write('F1', 'Redner', bold)
+    sitzungsdaten.write('G1', 'rede_id_sitzungen', bold)
+
+    rededaten.write('A1', 'rede_id', bold)
+    rededaten.write('B1', 'clean_rede', bold)
+    rededaten.write('C1', 'beifaelle', bold)
+    rededaten.write('D1', 'anzahl_beifaelle', bold)
+    rededaten.write('E1', 'wortmeldungen', bold)
+    rededaten.write('F1', 'anzahl_wortmeldungen', bold)
+    rededaten.write('G1', '10_seldom_words', bold)
+    rededaten.write('H1', '10_frequently_words', bold)
+
+
+    # writing in worksheet 'Sitzungsdaten'
+    row = 1
+    col = 0
+    for dict in liste_dictionary_reden_einer_sitzung:
+        for key in ['sitzungsnummer', 'sitzungsdatum', 'wahlperiode', 'tagesordnungspunkt', 'tagesordnungspunktbezeichnung', 'redner', 'rede_id_sitzungen']:
+            if isinstance(dict[key], list):
+                for item in dict[key]:
+                    sitzungsdaten.write(row, col, item)
+                    row += 1
+                #col += 1
+            else:
+                sitzungsdaten.write(row, col, dict[key])
+            col += 1
+        row += 1
+        col = 0
+
+    # writing in worksheet 'Rededaten'
+    row = 1
+    row_listeneintrag = 1
+    temp_row = 1
+    col = 0
+    for dict in liste_dictionary_reden_einer_sitzung:
+        for key in ['rede_id', 'clean_rede', 'beifaelle', 'anzahl_beifaelle', 'wortmeldungen', 'anzahl_wortmeldungen', '10_seldom_words', '10_frequently_words']:
+            if isinstance(dict[key], list):
+                for item in dict[key]:
+                    rededaten.write(row, col, item)
+                    row += 1
+
+
+            else:
+                rededaten.write(temp_row, col, dict[key])
+            col += 1
+        row += 1
+        temp_row += 1
+        col = 0
+
+    workbook.close()
+
 def clean_speeches(alle_Reden_einer_Sitzung):
     '''
     Holt alle Zwischenrufe, Beifälle, Unruhe, etc. aus einer Rede
     :return: liste_dictionary_reden_einer_sitzung
     '''
-    import re
     # gehe jede Rede durch
     # wenn (...) kommt dann entferne diesen Teil aus Rede
     # entfernten Teil analysieren und zwischenspeichern
     regex = re.compile(".*?\((.*?)\)")
     liste_dictionary_reden_einer_sitzung = []
+    rede_id = 1
 
     for rede in alle_Reden_einer_Sitzung:
 
-        index = 0
+        counter_beifaelle = 0
+        counter_wortmeldungen = 0
         clean_rede = ''
         liste_beifaelle = []
-        liste_widersprueche = []
-        liste_unruhe = []
         liste_wortmeldungen = []
         dict_beifaelle = {}
-        dict_widersprueche = {}
-        dict_unruhe = {}
         dict_wortmeldungen = {}
         result_dictionary = {}
-        temp_liste_treffer = []
-        eine_rede_als_kompletten_string = ''
-
-        eine_rede_als_kompletten_string = ' '.join(rede)
-        print('XXXX string_Rede: ', eine_rede_als_kompletten_string)
-
-        index += 1
-        # suche indices von Störungen
-        for match in re.finditer(regex, eine_rede_als_kompletten_string):
-            print('indices_Rede_unterbrechungen_alle: ', match.span())
+        string_rede = ''
         liste_treffer = []
-        liste_treffer = re.findall(regex, eine_rede_als_kompletten_string)
-        temp_liste_treffer.append(liste_treffer)
+
+        string_rede = ' '.join(rede)
+        liste_treffer = re.findall(regex, string_rede)
 
         for i in liste_treffer:
+            print('Eintrag: ',i)
             if i.__contains__('Beifall'):
-                dict_beifaelle['beifalltext'] = i
-                dict_beifaelle['start_index_beifall'] = ''
-                dict_beifaelle['ende_index_beifall'] = ''
-                dict_beifaelle['redeteil_zuvor'] = ''
-                dict_beifaelle['reaktion_danach'] = ''
-                liste_beifaelle.append(dict_beifaelle)  # Hinzufügen aller Beifälle einer Rede
-
-            elif i.__contains__('Widerspruch'):
-                dict_widersprueche['widerspruchtext'] = i
-                dict_widersprueche['start_index_widerspruch'] = ''
-                dict_widersprueche['ende_index_widerspruch'] = ''
-                dict_widersprueche['redeteil_zuvor'] = ''
-                dict_widersprueche['reaktion_danach'] = ''
-                liste_widersprueche.append(dict_widersprueche)  # Hinzufügen aller Widersprüche einer Rede
-
-            elif i.__contains__('Unruhe'):  # Hinzufügen aller Unruhen einer Rede
-                dict_unruhe['unruhetext'] = i
-                dict_unruhe['start_index_unruhe'] = ''
-                dict_unruhe['ende_index_unruhe'] = ''
-                dict_unruhe['redeteil_zuvor'] = ''
-                dict_unruhe['reaktion_danach'] = ''
-                liste_unruhe.append(dict_unruhe)
-
+                counter_beifaelle += 1
+                liste_beifaelle.append(i)          # Hinzufügen aller Beifälle einer Rede
             else:
-                dict_wortmeldungen['wortmeldungtext'] = i
-                dict_wortmeldungen['start_index_wortmeldung'] = ''
-                dict_wortmeldungen['ende_index_wortmeldung'] = ''
-                dict_wortmeldungen['redeteil_zuvor'] = ''
-                dict_wortmeldungen['raktion_danach'] = ''
-                liste_wortmeldungen.append(dict_wortmeldungen)  # Hinzufügen aller Wortmeldungen einer Rede
+                counter_wortmeldungen += 1
+                liste_wortmeldungen.append(i)  # Hinzufügen aller Wortmeldungen einer Rede
 
-                eine_rede_als_kompletten_string.replace('(' + i + ')', '')  # Entfernen von (...)
-                # clean_item = clean_item.replace('('+i+'!', '')
-        clean_rede = eine_rede_als_kompletten_string
+            string_rede = string_rede.replace('(' + i + ')', '')
 
-        result_dictionary = {
-            'rede': clean_rede,
-            'beifälle': liste_beifaelle,
-            'widerspruch': liste_widersprueche,
-            'unruhe': liste_unruhe,
-            'wortmeldungen': liste_wortmeldungen
+        #string_beifaelle = ' ; '.join(liste_beifaelle)
+        #string_wortmeldungen = ' ; '.join(liste_wortmeldungen)
+
+        ### Analyse Redetext - Haufigkeit und lexikalische Diversitaet
+        liste_speech_word_tokenized = speech_to_words_if_word_isalpha(string_rede)
+        list_seldom_words_without_stopwords, list_frequently_words_without_stopwords = lex_div_without_stopwords(liste_speech_word_tokenized)
+        string_seldom_words = ' ; '.join(list_seldom_words_without_stopwords)
+        string_frequently_words = ' ; '.join(list_frequently_words_without_stopwords)
+
+        result_dictionary_einer_rede = {
+                                'sitzungsnummer'        : 'sss',
+                                'sitzungsdatum'         : 'rrr',
+                                'wahlperiode'           : 'fff',
+                                'tagesordnungspunkt'    : 'zzz',
+                                'tagesordnungspunktbezeichnung': 'dfdedf',
+                                'redner'                : '234567',
+                                'rede_id_sitzungen'     :   rede_id,
+                                'rede_id'               :   rede_id,
+                                'clean_rede'            :   string_rede,
+                                'beifaelle'             :   liste_beifaelle,
+                                'anzahl_beifaelle'      :   counter_beifaelle,
+                                'wortmeldungen'         :   liste_wortmeldungen,
+                                'anzahl_wortmeldungen'  :   counter_wortmeldungen,
+                                '10_seldom_words'       :   string_seldom_words,
+                                '10_frequently_words'   :   string_frequently_words
+
         }
-        if result_dictionary['rede'] != '':
-            liste_dictionary_reden_einer_sitzung.append(result_dictionary)
-            # print(clean_rede)
-            print('3: ', liste_beifaelle)
-            print('4: ', liste_widersprueche)
-            print('5: ', liste_wortmeldungen)
-            print('6: ', clean_rede)
+        liste_dictionary_reden_einer_sitzung.append(result_dictionary_einer_rede)
+        rede_id += 1
     return liste_dictionary_reden_einer_sitzung
 
 ### ENDE Testing_Steve ###
@@ -612,6 +810,7 @@ print("Anzahl vorhandene Reden in Redeliste: " + str(len(redeliste)))
 #print(temp_top_liste)
 
 merged_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, sitzung_229)
+create_protocol_workbook(redeliste)
 print('Skript "Vereinigung" beendet')
 '''
 
