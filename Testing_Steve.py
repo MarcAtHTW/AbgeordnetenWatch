@@ -11,6 +11,7 @@ from nltk import StanfordPOSTagger
 import os
 import xlsxwriter
 import re
+import codecs
 os.environ['JAVAHOME'] = "C:/Program Files/Java/jdk1.8.0_20/bin/java.exe"
 
 '''
@@ -36,21 +37,27 @@ def get_content():
     
     :return: page_content
     '''
-    pdf_file = open('Plenarprotokoll_18_239.pdf', 'rb')
-    read_pdf = PyPDF2.PdfFileReader(pdf_file)
-    page_content = ''
-    for i in range(read_pdf.getNumPages()):
-        print(i)
-        pages = read_pdf.getPage(i)
-        page_content += pages.extractText()
-        #str(page_content.encode('UTF-8'))
-    #f = open("18232-data.txt", "r")
-    #for line in f.readlines():
-    #string_rede = ' '.join(f)
+    # pdf_file = open('Plenarprotokoll_18_239.pdf', 'rb')
+    # read_pdf = PyPDF2.PdfFileReader(pdf_file)
+    # page_content = ''
+    # for i in range(read_pdf.getNumPages()):
+    #     print(i)
+    #     pages = read_pdf.getPage(i)
+    #     page_content += pages.extractText()
+    #     #str(page_content.encode('UTF-8'))
+    f = codecs.open("18240-data.txt", "r", "utf-8")
+    lines = f.readlines()
+    f.close()
+    liste_sitzungsinhalt = []
+    string_sitzung = ''
+    for line in lines:
+        line = line.strip()
+        liste_sitzungsinhalt.append(line)
+        print(line)
+        string_sitzung = ' '.join(liste_sitzungsinhalt)
+    return string_sitzung
 
-    return page_content
-
-def split_and_analyse_content(page_content):
+def split_and_analyse_content(string_sitzung):
     '''
     Seiteninhalte des Protokolls werden zu Sätze, die wiederum zu Listenelemente werden
     entfernen von "\n" und "-" aus Listenelemente
@@ -58,12 +65,12 @@ def split_and_analyse_content(page_content):
     :param page_content: 
     :return: 
     '''
-    list = sent_tokenize(page_content)
+    list = sent_tokenize(string_sitzung)
     print(list)
     for i in range(len(list)):
         list_element = list[i]
-        list_element = list_element.replace("\n", "")
-        list_element = list_element.replace("-", "")
+        #list_element = list_element.replace("\n", "")
+        #list_element = list_element.replace("-", "")
         indexierte_liste.append(list_element) # liste ohne -, \n
         #print("item at index", i, ":", list_element)       # alle Listenelemente
         analyse_content_element(list_element, i)
@@ -104,16 +111,25 @@ def analyse_content_element(list_element, i):
     :return: 
     '''
     temp_dict_empty_values = {'polName': '', 'partyName': ''}
-    matchers = [ 'Ich eröffne die Aussprache und erteile das Wort', 'Das Wort hat', 'das Wort.', 'erteile zu Beginn das Wort',
-                'Redner das Wort', 'Rednerin das Wort', 'übergebe das Wort',
-                'gebe das Wort''nächste Redner','nächster Redner','nächste Rednerin',
-                'spricht jetzt','Nächste Rednerin ist','Nächster Redner ist' ,'Letzter Redner',
-                'Letzte Rednerin', 'letzter Redner','letzte Rednerin', 'nächste Wortmeldung',
-                'Nächste', 'Nächster','spricht als Nächster', 'spricht als Nächste',
+    # -*- encoding: utf-8 -*-
+    matchers = ['erteile das Wort', 'Das Wort hat', 'das Wort.', 'erteile zu Beginn das Wort', 'hat nun das Wort',
+                'Redner das Wort', 'Rednerin das Wort', 'übergebe das Wort', 'Das Wort erhält ',
+                'hat jetzt das Wort für', 'Das Wort für die Bundesregierung hat',
+                'Nächste Rednerin:', 'Nächster Redner', 'Nächste Rednerin für', 'Nächster Redner für',
+                'Als Nächste hat das Wort', 'Als Nächster hat das Wort', 'Als Nächstes spricht', 'Als Nächste spricht',
+                'Wir befinden uns noch in der Debatte und werden', 'hat jetzt um das Wort für eine',
+                'Frau Kollegin Schwarzer, möchten Sie darauf antworten?', 'hat um das Wort',
+                'Herr Kollege Sensburg, möchten Sie darauf antworten?', 'Erster Redner ist',
+                'Ich möchte Ihnen kurz das von den Schriftführerinnen und Schriftführern ermittelte Ergebnis',
+                'Jetzt hat das Wort', 'gebe das Wort', 'nächste Redner', 'nächster Redner', 'nächste Rednerin',
+                'spricht jetzt', 'Nächste Rednerin ist','Nächster Redner ist', 'Nächster Redner in', 'Letzter Redner',
+                'Letzte Rednerin','letzte Rednerin', 'nächste Wortmeldung',
+                'spricht als Nächster', 'spricht als Nächste',
                 'zunächst das Wort', 'zu Beginn das Wort', 'Wort dem',
                 'Nächste Rednerin ist die Kollegin', 'Nächster Redner ist der Kollege', '(Heiterkeit)für die SPD',
                 'Die erste Fragestellerin', 'Der erste Fragesteller', 'Die nächste Fragestellerin',
                 'Der nächste Fragensteller', 'die nächste Fragestellerin', 'der nächste Fragensteller']
+    #[x.encode('utf-8') for x in matchers]
     if any(m in list_element for m in matchers):
         print("\nWechsel Redner", i, ":", list_element)    # Listenelemente, die matchers enthalten
         start_Element_Rede = i + 1
@@ -440,6 +456,6 @@ liste_alle_reden = get_all_speeches(start_end_nummern_liste)
 
 print(start_end_nummern_liste)
 redeliste = clean_speeches(liste_alle_reden)
-print(redeliste)
+#print(redeliste)
 create_protocol_workbook(redeliste)
 
