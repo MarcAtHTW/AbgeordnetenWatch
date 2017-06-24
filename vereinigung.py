@@ -36,7 +36,7 @@ def get_content():
     :return: page_content
     '''
     #pdf_file = open('Plenarprotokoll_18_232.pdf', 'rb')
-    pdf_file = open('Plenarprotokoll_18_229.pdf', 'rb')
+    pdf_file = open('Plenarprotokoll_18_240.pdf', 'rb')
 
     read_pdf = PyPDF2.PdfFileReader(pdf_file)
     page_content = ''
@@ -92,9 +92,22 @@ def analyse_content_element(list_element, i):
     :return:
     '''
     temp_dict_empty_values = {'polName': '', 'partyName': ''}
-    matchers = [' erteile zu Beginn das Wort','Das Wort hat ', ' das Wort.', ' Redner das Wort', ' Rednerin das Wort', ' übergebe das Wort', ' nächste Redner', 'nächster Redner', 'nächste Rednerin', 'spricht jetzt',
-                'Nächste Rednerin', 'Nächste Rednerin ist', 'Nächster Redner', 'Letzter Redner', 'Letzte Rednerin',  'letzter Redner', 'letzte Rednerin','nächste Wortmeldung', 'Nächste', 'Nächster',
-                'spricht als Nächster', 'spricht als Nächste', '(Heiterkeit)für die SPD', 'Wort dem']
+    #matchers229 = [' erteile zu Beginn das Wort', 'Das Wort hat ', ' das Wort.', ' Redner das Wort', ' Rednerin das Wort',
+    #            ' übergebe das Wort', ' nächste Redner', 'nächster Redner', 'nächste Rednerin', 'spricht jetzt',
+    #            'Nächste Rednerin', 'Nächste Rednerin ist', 'Nächster Redner', 'Letzter Redner', 'Letzte Rednerin',
+    #            'letzter Redner', 'letzte Rednerin', 'nächste Wortmeldung', 'Nächste', 'Nächster',
+    #            'spricht als Nächster', 'spricht als Nächste', '(Heiterkeit)für die SPD', 'Wort dem']
+
+    matchers = ['Sie haben das Wort', 'Das Wort hat', 'das Wort.', 'erteile zu Beginn das Wort',
+                'Redner das Wort', 'Rednerin das Wort', 'übergebe das Wort',
+                'gebe das Wort''nächste Redner', 'nächster Redner', 'nächste Rednerin',
+                'spricht jetzt', 'Nächste Rednerin ist', 'Nächster Redner ist', 'Letzter Redner',
+                'Letzte Rednerin', 'letzter Redner', 'letzte Rednerin', 'nächste Wortmeldung',
+                'Nächste', 'Nächster', 'spricht als Nächster', 'spricht als Nächste',
+                'zunächst das Wort', 'zu Beginn das Wort', 'Wort dem',
+                'Nächste Rednerin ist die Kollegin', 'Nächster Redner ist der Kollege', '(Heiterkeit)für die SPD',
+                'Die erste Fragestellerin', 'Der erste Fragesteller', 'Die nächste Fragestellerin',
+                'Der nächste Fragensteller', 'die nächste Fragestellerin', 'der nächste Fragensteller']
 
     if any(m in list_element for m in matchers):
         print("\nWechsel Redner", i, ":", list_element)  # Listenelemente, die matchers enthalten
@@ -634,6 +647,12 @@ def get_alle_sitzungen_mit_start_und_ende_der_topic(alle_tops_list, alle_sitzung
     return alle_sitzungen
 
 def sort_dict_topics_via_topic_id(dict_topics):
+    '''
+    Erhält ein Dictionary und sortiert es anhand der Topic-ID in eine Liste.
+
+    :param dict_topics:
+    :return:
+    '''
     if len(dict_topics) >1:
         dict_temp = {}
         list_sorted_topics = []
@@ -678,6 +697,8 @@ def sort_topics_to_sitzung(alle_sitzungen):
         topic_id = 0
         topic_number_key_cache = ''
         for i in range(len(tops)):
+            if topic_id == 5:
+                pass
             topic = tops[i]
             topic = topic.strip()
 
@@ -724,22 +745,46 @@ def delete_first_and_last_speecher_from_list(dict_sitzungen):
 
     return dict_sitzungen
 
-def sort_reden_eines_tops_in_tagesordnungspunkt(reden_eines_tops, top_counter, cleaned_sortierte_sitzungen):
+def sort_reden_eines_tops_in_tagesordnungspunkt(reden_eines_tops, top_counter, cleaned_sortierte_sitzungen, aktuelle_sitzungsbezeichnung):
     i = 0
     list_sorted_redner_temp =[]
-    for redner in cleaned_sortierte_sitzungen['TOPs'][top_counter]['Redner']:
+    for redner in cleaned_sortierte_sitzungen[aktuelle_sitzungsbezeichnung]['TOPs'][top_counter]['Redner']:
         dict_temp_redner = {str(redner): reden_eines_tops[i]}
         list_sorted_redner_temp.append(dict_temp_redner)
         i += 1
-    cleaned_sortierte_sitzungen['TOPs'][top_counter]['Redner'] = list_sorted_redner_temp
+    cleaned_sortierte_sitzungen[aktuelle_sitzungsbezeichnung]['TOPs'][top_counter]['Redner'] = list_sorted_redner_temp
     return cleaned_sortierte_sitzungen
 
 def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung):
+
+    aktuelle_sitzungsbezeichnung = 'Sitzung 240'
+    aktuelle_sitzung = cleaned_sortierte_sitzungen['Sitzung 240']
+    '''
+    
+    for sitzung in sorted(cleaned_sortierte_sitzungen):
+        aktuelle_sitzungsbezeichnung = sitzung
+        while aktuelle_sitzungsbezeichnung == 'Sitzung 229':
+            aktuelle_sitzung = cleaned_sortierte_sitzungen[sitzung]
+
+            i = 0
+            for rede in redeliste:
+
+                rede_id = rede['rede_id']
+
+                if rede_id == aktuelle_sitzung['TOPs'][i]['TOP_ID']:
+                    rede['wahlperiode'] = aktuelle_sitzung['Wahlperiode']
+                    rede['sitzungsdatum'] = aktuelle_sitzung['Sitzungsdatum']
+                    rede['tagesordnungspunktbezeichnung'] = aktuelle_sitzung['TOPs'][i]['Tagesordnungspunkt']
+                    rede['tagesordnungspunkt'] = aktuelle_sitzung['TOPs'][i]['Top_Key']
+                else:
+                    print('###### Rede_ID passt nicht zur TOP_ID in merge_sitzungsstruktur_mit_reden()')
+                redeliste[i] = rede
+                i += 1
+    '''
+
     laenge_der_redeliste = len(redeliste)
-    tops = cleaned_sortierte_sitzung['TOPs']
+    tops = aktuelle_sitzung['TOPs']
     reden = redeliste
-
-
     j = 0
     top_counter = 0
     for top in tops:
@@ -753,11 +798,25 @@ def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung):
             reden_eines_tagesordnungspunkts.append(reden.pop(0))
             i += 1
 
-        final_cleaned_sortierte_sitzung = sort_reden_eines_tops_in_tagesordnungspunkt(reden_eines_tagesordnungspunkts, j, cleaned_sortierte_sitzung)
+        final_cleaned_sortierte_sitzung = sort_reden_eines_tops_in_tagesordnungspunkt(reden_eines_tagesordnungspunkts, j, cleaned_sortierte_sitzung, aktuelle_sitzungsbezeichnung)
         j += 1
         top_counter += 1
     return final_cleaned_sortierte_sitzung
 
+def count_speecher():
+    anz_redner = 0
+    i = 0
+    for top in temp_speecher_list:
+        temp_top_liste.append(temp_speecher_list[i]['Redner'])
+        anz_redner += len(temp_speecher_list[i]['Redner'])
+        i +=1
+    return str(anz_redner)
+
+def count_speecher_from_cleaned_sortierte_sitzung(sitzung):
+    result = 0
+    for anz_redner_je_topic in sitzung['TOPs']:
+        result += len(anz_redner_je_topic['Redner'])
+    return result
 #    for rede in reden_eines_tagesordnungspunkts:
 #        for list_eintrag_redner in tops[top]['Redner']:
 #            redner = {list_eintrag_redner:rede}
@@ -786,35 +845,27 @@ alle_sitzungen_mit_start_und_ende_der_topic = get_alle_sitzungen_mit_start_und_e
 sortierte_sitzungen = sort_topics_to_sitzung(alle_sitzungen_mit_start_und_ende_der_topic)
 cleaned_sortierte_sitzungen = delete_first_and_last_speecher_from_list(sortierte_sitzungen)
 print('Scraping beendet')
+sitzung_240 = cleaned_sortierte_sitzungen['Sitzung 240']
+anzahl_redner = count_speecher_from_cleaned_sortierte_sitzung(sitzung_240)
+print('Anzahl Redner: ' + str(anzahl_redner))
 ### ENDE Using Functions Marc
 
 ### START spaßige teil###
 '''
-START Test mit nur einer Sitzung
+START Test 
 '''
-sitzung_229 = cleaned_sortierte_sitzungen['Sitzung 229']
-
-temp_speecher_list = sitzung_229['TOPs']
+#sitzung_229 = cleaned_sortierte_sitzungen['Sitzung 229']
+#temp_speecher_list = sitzung_229['TOPs']
 temp_top_liste = []
 
-i=0
-j = 0
-for top in temp_speecher_list:
-    temp_top_liste.append(temp_speecher_list[j]['Redner'])
-    i = i + len(temp_speecher_list[j]['Redner'])
-    j +=1
 
-print("Anzahl einsortierte Redner: " + str(i))
+
+#print("Anzahl einsortierte Redner: " + count_speecher())
 print("Anzahl vorhandene Reden in Redeliste: " + str(len(redeliste)))
 #print(len(temp_top_liste))
 #print(temp_top_liste)
 
-merged_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, sitzung_229)
+#merged_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, sitzung_229)
+mergeed_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzungen)
 create_protocol_workbook(redeliste)
 print('Skript "Vereinigung" beendet')
-'''
-
-ENDE Test mit nur einer Sitzung (229)
-'''
-
-### ENDE spaßige teil###
