@@ -879,11 +879,11 @@ def set_metadaten(sitzung):
         for redner in tagesordnungspunkt['Redner']:
             for redner_name_temp in redner:
                 redner_name = redner_name_temp
-                tagesordnungspunkt[redner_name]['sitzungsdatum']                    = sitzungsdatum
-                tagesordnungspunkt[redner_name]['tagesordnungspunktbezeichnung']    = tagesordnungspunkt_bezeichnung
-                tagesordnungspunkt[redner_name]['tagesordnungspunkt']               = top_key
-                tagesordnungspunkt[redner_name]['wahlperiode']                      = wahlperiode
-            pass
+                redner[redner_name]['sitzungsdatum']                    = sitzungsdatum
+                redner[redner_name]['tagesordnungspunktbezeichnung']    = tagesordnungspunkt_bezeichnung
+                redner[redner_name]['tagesordnungspunkt']               = top_key
+                redner[redner_name]['wahlperiode']                      = wahlperiode
+
 
 ### ENDE Testing_Marc ###
 
@@ -932,7 +932,7 @@ print("Anzahl vorhandene Reden in Redeliste: " + str(len(redeliste)))
 
 #merged_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, sitzung_229)
 merged_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzungen)
-#set_metadaten(merged_sitzung['Sitzung 240'])
+set_metadaten(merged_sitzung['Sitzung 240'])
 
 create_protocol_workbook(redeliste)
 print('Skript "Vereinigung" beendet')
