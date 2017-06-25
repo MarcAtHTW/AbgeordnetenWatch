@@ -131,38 +131,41 @@ def analyse_content_element(list_element, i):
     #[x.encode('utf-8') for x in matchers]
     if any(m in list_element for m in matchers):
         print("\nWechsel Redner", i, ":", list_element)    # Listenelemente, die matchers enthalten
-        start_Element_Rede = i + 1
-        list_with_startelement_numbers.append(start_Element_Rede)
-        print("Start_Index_Redetext: ", start_Element_Rede)
-        # ''' - POS -> PartOfSpeech Verben, Nomen, ... in Listenelement mit matchers'''
-        # words = word_tokenize(list_element)
-        # '''extracting Named Entities - Person, Organization,...'''
-        # jar = 'jars\stanford-postagger.jar'
-        # model = 'jars\german-hgc.tagger'
-        # pos_tagger = StanfordPOSTagger(model, jar, encoding='utf8')
-        # tagged = pos_tagger.tag(words)
-        # print(tagged)
-        # chunkGram = r"""Eigenname: {<NE>?}"""
-        # chunkParser = nltk.RegexpParser(chunkGram)
-        # namedEnt = chunkParser.parse(tagged)
-        # print("chunkParser: ",namedEnt)
-        # #namedEnt.draw()
-        # ''' extract entity names - anhand von label - NE => Eigenname'''
-        # entityPers_names_subtree = []
-        # for subtree in namedEnt.subtrees(filter=lambda t: t.label() == 'Eigenname'):
-        #     print(subtree)
-        #     entityPers_names_subtree.append(subtree[0])
-        # print('entityPers_names_subtree: ',entityPers_names_subtree)
-        # entityPers_names \
-        #     = []
-        # name = ''
-        # for ne in entityPers_names_subtree:
-        #     name += ' ' + ne[0]
-        # entityPers_names.append(name)
-        # print("Person: ",entityPers_names)
-        # print("Person:",str(name))
+        if list_element.__contains__('Außerdem haben Sie nachher das Wort.') or list_element.__contains__('Jetzt hat der Kollege Herzog das Wort.'):
+            pass
+        else:
+            start_Element_Rede = i + 1
+            list_with_startelement_numbers.append(start_Element_Rede)
+            print("Start_Index_Redetext: ", start_Element_Rede)
+            # ''' - POS -> PartOfSpeech Verben, Nomen, ... in Listenelement mit matchers'''
+            # words = word_tokenize(list_element)
+            # '''extracting Named Entities - Person, Organization,...'''
+            # jar = 'jars\stanford-postagger.jar'
+            # model = 'jars\german-hgc.tagger'
+            # pos_tagger = StanfordPOSTagger(model, jar, encoding='utf8')
+            # tagged = pos_tagger.tag(words)
+            # print(tagged)
+            # chunkGram = r"""Eigenname: {<NE>?}"""
+            # chunkParser = nltk.RegexpParser(chunkGram)
+            # namedEnt = chunkParser.parse(tagged)
+            # print("chunkParser: ",namedEnt)
+            # #namedEnt.draw()
+            # ''' extract entity names - anhand von label - NE => Eigenname'''
+            # entityPers_names_subtree = []
+            # for subtree in namedEnt.subtrees(filter=lambda t: t.label() == 'Eigenname'):
+            #     print(subtree)
+            #     entityPers_names_subtree.append(subtree[0])
+            # print('entityPers_names_subtree: ',entityPers_names_subtree)
+            # entityPers_names \
+            #     = []
+            # name = ''
+            # for ne in entityPers_names_subtree:
+            #     name += ' ' + ne[0]
+            # entityPers_names.append(name)
+            # print("Person: ",entityPers_names)
+            # print("Person:",str(name))
 
-    # Listenelement ist entweder 'Anfang bis zur ersten Rede' oder 'Redeteil'
+        # Listenelement ist entweder 'Anfang bis zur ersten Rede' oder 'Redeteil'
     else:
         Rede = []
         if len(list_with_startelement_numbers) != 0:        # wenn bereits eine Startnummer (erste Rede) vorhanden
