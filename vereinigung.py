@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 from operator import itemgetter
 import xlsxwriter
 import re
+import codecs
 
 ### Start Testing_Steve ###
 os.environ['JAVAHOME'] = "C:/Program Files/Java/jdk1.8.0_20/bin/java.exe"
@@ -35,18 +36,28 @@ def get_content():
 
     :return: page_content
     '''
-    #pdf_file = open('Plenarprotokoll_18_232.pdf', 'rb')
-    pdf_file = open('Plenarprotokoll_18_240.pdf', 'rb')
+    # pdf_file = open('Plenarprotokoll_18_239.pdf', 'rb')
+    # read_pdf = PyPDF2.PdfFileReader(pdf_file)
+    # page_content = ''
+    # for i in range(read_pdf.getNumPages()):
+    #     print(i)
+    #     pages = read_pdf.getPage(i)
+    #     page_content += pages.extractText()
+    #     #str(page_content.encode('UTF-8'))
+    f = codecs.open("18240-data.txt", "r", "utf-8")
+    lines = f.readlines()
+    f.close()
+    liste_sitzungsinhalt = []
+    string_sitzung = ''
+    for line in lines:
+        line = line.strip()
+        liste_sitzungsinhalt.append(line)
+        print(line)
+        string_sitzung = ' '.join(liste_sitzungsinhalt)
+    return string_sitzung
 
-    read_pdf = PyPDF2.PdfFileReader(pdf_file)
-    page_content = ''
-    for i in range(read_pdf.getNumPages()):
-        print(i)
-        pages = read_pdf.getPage(i)
-        page_content += pages.extractText()
-    return page_content
 
-def split_and_analyse_content(page_content):
+def split_and_analyse_content(string_sitzung):
     '''
     Seiteninhalte des Protokolls werden zu Sätze, die wiederum zu Listenelemente werden
     entfernen von "\n" und "-" aus Listenelemente
@@ -54,16 +65,23 @@ def split_and_analyse_content(page_content):
     :param page_content:
     :return:
     '''
-    list = sent_tokenize(page_content)
+    list = sent_tokenize(string_sitzung)
     print(list)
     for i in range(len(list)):
         list_element = list[i]
-        list_element = list_element.replace("\n", "")
-        list_element = list_element.replace("-", "")
+        # list_element = list_element.replace("\n", "")
+        # list_element = list_element.replace("-", "")
         indexierte_liste.append(list_element)  # liste ohne -, \n
         # print("item at index", i, ":", list_element)       # alle Listenelemente
         analyse_content_element(list_element, i)
+
         set_number(i)
+        if list_element.__contains__('(Schluss:'):
+            global ende_der_letzten_rede
+            ende_der_letzten_rede = i
+            # elif list_element.__contains__('Beginn:'):
+            #     global start_der_ersten_rede
+            #     start_der_ersten_rede = i
 
 def set_number(i):
     '''
@@ -92,25 +110,27 @@ def analyse_content_element(list_element, i):
     :return:
     '''
     temp_dict_empty_values = {'polName': '', 'partyName': ''}
-    #matchers229 = [' erteile zu Beginn das Wort', 'Das Wort hat ', ' das Wort.', ' Redner das Wort', ' Rednerin das Wort',
-    #            ' übergebe das Wort', ' nächste Redner', 'nächster Redner', 'nächste Rednerin', 'spricht jetzt',
-    #            'Nächste Rednerin', 'Nächste Rednerin ist', 'Nächster Redner', 'Letzter Redner', 'Letzte Rednerin',
-    #            'letzter Redner', 'letzte Rednerin', 'nächste Wortmeldung', 'Nächste', 'Nächster',
-    #            'spricht als Nächster', 'spricht als Nächste', '(Heiterkeit)für die SPD', 'Wort dem']
-
-    matchers = ['Sie haben das Wort', 'Das Wort hat', 'das Wort.', 'erteile zu Beginn das Wort',
-                'Redner das Wort', 'Rednerin das Wort', 'übergebe das Wort',
-                'gebe das Wort''nächste Redner', 'nächster Redner', 'nächste Rednerin',
-                'spricht jetzt', 'Nächste Rednerin ist', 'Nächster Redner ist', 'Letzter Redner',
-                'Letzte Rednerin', 'letzter Redner', 'letzte Rednerin', 'nächste Wortmeldung',
-                'Nächste', 'Nächster', 'spricht als Nächster', 'spricht als Nächste',
+    # -*- encoding: utf-8 -*-
+    matchers = ['erteile das Wort', 'Das Wort hat', 'das Wort.', 'erteile zu Beginn das Wort', 'hat nun das Wort',
+                'Redner das Wort', 'Rednerin das Wort', 'übergebe das Wort', 'Das Wort erhält ',
+                'hat jetzt das Wort für', 'Das Wort für die Bundesregierung hat',
+                'Nächste Rednerin:', 'Nächster Redner', 'Nächste Rednerin für', 'Nächster Redner für',
+                'Als Nächste hat das Wort', 'Als Nächster hat das Wort', 'Als Nächstes spricht', 'Als Nächste spricht',
+                'Wir befinden uns noch in der Debatte und werden', 'hat jetzt um das Wort für eine',
+                'Frau Kollegin Schwarzer, möchten Sie darauf antworten?', 'hat um das Wort',
+                'Herr Kollege Sensburg, möchten Sie darauf antworten?', 'Erster Redner ist',
+                'Ich möchte Ihnen kurz das von den Schriftführerinnen und Schriftführern ermittelte Ergebnis',
+                'Jetzt hat das Wort', 'gebe das Wort', 'nächste Redner', 'nächster Redner', 'nächste Rednerin',
+                'spricht jetzt', 'Nächste Rednerin ist','Nächster Redner ist', 'Nächster Redner in', 'Letzter Redner',
+                'Letzte Rednerin','letzte Rednerin', 'nächste Wortmeldung',
+                'spricht als Nächster', 'spricht als Nächste',
                 'zunächst das Wort', 'zu Beginn das Wort', 'Wort dem',
                 'Nächste Rednerin ist die Kollegin', 'Nächster Redner ist der Kollege', '(Heiterkeit)für die SPD',
                 'Die erste Fragestellerin', 'Der erste Fragesteller', 'Die nächste Fragestellerin',
                 'Der nächste Fragensteller', 'die nächste Fragestellerin', 'der nächste Fragensteller']
-
+    #[x.encode('utf-8') for x in matchers]
     if any(m in list_element for m in matchers):
-        print("\nWechsel Redner", i, ":", list_element)  # Listenelemente, die matchers enthalten
+        print("\nWechsel Redner", i, ":", list_element)    # Listenelemente, die matchers enthalten
         start_Element_Rede = i + 1
         list_with_startelement_numbers.append(start_Element_Rede)
         print("Start_Index_Redetext: ", start_Element_Rede)
@@ -145,7 +165,7 @@ def analyse_content_element(list_element, i):
     # Listenelement ist entweder 'Anfang bis zur ersten Rede' oder 'Redeteil'
     else:
         Rede = []
-        if len(list_with_startelement_numbers) != 0:  # wenn bereits eine Startnummer (erste Rede) vorhanden
+        if len(list_with_startelement_numbers) != 0:        # wenn bereits eine Startnummer (erste Rede) vorhanden
             print("Redeteil:", i, list_element)
         else:
             global list_elements_till_first_speech
@@ -697,8 +717,6 @@ def sort_topics_to_sitzung(alle_sitzungen):
         topic_id = 0
         topic_number_key_cache = ''
         for i in range(len(tops)):
-            if topic_id == 5:
-                pass
             topic = tops[i]
             topic = topic.strip()
 
@@ -712,6 +730,9 @@ def sort_topics_to_sitzung(alle_sitzungen):
                     topic_id += 1
                     topic_number_key_cache = topic
                     top_name = get_topic_name_from_topic_number(top_number_key, topic)
+                    if top_number_key == 'TOP ZP':
+                        top_number_key += ' Topic_ID: ' + str(topic_id)
+                        top_name = top_number_key
                     dict_topics[top_number_key] = {'Tagesordnungspunkt': top_name, 'TOP_ID':topic_id}
 
             else:
@@ -733,15 +754,26 @@ def sort_topics_to_sitzung(alle_sitzungen):
     return dict_sitzungen
 
 def delete_first_and_last_speecher_from_list(dict_sitzungen):
-    for sitzung in sorted(dict_sitzungen):
-        temp_speecher_list = dict_sitzungen[sitzung]['TOPs']
-        top_counter = 0
-        for top in temp_speecher_list:
-            if len(temp_speecher_list[top_counter]['Redner']) >1:
-                temp_top_liste = temp_speecher_list[top_counter]['Redner']
-                temp_top_liste.remove(temp_top_liste[0])
-                temp_top_liste.remove(temp_top_liste[len(temp_top_liste) - 1])
-                top_counter += 1
+
+    #for sitzung in sorted(dict_sitzungen):
+
+    #temporär nur für eine Sitzung 240
+    sitzung = 'Sitzung 240'
+    temp_speecher_list = dict_sitzungen[sitzung]['TOPs']
+    top_counter = 0
+    while top_counter < len(temp_speecher_list):
+
+        if len(temp_speecher_list[top_counter]['Redner']) >=3:
+            temp_top_liste = temp_speecher_list[top_counter]['Redner']
+            temp_top_liste.remove(temp_top_liste[0])
+            temp_top_liste.remove(temp_top_liste[len(temp_top_liste) - 1])
+            top_counter += 1
+
+        elif len(temp_speecher_list[top_counter]['Redner']) < 3:
+            del temp_speecher_list[top_counter]
+
+
+
 
     return dict_sitzungen
 
@@ -797,10 +829,16 @@ def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung):
         while i < anzahl_redner_in_topic:
             reden_eines_tagesordnungspunkts.append(reden.pop(0))
             i += 1
+        if len(reden_eines_tagesordnungspunkts) > 1:
+            final_cleaned_sortierte_sitzung = sort_reden_eines_tops_in_tagesordnungspunkt(reden_eines_tagesordnungspunkts, j, cleaned_sortierte_sitzung, aktuelle_sitzungsbezeichnung)
+            j += 1
+            top_counter += 1
+        else:
+            aktueller_tagesordnungspunkt = cleaned_sortierte_sitzungen[aktuelle_sitzungsbezeichnung]['TOPs'][top_counter]['Tagesordnungspunkt']
+            print('Weniger als zwei Redner in Rednerliste des Tagesordnungspunktes "' + aktueller_tagesordnungspunkt + '". Tagesordnungspunkt wird gelöscht.')
+            j += 1
+            top_counter += 1
 
-        final_cleaned_sortierte_sitzung = sort_reden_eines_tops_in_tagesordnungspunkt(reden_eines_tagesordnungspunkts, j, cleaned_sortierte_sitzung, aktuelle_sitzungsbezeichnung)
-        j += 1
-        top_counter += 1
     return final_cleaned_sortierte_sitzung
 
 def count_speecher():
@@ -844,6 +882,7 @@ alle_sitzungen = alle_tops_und_alle_sitzungen['Alle_Sitzungen']
 alle_sitzungen_mit_start_und_ende_der_topic = get_alle_sitzungen_mit_start_und_ende_der_topic(alle_tops_list, alle_sitzungen)
 sortierte_sitzungen = sort_topics_to_sitzung(alle_sitzungen_mit_start_und_ende_der_topic)
 cleaned_sortierte_sitzungen = delete_first_and_last_speecher_from_list(sortierte_sitzungen)
+
 print('Scraping beendet')
 sitzung_240 = cleaned_sortierte_sitzungen['Sitzung 240']
 anzahl_redner = count_speecher_from_cleaned_sortierte_sitzung(sitzung_240)
