@@ -523,7 +523,7 @@ def clean_speeches(alle_Reden_einer_Sitzung):
                                 'wahlperiode'           : 'fff',
                                 'tagesordnungspunkt'    : 'zzz',
                                 'tagesordnungspunktbezeichnung': 'dfdedf',
-                                'redner'                : '234567',
+                                #'redner'                : '234567',
                                 'rede_id_sitzungen'     :   rede_id,
                                 'rede_id'               :   rede_id,
                                 'clean_rede'            :   string_rede,
@@ -862,6 +862,29 @@ def count_speecher_from_cleaned_sortierte_sitzung(sitzung):
 #        for list_eintrag_redner in tops[top]['Redner']:
 #            redner = {list_eintrag_redner:rede}
 
+
+def set_metadaten(sitzung):
+    sitzungsdatum   = sitzung['Sitzungsdatum']
+    wahlperiode     = sitzung['Wahlperiode']
+
+    tagesordnungspunkt_bezeichnung  = ''
+    top_key                         = ''
+
+    for tagesordnungspunkt in sitzung['TOPs']:
+
+        tagesordnungspunkt_bezeichnung  = tagesordnungspunkt['Tagesordnungspunkt']
+        top_key                         = tagesordnungspunkt['Top_Key']
+
+
+        for redner in tagesordnungspunkt['Redner']:
+            for redner_name_temp in redner:
+                redner_name = redner_name_temp
+                tagesordnungspunkt[redner_name]['sitzungsdatum']                    = sitzungsdatum
+                tagesordnungspunkt[redner_name]['tagesordnungspunktbezeichnung']    = tagesordnungspunkt_bezeichnung
+                tagesordnungspunkt[redner_name]['tagesordnungspunkt']               = top_key
+                tagesordnungspunkt[redner_name]['wahlperiode']                      = wahlperiode
+            pass
+
 ### ENDE Testing_Marc ###
 
 ### Start Using Functions Steve
@@ -908,6 +931,8 @@ print("Anzahl vorhandene Reden in Redeliste: " + str(len(redeliste)))
 #print(temp_top_liste)
 
 #merged_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, sitzung_229)
-mergeed_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzungen)
+merged_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzungen)
+#set_metadaten(merged_sitzung['Sitzung 240'])
+
 create_protocol_workbook(redeliste)
 print('Skript "Vereinigung" beendet')
