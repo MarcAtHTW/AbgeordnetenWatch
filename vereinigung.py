@@ -552,7 +552,7 @@ def start_scraping_with_chrome(url):
     '''
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument('--no-sandbox')
-    chrome = webdriver.Chrome('/usr/bin/chromedriver', chrome_options=chrome_options)
+    chrome = webdriver.Chrome('C:/Python36-32/BrowserDriver/chromedriver.exe', chrome_options=chrome_options)
     chrome.get(url)
     return chrome
 
