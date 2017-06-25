@@ -524,3 +524,4 @@ redeliste = clean_speeches(liste_alle_reden)
 #print(redeliste)
 create_protocol_workbook(redeliste)
 
+
