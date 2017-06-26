@@ -383,39 +383,56 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     # Create a workbook and add a worksheet.
     workbook = xlsxwriter.Workbook('bundestag_protokolle.xlsx')
     sitzungsdaten = workbook.add_worksheet('Sitzungsdaten')
-    rededaten = workbook.add_worksheet('Rededaten')
+    topdaten = workbook.add_worksheet('Topdaten')
+    redner_rede_daten = workbook.add_worksheet('Redner_Rede')
+    beifalldaten = workbook.add_worksheet('Beifalldaten')
+    wortmeldedaten = workbook.add_worksheet('Wortmeldedaten')
+    seldom_words_daten = workbook.add_worksheet('seldom_words')
+    freq_words_daten = workbook.add_worksheet('freq_words')
 
     # Add a bold format to use to highlight cells.
     bold = workbook.add_format({'bold': 1})
 
     # Adjust the column width.
     sitzungsdaten.set_column(1, 1, 15)
-    rededaten.set_column(1, 1, 15)
+    topdaten.set_column(1, 1, 15)
+    redner_rede_daten.set_column(1, 1, 15)
+    beifalldaten.set_column(1, 1, 15)
+    wortmeldedaten.set_column(1, 1, 15)
+    seldom_words_daten.set_column(1, 1, 15)
+    freq_words_daten.set_column(1, 1, 15)
 
     # Write data headers.
     sitzungsdaten.write('A1', 'Sitzungsnummer', bold)
     sitzungsdaten.write('B1', 'Sitzungsdatum', bold)
     sitzungsdaten.write('C1', 'Wahlperiode', bold)
-    sitzungsdaten.write('D1', 'Tagesordnungspunkt', bold)
-    sitzungsdaten.write('E1', 'Tagesordnungspunktbezeichnung', bold)
-    sitzungsdaten.write('F1', 'Redner', bold)
-    sitzungsdaten.write('G1', 'rede_id_sitzungen', bold)
 
-    rededaten.write('A1', 'rede_id', bold)
-    rededaten.write('B1', 'clean_rede', bold)
-    rededaten.write('C1', 'beifaelle', bold)
-    rededaten.write('D1', 'anzahl_beifaelle', bold)
-    rededaten.write('E1', 'wortmeldungen', bold)
-    rededaten.write('F1', 'anzahl_wortmeldungen', bold)
-    rededaten.write('G1', '10_seldom_words', bold)
-    rededaten.write('H1', '10_frequently_words', bold)
+    topdaten.write('A1', 'Sitzungsnummer', bold)
+    topdaten.write('B1', 'Tagesordnungspunkt', bold)
+    topdaten.write('C1', 'Tagesordnungspunktbezeichnung', bold)
 
+    redner_rede_daten.write('A1', 'Tagesordnungspunktbezeichnung', bold)
+    redner_rede_daten.write('B1', 'Redner', bold)
+    redner_rede_daten.write('C1', 'clean_rede', bold)
+    redner_rede_daten.write('D1', 'rede_id', bold)
+
+    beifalldaten.write('A1', 'rede_id', bold)
+    beifalldaten.write('B1', 'Beifalltext', bold)
+
+    wortmeldedaten.write('A1', 'rede_id', bold)
+    wortmeldedaten.write('B1', 'Wortmeldungen', bold)
+
+    seldom_words_daten.write('A1', 'rede_id', bold)
+    seldom_words_daten.write('B1', 'Seldom_words', bold)
+
+    freq_words_daten.write('A1', 'rede_id', bold)
+    freq_words_daten.write('B1', 'freq_words', bold)
 
     # writing in worksheet 'Sitzungsdaten'
     row = 1
     col = 0
     for dict in liste_dictionary_reden_einer_sitzung:
-        for key in ['sitzungsnummer', 'sitzungsdatum', 'wahlperiode', 'tagesordnungspunkt', 'tagesordnungspunktbezeichnung', 'redner', 'rede_id_sitzungen']:
+        for key in ['sitzungsnummer', 'sitzungsdatum', 'wahlperiode']:
             if isinstance(dict[key], list):
                 for item in dict[key]:
                     sitzungsdaten.write(row, col, item)
@@ -427,88 +444,202 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
         row += 1
         col = 0
 
-    # writing in worksheet 'Rededaten'
+    # writing in worksheet 'Topdaten'
     row = 1
-    row_folge_dict = 1
-    liste_mit_hoechster_laenge = 0
+    col = 0
+    for dict in liste_dictionary_reden_einer_sitzung:
+        for key in ['sitzungsnummer', 'tagesordnungspunkt', 'tagesordnungspunktbezeichnung']:
+            if isinstance(dict[key], list):
+                for item in dict[key]:
+                    topdaten.write(row, col, item)
+                    row += 1
+                #col += 1
+            else:
+                topdaten.write(row, col, dict[key])
+            col += 1
+        row += 1
+        col = 0
+
+    # writing in worksheet 'Redner_Rede'
+    row = 1
     temp_row = 1
     col = 0
-    nr_dict = 0
     for dict in liste_dictionary_reden_einer_sitzung:
-
-        if dict == liste_dictionary_reden_einer_sitzung[0]:
-            print('true')
-            for key in ['rede_id', 'clean_rede', 'beifaelle', 'anzahl_beifaelle', 'wortmeldungen', 'anzahl_wortmeldungen', '10_seldom_words', '10_frequently_words']:
-                if key == 'beifaelle':
-                    row = 1
-                    for item in dict[key]:
-                        rededaten.write(row, col, item)
-                        row += 1
-                elif key == 'wortmeldungen':
-                    row = 1
-                    for item in dict[key]:
-                        rededaten.write(row, col, item)
-                        row += 1
-                elif key == '10_seldom_words':
-                    row = 1
-                    for item in dict[key]:
-                        rededaten.write(row, col, item)
-                        row += 1
-                elif key == '10_frequently_words':
-                    row = 1
-                    for item in dict[key]:
-                        rededaten.write(row, col, item)
-                        row += 1
-                else:
-                    rededaten.write(1, col, dict[key])
-                col += 1
-
-        if dict != liste_dictionary_reden_einer_sitzung[0]:
-
-            l_beifaelle = len(liste_dictionary_reden_einer_sitzung[nr_dict].get('beifaelle'))
-            print('Laenge beifaelle: ', l_beifaelle)
-            l_wortmeldungen = len(liste_dictionary_reden_einer_sitzung[nr_dict].get('wortmeldungen'))
-            print('Laenge wortmeldungen: ', l_wortmeldungen)
-            if l_beifaelle > l_wortmeldungen and l_beifaelle > 10:
-                row_folge_dict += l_beifaelle
-            elif l_wortmeldungen > l_beifaelle and l_wortmeldungen > 10:
-                row_folge_dict += l_wortmeldungen
-            elif l_beifaelle == l_wortmeldungen and l_beifaelle > 10:
-                row_folge_dict += l_beifaelle
-            elif l_beifaelle == l_wortmeldungen and l_beifaelle < 10:
-                row_folge_dict += 10
+        for key in ['tagesordnungspunktbezeichnung', 'redner', 'clean_rede', 'rede_id_sitzungen']:
+            if isinstance(dict[key], list):
+                for item in dict[key]:
+                    redner_rede_daten.write(row, col, item)
+                    row += 1
             else:
-                row_folge_dict += 10
-
-            print(row_folge_dict)
-            temp_row = row_folge_dict
-            row_beifaelle = row_folge_dict
-            row_meldungen = row_folge_dict
-            row_seldom = row_folge_dict
-            row_frequently = row_folge_dict
-            nr_dict += 1
-
-            for key in ['rede_id', 'clean_rede', 'beifaelle', 'anzahl_beifaelle', 'wortmeldungen', 'anzahl_wortmeldungen', '10_seldom_words', '10_frequently_words']:
-                if key == 'beifaelle':
-                    for item in dict[key]:
-                        rededaten.write(row_beifaelle, col, item)
-                        row_beifaelle += 1
-                elif key == 'wortmeldungen':
-                    for item in dict[key]:
-                        rededaten.write(row_meldungen, col, item)
-                        row_meldungen += 1
-                elif key == '10_seldom_words':
-                    for item in dict[key]:
-                        rededaten.write(row_seldom, col, item)
-                        row_seldom += 1
-                elif key == '10_frequently_words':
-                    for item in dict[key]:
-                        rededaten.write(row_frequently, col, item)
-                        row_frequently += 1
-                else:
-                    rededaten.write(temp_row, col, dict[key])
-                col += 1
+                k = 0
+                while k < len(dict['beifaelle']):
+                    redner_rede_daten.write(temp_row, col, dict[key])
+                    k += 1
+                    temp_row += 1
+            col += 1
         col = 0
+
+
+
+
+    # writing in worksheet 'Beifalldaten'
+    row = 1
+    temp_row = 1
+    col = 0
+    for dict in liste_dictionary_reden_einer_sitzung:
+        for key in ['rede_id_sitzungen', 'beifaelle']:
+            if isinstance(dict[key], list):
+                for item in dict[key]:
+                    beifalldaten.write(row, col, item)
+                    row += 1
+            else:
+                k = 0
+                while k < len(dict['beifaelle']):
+                    beifalldaten.write(temp_row, col, dict[key])
+                    k += 1
+                    temp_row += 1
+            col += 1
+        col = 0
+
+    # writing in worksheet 'Wortmeldedaten'
+    row = 1
+    temp_row = 1
+    col = 0
+    for dict in liste_dictionary_reden_einer_sitzung:
+        for key in ['rede_id_sitzungen', 'wortmeldungen']:
+            if isinstance(dict[key], list):
+                for item in dict[key]:
+                    wortmeldedaten.write(row, col, item)
+                    row += 1
+            else:
+                k = 0
+                while k < len(dict['wortmeldungen']):
+                    wortmeldedaten.write(temp_row, col, dict[key])
+                    k += 1
+                    temp_row += 1
+            col += 1
+        col = 0
+
+    # writing in worksheet 'seldom_words_daten'
+    row = 1
+    temp_row = 1
+    col = 0
+    for dict in liste_dictionary_reden_einer_sitzung:
+        for key in ['rede_id_sitzungen', '10_seldom_words']:
+            if isinstance(dict[key], list):
+                for item in dict[key]:
+                    seldom_words_daten.write(row, col, item)
+                    row += 1
+            else:
+                k = 0
+                while k < len(dict['10_seldom_words']):
+                    seldom_words_daten.write(temp_row, col, dict[key])
+                    k += 1
+                    temp_row += 1
+            col += 1
+        col = 0
+
+    # writing in worksheet 'freq_words_daten'
+    row = 1
+    temp_row = 1
+    col = 0
+
+    for dict in liste_dictionary_reden_einer_sitzung:
+        for key in ['rede_id_sitzungen', '10_frequently_words']:
+            if isinstance(dict[key], list):
+                for item in dict[key]:
+                    freq_words_daten.write(row, col, item)
+                    row += 1
+            else:
+                k = 0
+                while k < len(dict['10_frequently_words']):
+                    freq_words_daten.write(temp_row, col, dict[key])
+                    k += 1
+                    temp_row += 1
+            col += 1
+        col = 0
+
+    # row = 1
+    # row_folge_dict = 1
+    # liste_mit_hoechster_laenge = 0
+    # temp_row = 1
+    # col = 0
+    # nr_dict = 0
+    # for dict in liste_dictionary_reden_einer_sitzung:
+    #
+    #     if dict == liste_dictionary_reden_einer_sitzung[0]:
+    #         print('true')
+    #         for key in ['rede_id', 'clean_rede', 'beifaelle', 'anzahl_beifaelle', 'wortmeldungen', 'anzahl_wortmeldungen', '10_seldom_words', '10_frequently_words']:
+    #             if key == 'beifaelle':
+    #                 row = 1
+    #                 for item in dict[key]:
+    #                     rededaten.write(row, col, item)
+    #                     row += 1
+    #             elif key == 'wortmeldungen':
+    #                 row = 1
+    #                 for item in dict[key]:
+    #                     rededaten.write(row, col, item)
+    #                     row += 1
+    #             elif key == '10_seldom_words':
+    #                 row = 1
+    #                 for item in dict[key]:
+    #                     rededaten.write(row, col, item)
+    #                     row += 1
+    #             elif key == '10_frequently_words':
+    #                 row = 1
+    #                 for item in dict[key]:
+    #                     rededaten.write(row, col, item)
+    #                     row += 1
+    #             else:
+    #                 rededaten.write(1, col, dict[key])
+    #             col += 1
+    #
+    #     if dict != liste_dictionary_reden_einer_sitzung[0]:
+    #
+    #         l_beifaelle = len(liste_dictionary_reden_einer_sitzung[nr_dict].get('beifaelle'))
+    #         print('Laenge beifaelle: ', l_beifaelle)
+    #         l_wortmeldungen = len(liste_dictionary_reden_einer_sitzung[nr_dict].get('wortmeldungen'))
+    #         print('Laenge wortmeldungen: ', l_wortmeldungen)
+    #         if l_beifaelle > l_wortmeldungen and l_beifaelle > 10:
+    #             row_folge_dict += l_beifaelle
+    #         elif l_wortmeldungen > l_beifaelle and l_wortmeldungen > 10:
+    #             row_folge_dict += l_wortmeldungen
+    #         elif l_beifaelle == l_wortmeldungen and l_beifaelle > 10:
+    #             row_folge_dict += l_beifaelle
+    #         elif l_beifaelle == l_wortmeldungen and l_beifaelle < 10:
+    #             row_folge_dict += 10
+    #         else:
+    #             row_folge_dict += 10
+    #
+    #         print(row_folge_dict)
+    #         temp_row = row_folge_dict
+    #         row_beifaelle = row_folge_dict
+    #         row_meldungen = row_folge_dict
+    #         row_seldom = row_folge_dict
+    #         row_frequently = row_folge_dict
+    #         nr_dict += 1
+    #
+    #         for key in ['rede_id', 'clean_rede', 'beifaelle', 'anzahl_beifaelle', 'wortmeldungen', 'anzahl_wortmeldungen', '10_seldom_words', '10_frequently_words']:
+    #             if key == 'beifaelle':
+    #                 for item in dict[key]:
+    #                     rededaten.write(row_beifaelle, col, item)
+    #                     row_beifaelle += 1
+    #             elif key == 'wortmeldungen':
+    #                 for item in dict[key]:
+    #                     rededaten.write(row_meldungen, col, item)
+    #                     row_meldungen += 1
+    #             elif key == '10_seldom_words':
+    #                 for item in dict[key]:
+    #                     rededaten.write(row_seldom, col, item)
+    #                     row_seldom += 1
+    #             elif key == '10_frequently_words':
+    #                 for item in dict[key]:
+    #                     rededaten.write(row_frequently, col, item)
+    #                     row_frequently += 1
+    #             else:
+    #                 rededaten.write(temp_row, col, dict[key])
+    #             col += 1
+    #     col = 0
 
     workbook.close()
 
