@@ -449,25 +449,89 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
 
     # writing in worksheet 'Rededaten'
     row = 1
-    row_listeneintrag = 1
+    row_folge_dict = 1
+    liste_mit_hoechster_laenge = 0
     temp_row = 1
     col = 0
+    nr_dict = 0
     for dict in liste_dictionary_reden_einer_sitzung:
-        for key in ['rede_id', 'clean_rede', 'beifaelle', 'anzahl_beifaelle', 'wortmeldungen', 'anzahl_wortmeldungen', '10_seldom_words', '10_frequently_words']:
-            if isinstance(dict[key], list):
-                for item in dict[key]:
-                    rededaten.write(row, col, item)
-                    row += 1
 
+        if dict == liste_dictionary_reden_einer_sitzung[0]:
+            print('true')
+            for key in ['rede_id', 'clean_rede', 'beifaelle', 'anzahl_beifaelle', 'wortmeldungen', 'anzahl_wortmeldungen', '10_seldom_words', '10_frequently_words']:
+                if key == 'beifaelle':
+                    row = 1
+                    for item in dict[key]:
+                        rededaten.write(row, col, item)
+                        row += 1
+                elif key == 'wortmeldungen':
+                    row = 1
+                    for item in dict[key]:
+                        rededaten.write(row, col, item)
+                        row += 1
+                elif key == '10_seldom_words':
+                    row = 1
+                    for item in dict[key]:
+                        rededaten.write(row, col, item)
+                        row += 1
+                elif key == '10_frequently_words':
+                    row = 1
+                    for item in dict[key]:
+                        rededaten.write(row, col, item)
+                        row += 1
+                else:
+                    rededaten.write(1, col, dict[key])
+                col += 1
 
+        if dict != liste_dictionary_reden_einer_sitzung[0]:
+
+            l_beifaelle = len(liste_dictionary_reden_einer_sitzung[nr_dict].get('beifaelle'))
+            print('Laenge beifaelle: ', l_beifaelle)
+            l_wortmeldungen = len(liste_dictionary_reden_einer_sitzung[nr_dict].get('wortmeldungen'))
+            print('Laenge wortmeldungen: ', l_wortmeldungen)
+            if l_beifaelle > l_wortmeldungen and l_beifaelle > 10:
+                row_folge_dict += l_beifaelle
+            elif l_wortmeldungen > l_beifaelle and l_wortmeldungen > 10:
+                row_folge_dict += l_wortmeldungen
+            elif l_beifaelle == l_wortmeldungen and l_beifaelle > 10:
+                row_folge_dict += l_beifaelle
+            elif l_beifaelle == l_wortmeldungen and l_beifaelle < 10:
+                row_folge_dict += 10
             else:
-                rededaten.write(temp_row, col, dict[key])
-            col += 1
-        row += 1
-        temp_row += 1
+                row_folge_dict += 10
+
+            print(row_folge_dict)
+            temp_row = row_folge_dict
+            row_beifaelle = row_folge_dict
+            row_meldungen = row_folge_dict
+            row_seldom = row_folge_dict
+            row_frequently = row_folge_dict
+            nr_dict += 1
+
+            for key in ['rede_id', 'clean_rede', 'beifaelle', 'anzahl_beifaelle', 'wortmeldungen', 'anzahl_wortmeldungen', '10_seldom_words', '10_frequently_words']:
+                if key == 'beifaelle':
+                    for item in dict[key]:
+                        rededaten.write(row_beifaelle, col, item)
+                        row_beifaelle += 1
+                elif key == 'wortmeldungen':
+                    for item in dict[key]:
+                        rededaten.write(row_meldungen, col, item)
+                        row_meldungen += 1
+                elif key == '10_seldom_words':
+                    for item in dict[key]:
+                        rededaten.write(row_seldom, col, item)
+                        row_seldom += 1
+                elif key == '10_frequently_words':
+                    for item in dict[key]:
+                        rededaten.write(row_frequently, col, item)
+                        row_frequently += 1
+                else:
+                    rededaten.write(temp_row, col, dict[key])
+                col += 1
         col = 0
 
     workbook.close()
+
 
 def clean_speeches(alle_Reden_einer_Sitzung):
     '''
@@ -514,8 +578,6 @@ def clean_speeches(alle_Reden_einer_Sitzung):
         ### Analyse Redetext - Haufigkeit und lexikalische Diversitaet
         liste_speech_word_tokenized = speech_to_words_if_word_isalpha(string_rede)
         list_seldom_words_without_stopwords, list_frequently_words_without_stopwords = lex_div_without_stopwords(liste_speech_word_tokenized)
-        string_seldom_words = ' ; '.join(list_seldom_words_without_stopwords)
-        string_frequently_words = ' ; '.join(list_frequently_words_without_stopwords)
 
         result_dictionary_einer_rede = {
                                 'sitzungsnummer'        : 'sss',
@@ -523,7 +585,7 @@ def clean_speeches(alle_Reden_einer_Sitzung):
                                 'wahlperiode'           : 'fff',
                                 'tagesordnungspunkt'    : 'zzz',
                                 'tagesordnungspunktbezeichnung': 'dfdedf',
-                                #'redner'                : '234567',
+                                'redner'                : '234567',
                                 'rede_id_sitzungen'     :   rede_id,
                                 'rede_id'               :   rede_id,
                                 'clean_rede'            :   string_rede,
@@ -531,8 +593,8 @@ def clean_speeches(alle_Reden_einer_Sitzung):
                                 'anzahl_beifaelle'      :   counter_beifaelle,
                                 'wortmeldungen'         :   liste_wortmeldungen,
                                 'anzahl_wortmeldungen'  :   counter_wortmeldungen,
-                                '10_seldom_words'       :   string_seldom_words,
-                                '10_frequently_words'   :   string_frequently_words
+                                '10_seldom_words'       :   list_seldom_words_without_stopwords,
+                                '10_frequently_words'   :   list_frequently_words_without_stopwords
 
         }
         liste_dictionary_reden_einer_sitzung.append(result_dictionary_einer_rede)
@@ -552,7 +614,7 @@ def start_scraping_with_chrome(url):
     '''
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument('--no-sandbox')
-    chrome = webdriver.Chrome('/usr/bin/chromedriver', chrome_options=chrome_options)
+    chrome = webdriver.Chrome('C:/Python36-32/BrowserDriver/chromedriver.exe', chrome_options=chrome_options)
     chrome.get(url)
     return chrome
 
@@ -933,6 +995,7 @@ print("Anzahl vorhandene Reden in Redeliste: " + str(len(redeliste)))
 #merged_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, sitzung_229)
 merged_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzungen)
 set_metadaten(merged_sitzung['Sitzung 240'])
-
+print(merged_sitzung)
+print(redeliste)
 create_protocol_workbook(redeliste)
 print('Skript "Vereinigung" beendet')
