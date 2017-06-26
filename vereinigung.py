@@ -614,7 +614,9 @@ def start_scraping_with_chrome(url):
     '''
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument('--no-sandbox')
-    chrome = webdriver.Chrome('C:/Python36-32/BrowserDriver/chromedriver.exe', chrome_options=chrome_options)
+    #chrome = webdriver.Chrome('C:/Python36-32/BrowserDriver/chromedriver.exe', chrome_options=chrome_options)
+    chrome = webdriver.Chrome('/usr/bin/chromedriver', chrome_options=chrome_options)
+
     chrome.get(url)
     return chrome
 
@@ -809,9 +811,10 @@ def sort_topics_to_sitzung(alle_sitzungen):
                 dict_topics[top_number_key]['Redner'] = list_redner
         list_sorted_topics = sort_dict_topics_via_topic_id(dict_topics)
         dict_sitzung = {
-            'Sitzungsdatum': sitzungs_datum,
-            'Wahlperiode': wahlperiode,
-            'TOPs': list_sorted_topics
+            'Sitzungsdatum' : sitzungs_datum,
+            'Wahlperiode'   : wahlperiode,
+            'TOPs'          : list_sorted_topics,
+            'Sitzungsnummer': sitzungs_nummer
         }
 
         dict_sitzungen['Sitzung ' + sitzungs_nummer] = dict_sitzung
@@ -928,6 +931,7 @@ def count_speecher_from_cleaned_sortierte_sitzung(sitzung):
 def set_metadaten(sitzung):
     sitzungsdatum   = sitzung['Sitzungsdatum']
     wahlperiode     = sitzung['Wahlperiode']
+    sitzungsnummer  = sitzung['Sitzungsnummer']
 
     tagesordnungspunkt_bezeichnung  = ''
     top_key                         = ''
@@ -941,11 +945,36 @@ def set_metadaten(sitzung):
         for redner in tagesordnungspunkt['Redner']:
             for redner_name_temp in redner:
                 redner_name = redner_name_temp
+                redner[redner_name]['sitzungsnummer']                   = sitzungsnummer
                 redner[redner_name]['sitzungsdatum']                    = sitzungsdatum
                 redner[redner_name]['tagesordnungspunktbezeichnung']    = tagesordnungspunkt_bezeichnung
                 redner[redner_name]['tagesordnungspunkt']               = top_key
                 redner[redner_name]['wahlperiode']                      = wahlperiode
 
+def get_sitzungs_dataset_for_excel(sitzung):
+    list_result         = []
+    for tagesordnungspunkt in sitzung['TOPs']:
+        dictionary_result = {}
+        for rede in tagesordnungspunkt['Redner']:
+            for redner in rede:
+                dictionary_result['10_frequently_words']            = rede[redner]['10_frequently_words']
+                dictionary_result['10_seldom_words']                = rede[redner]['10_seldom_words']
+                dictionary_result['anzahl_beifaelle']               = rede[redner]['anzahl_beifaelle']
+                dictionary_result['anzahl_wortmeldungen']           = rede[redner]['anzahl_wortmeldungen']
+                dictionary_result['beifaelle']                      = rede[redner]['beifaelle']
+                dictionary_result['clean_rede']                     = rede[redner]['clean_rede']
+                dictionary_result['rede_id']                        = rede[redner]['rede_id']
+                dictionary_result['rede_id_sitzungen']              = rede[redner]['rede_id_sitzungen']
+                dictionary_result['redner']                         = redner
+                dictionary_result['sitzungsdatum']                  = rede[redner]['sitzungsdatum']
+                dictionary_result['sitzungsnummer']                 = rede[redner]['sitzungsnummer']
+                dictionary_result['tagesordnungspunkt']             = rede[redner]['tagesordnungspunkt']
+                dictionary_result['tagesordnungspunktbezeichnung']  = rede[redner]['tagesordnungspunktbezeichnung']
+                dictionary_result['wahlperiode']                    = rede[redner]['wahlperiode']
+                dictionary_result['wortmeldungen']                  = rede[redner]['wortmeldungen']
+            list_result.append(dictionary_result)
+
+    return list_result
 
 ### ENDE Testing_Marc ###
 
@@ -995,6 +1024,9 @@ print("Anzahl vorhandene Reden in Redeliste: " + str(len(redeliste)))
 #merged_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, sitzung_229)
 merged_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzungen)
 set_metadaten(merged_sitzung['Sitzung 240'])
+
+dataset_for_excel = get_sitzungs_dataset_for_excel(merged_sitzung['Sitzung 240'])
+
 print(merged_sitzung)
 print(redeliste)
 create_protocol_workbook(redeliste)
