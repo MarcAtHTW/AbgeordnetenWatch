@@ -28,6 +28,7 @@ number_of_last_element = 0
 list_elements_till_first_speech = []  # enthält listenelemente bis zur ersten Rede
 politican_name = ""
 party_name = ""
+liste_zeilen = []
 
 
 def get_content():
@@ -54,6 +55,7 @@ def get_content():
         liste_sitzungsinhalt.append(line)
         print(line)
         string_sitzung = ' '.join(liste_sitzungsinhalt)
+        liste_zeilen.append(line)
     return string_sitzung
 
 
@@ -82,6 +84,48 @@ def split_and_analyse_content(string_sitzung):
             # elif list_element.__contains__('Beginn:'):
             #     global start_der_ersten_rede
             #     start_der_ersten_rede = i
+
+def set_part_till_first_speech():
+    matchers = ['Beginn:']
+    list_zeilen_till_first_speech = []
+    global liste_zeilen
+    for zeile in liste_zeilen:
+        if any(m in zeile for m in matchers):
+            break
+        else:
+            list_zeilen_till_first_speech.append(zeile)
+            print('erste Zeilen: ', zeile)
+
+def get_all_parties():
+    list_parties = [
+        'DIE LINKE',
+        'CDU/CSU',
+        'SPD',
+        'BÜNDNIS',
+        'BÜNDNIS 90/DIE GRÜNEN',
+        'FDP',
+        'AFD',
+        'DIE PIRATEN'
+    ]
+
+    return list_parties
+
+def get_party(element):
+    party = ''
+
+    for letter in (element[element.index('('):]):
+        party += letter
+        if letter == ' ':
+            break
+
+    return party
+
+def get_surname(full_name):
+    surname = ''
+    for letter in (full_name[:full_name.index(',')]):
+        surname += letter
+
+    return surname
 
 def set_number(i):
     '''
@@ -1083,11 +1127,23 @@ def set_metadaten(sitzung):
 
 def get_sitzungs_dataset_for_excel(sitzung):
     list_result         = []
+    all_parties = get_all_parties()  #Liste aller möglichen Parteien
+
+    global liste_zeilen
+
     for tagesordnungspunkt in sitzung['TOPs']:
 
         for rede in tagesordnungspunkt['Redner']:
             dictionary_result = {}
             for redner in rede:
+                #surname = get_surname(redner)
+                party = ''
+                # Parteienvergleich
+                for zeile in liste_zeilen:
+                    if zeile.__contains__(get_surname(redner)):
+                        if zeile.__contains__('('):
+                            party = get_party(zeile)
+                            break
                 dictionary_result['10_frequently_words']            = rede[redner]['10_frequently_words']
                 dictionary_result['10_seldom_words']                = rede[redner]['10_seldom_words']
                 dictionary_result['anzahl_beifaelle']               = rede[redner]['anzahl_beifaelle']
@@ -1103,6 +1159,7 @@ def get_sitzungs_dataset_for_excel(sitzung):
                 dictionary_result['tagesordnungspunktbezeichnung']  = rede[redner]['tagesordnungspunktbezeichnung']
                 dictionary_result['wahlperiode']                    = rede[redner]['wahlperiode']
                 dictionary_result['wortmeldungen']                  = rede[redner]['wortmeldungen']
+                dictionary_result['partei']                         = party
                 list_result.append(dictionary_result)
 
     return list_result
@@ -1153,6 +1210,8 @@ print("Anzahl vorhandene Reden in Redeliste: " + str(len(redeliste)))
 #print(temp_top_liste)
 
 #merged_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, sitzung_229)
+set_part_till_first_speech()
+
 merged_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzungen)
 set_metadaten(merged_sitzung['Sitzung 240'])
 dataset_for_excel = get_sitzungs_dataset_for_excel(merged_sitzung['Sitzung 240'])
@@ -1160,4 +1219,5 @@ dataset_for_excel = get_sitzungs_dataset_for_excel(merged_sitzung['Sitzung 240']
 print(merged_sitzung)
 print(redeliste)
 create_protocol_workbook(dataset_for_excel)
+
 print('Skript "Vereinigung" beendet')
