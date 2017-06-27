@@ -464,28 +464,25 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     col = 0
     x = 0
     for dict in liste_dictionary_reden_einer_sitzung:
-        # temp_tagesornungspunkt                  = ''
-        # temp_tagesordnungsunkt_bezeichnung      = ''
-        #
-        # for key in dict:
-        #
-        #     temp_tagesordnungsunkt              = key['tagesoordnungspunkt']
-        #     temp_tagesordnungsunkt_bezeichnung  = key['tagesordnungspunktbezeichnung']
 
         if x >0 :
-            if liste_dictionary_reden_einer_sitzung[x-1]['tagesordnungspunkt'] != dict['tagesordnungspunkt'] and liste_dictionary_reden_einer_sitzung[x-1]['tagesordnungspunktbezeichnung'] !=dict['tagesordnungspunktbezeichnung']:
-                for key in dict:
+            #if liste_dictionary_reden_einer_sitzung[x-1]['tagesordnungspunkt'] != dict['tagesordnungspunkt'] and liste_dictionary_reden_einer_sitzung[x-1]['tagesordnungspunktbezeichnung'] !=dict['tagesordnungspunktbezeichnung']:
+            if temp_tagesordnungspunkt != liste_dictionary_reden_einer_sitzung[x]['tagesordnungspunkt'] and temp_tagesordnungspunkt_bezeichnung != liste_dictionary_reden_einer_sitzung[x]['tagesordnungspunktbezeichnung']:
+                for key in ['sitzungsnummer', 'tagesordnungspunkt', 'tagesordnungspunktbezeichnung']:
                     topdaten.write(row, col, dict[key])
                     col += 1
                 row += 1
                 col = 0
+                temp_tagesordnungspunkt = liste_dictionary_reden_einer_sitzung[x]['tagesordnungspunkt']
+                temp_tagesordnungspunkt_bezeichnung = liste_dictionary_reden_einer_sitzung[x]['tagesordnungspunktbezeichnung']
         else:
-            for key in dict:
-                if not isinstance(dict[key], list):
-                    topdaten.write(row, col, dict[key])
-                    col += 1
+            temp_tagesordnungspunkt             = liste_dictionary_reden_einer_sitzung[x]['tagesordnungspunkt']
+            temp_tagesordnungspunkt_bezeichnung = liste_dictionary_reden_einer_sitzung[x]['tagesordnungspunktbezeichnung']
+
+            topdaten.write(row, col, sitzungnummer)
+            topdaten.write(row, col +1, temp_tagesordnungspunkt)
+            topdaten.write(row, col +2, temp_tagesordnungspunkt_bezeichnung)
             row += 1
-            col = 0
         x += 1
 
     # writing in worksheet 'Redner_Rede'
