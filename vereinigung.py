@@ -431,7 +431,7 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     topdaten.write('B1', 'Tagesordnungspunkt', bold)
     topdaten.write('C1', 'Tagesordnungspunktbezeichnung', bold)
 
-    redner_rede_daten.write('A1', 'Tagesordnungspunktbezeichnung', bold)
+    redner_rede_daten.write('A1', 'Tagesordnungspunkt', bold)
     redner_rede_daten.write('B1', 'Redner', bold)
     redner_rede_daten.write('C1', 'clean_rede', bold)
     redner_rede_daten.write('D1', 'rede_id', bold)
@@ -455,9 +455,9 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     sitzungsdatum = liste_dictionary_reden_einer_sitzung[0]['sitzungsdatum']
     wahlperiode = liste_dictionary_reden_einer_sitzung[0]['wahlperiode']
 
-    sitzungsdaten.write(row, col, sitzungnummer)
+    sitzungsdaten.write_number(row, col, int(sitzungnummer))
     sitzungsdaten.write(row, col + 1, sitzungsdatum)
-    sitzungsdaten.write(row, col + 2, wahlperiode)
+    sitzungsdaten.write_number(row, col + 2, int(wahlperiode))
 
     # writing in worksheet 'Topdaten'
     row = 1
@@ -469,7 +469,10 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
             #if liste_dictionary_reden_einer_sitzung[x-1]['tagesordnungspunkt'] != dict['tagesordnungspunkt'] and liste_dictionary_reden_einer_sitzung[x-1]['tagesordnungspunktbezeichnung'] !=dict['tagesordnungspunktbezeichnung']:
             if temp_tagesordnungspunkt != liste_dictionary_reden_einer_sitzung[x]['tagesordnungspunkt'] and temp_tagesordnungspunkt_bezeichnung != liste_dictionary_reden_einer_sitzung[x]['tagesordnungspunktbezeichnung']:
                 for key in ['sitzungsnummer', 'tagesordnungspunkt', 'tagesordnungspunktbezeichnung']:
-                    topdaten.write(row, col, dict[key])
+                    if key == 'sitzungsnummer':
+                        topdaten.write_number(row, col, int(dict[key]))
+                    else:
+                        topdaten.write(row, col, dict[key])
                     col += 1
                 row += 1
                 col = 0
@@ -479,7 +482,7 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
             temp_tagesordnungspunkt             = liste_dictionary_reden_einer_sitzung[x]['tagesordnungspunkt']
             temp_tagesordnungspunkt_bezeichnung = liste_dictionary_reden_einer_sitzung[x]['tagesordnungspunktbezeichnung']
 
-            topdaten.write(row, col, sitzungnummer)
+            topdaten.write_number(row, col, int(sitzungnummer))
             topdaten.write(row, col +1, temp_tagesordnungspunkt)
             topdaten.write(row, col +2, temp_tagesordnungspunkt_bezeichnung)
             row += 1
@@ -925,7 +928,7 @@ def sort_topics_to_sitzung(alle_sitzungen):
                     topic_number_key_cache = topic
                     top_name = get_topic_name_from_topic_number(top_number_key, topic)
                     if top_number_key == 'TOP ZP':
-                        top_number_key += ' Topic_ID: ' + str(topic_id)
+                        top_number_key += topic_number_key_cache
                         top_name = top_number_key
                     dict_topics[top_number_key] = {'Tagesordnungspunkt': top_name, 'TOP_ID':topic_id}
 
@@ -1091,8 +1094,8 @@ def get_sitzungs_dataset_for_excel(sitzung):
                 dictionary_result['anzahl_wortmeldungen']           = rede[redner]['anzahl_wortmeldungen']
                 dictionary_result['beifaelle']                      = rede[redner]['beifaelle']
                 dictionary_result['clean_rede']                     = rede[redner]['clean_rede']
-                dictionary_result['rede_id']                        = rede[redner]['rede_id']
-                dictionary_result['rede_id_sitzungen']              = rede[redner]['rede_id_sitzungen']
+                dictionary_result['rede_id']                        = str(rede[redner]['sitzungsnummer']) + '_' + str(rede[redner]['rede_id'])
+                dictionary_result['rede_id_sitzungen']              = str(rede[redner]['sitzungsnummer']) + '_' + str(rede[redner]['rede_id'])
                 dictionary_result['redner']                         = redner
                 dictionary_result['sitzungsdatum']                  = rede[redner]['sitzungsdatum']
                 dictionary_result['sitzungsnummer']                 = rede[redner]['sitzungsnummer']
