@@ -1,3 +1,4 @@
+# coding=utf-8
 import PyPDF2
 import nltk
 from nltk import FreqDist
@@ -98,25 +99,60 @@ def set_part_till_first_speech():
 
 def get_all_parties():
     list_parties = [
-        'DIE LINKE',
-        'CDU/CSU',
-        'SPD',
-        'BÜNDNIS',
-        'BÜNDNIS 90/DIE GRÜNEN',
-        'FDP',
-        'AFD',
-        'DIE PIRATEN'
+        '(DIE LINKE)',
+        '(CDU/CSU)',
+        '(SPD)',
+        '(BÜNDNIS 90/DIE GRÜNEN)',
+        '(BÜNDNIS',
+        'DIE GRÜNEN)'
+        '(FDP)',
+        '(AFD)',
+        '(DIE PIRATEN)'
     ]
 
     return list_parties
 
-def get_party(element):
-    party = ''
+def check_if_party_is_in_zeile(zeile):
+    # Wenn das Element keinen Hinweis auf eine Partei Enthält, wird es verworfen:
+    liste_parteien = get_all_parties()
+    found_party = False
 
-    for letter in (element[element.index('('):]):
-        party += letter
-        if letter == ' ':
-            break
+    for partei in liste_parteien:
+        if str(partei) in zeile:
+            found_party = True
+
+    return found_party
+
+
+def get_party(element):
+    '''
+    Holt den Parteinamen aus dem Rednernamen.
+
+    :type element:String
+    :param element:Parteiname
+    :return:String
+    '''
+
+    #liste_parteien = get_all_parties()
+
+    party = ''
+    if element.__contains__(')'):
+        for letter in (element[element.index('('):element.index(')') +1 ]):
+            party += letter
+
+    elif not element.__contains__(')'):
+        for letter in (element[element.index('('):]):
+            party += letter
+
+    if party.__contains__('BÜNDNIS') or party.__contains__('DIE GRÜNEN'):
+        party = '(BÜNDNIS 90/DIE GRÜNEN)'
+
+    if party.__contains__('(CDU/CSU)'):
+        #Wirt benötigt, falls doppelte Klamern auftreten
+        party = ('(CDU/CSU)')
+
+
+
 
     return party
 
@@ -477,8 +513,9 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
 
     redner_rede_daten.write('A1', 'Tagesordnungspunkt', bold)
     redner_rede_daten.write('B1', 'Redner', bold)
-    redner_rede_daten.write('C1', 'clean_rede', bold)
-    redner_rede_daten.write('D1', 'rede_id', bold)
+    redner_rede_daten.write('C1', 'Partei', bold)
+    redner_rede_daten.write('D1', 'clean_rede', bold)
+    redner_rede_daten.write('E1', 'rede_id', bold)
 
     beifalldaten.write('A1', 'rede_id', bold)
     beifalldaten.write('B1', 'Beifalltext', bold)
@@ -536,7 +573,7 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     row = 1
     col = 0
     for dict in liste_dictionary_reden_einer_sitzung:
-        for key in ['tagesordnungspunkt', 'redner', 'clean_rede', 'rede_id_sitzungen']:
+        for key in ['tagesordnungspunkt', 'redner', 'partei', 'clean_rede', 'rede_id_sitzungen']:
             redner_rede_daten.write(row, col, dict[key])
             col += 1
         row += 1
@@ -1127,7 +1164,6 @@ def set_metadaten(sitzung):
 
 def get_sitzungs_dataset_for_excel(sitzung):
     list_result         = []
-    all_parties = get_all_parties()  #Liste aller möglichen Parteien
 
     global liste_zeilen
 
@@ -1141,7 +1177,7 @@ def get_sitzungs_dataset_for_excel(sitzung):
                 # Parteienvergleich
                 for zeile in liste_zeilen:
                     if zeile.__contains__(get_surname(redner)):
-                        if zeile.__contains__('('):
+                        if check_if_party_is_in_zeile(zeile) == True:
                             party = get_party(zeile)
                             break
                 dictionary_result['10_frequently_words']            = rede[redner]['10_frequently_words']
