@@ -28,6 +28,7 @@ politican_name = ""
 party_name = ""
 ende_der_letzten_rede = 0
 start_der_ersten_rede = 0
+liste_zeilen = []
 
 
 
@@ -55,6 +56,8 @@ def get_content():
         liste_sitzungsinhalt.append(line)
         print(line)
         string_sitzung = ' '.join(liste_sitzungsinhalt)
+        liste_zeilen.append(line)
+    
     return string_sitzung
 
 def split_and_analyse_content(string_sitzung):
@@ -82,6 +85,19 @@ def split_and_analyse_content(string_sitzung):
         # elif list_element.__contains__('Beginn:'):
         #     global start_der_ersten_rede
         #     start_der_ersten_rede = i
+
+def get_part_till_first_speech():
+    matchers = ['Beginn:']
+    list_zeilen_till_first_speech = []
+    global liste_zeilen
+    for zeile in liste_zeilen:
+        if any(m in zeile for m in matchers):
+            break
+        else:
+            list_zeilen_till_first_speech.append(zeile)
+            print('erste Zeilen: ', zeile)
+
+
 
 
 def set_number(i):
@@ -266,6 +282,28 @@ def clean_speeches(alle_Reden_einer_Sitzung):
     regex = re.compile(".*?\((.*?)\)")
     liste_dictionary_reden_einer_sitzung = []
     rede_id = 1
+    global list_elements_till_first_speech
+    filterlist = []
+    counter = 0
+    for list_element in list_elements_till_first_speech:
+        counter += 1
+        if 'Lauterbach (' in list_element:
+            print(list_element)
+            partei = list_element.find('(')
+            print('uuuuuuuuuuuuuuuuuuuuuuuuuu: ', partei)
+            #filterlist.append(list_element)
+
+            #print('uuuuuuuuuuuuuuuuuuuuuuuuuu: ', list_element)
+
+    #string_till_first_speech = ' '.join(list_elements_till_first_speech)
+    #print('uuuuuuuuuuuuuuuuuuuuuuuuuu: ',string_till_first_speech)
+    #partei = string_till_first_speech[string_till_first_speech.find('Lauterbach ('):string_till_first_speech.find('(')]
+    #print('uuuuuuuuuuuuuuuuuuuuuuuuuu: ',partei)
+    #  #reg = re.compile(?:rednername)(. *?\((. *?)\)))
+    # print('uuuuuuuuuuuuuuuuuuuuuuuuuu: ', partei)
+    # (re.findall(r'@(\w+)', 'Hello there @bob !') or None,)[0]
+    # 'bob'
+
 
     for rede in alle_Reden_einer_Sitzung:
 
@@ -431,34 +469,27 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     # writing in worksheet 'Sitzungsdaten'
     row = 1
     col = 0
-    for dict in liste_dictionary_reden_einer_sitzung:
-        for key in ['sitzungsnummer', 'sitzungsdatum', 'wahlperiode']:
-            if isinstance(dict[key], list):
-                for item in dict[key]:
-                    sitzungsdaten.write(row, col, item)
-                    row += 1
-                #col += 1
-            else:
-                sitzungsdaten.write(row, col, dict[key])
-            col += 1
-        row += 1
-        col = 0
+    sitzungnummer = liste_dictionary_reden_einer_sitzung[0]['sitzungsnummer']
+    sitzungsdatum = liste_dictionary_reden_einer_sitzung[0]['sitzungsdatum']
+    wahlperiode = liste_dictionary_reden_einer_sitzung[0]['wahlperiode']
+
+    sitzungsdaten.write(row, col, sitzungnummer)
+    sitzungsdaten.write(row, col+1, sitzungsdatum)
+    sitzungsdaten.write(row, col+2, wahlperiode)
+
 
     # writing in worksheet 'Topdaten'
     row = 1
     col = 0
     for dict in liste_dictionary_reden_einer_sitzung:
         for key in ['sitzungsnummer', 'tagesordnungspunkt', 'tagesordnungspunktbezeichnung']:
-            if isinstance(dict[key], list):
-                for item in dict[key]:
-                    topdaten.write(row, col, item)
-                    row += 1
-                #col += 1
-            else:
-                topdaten.write(row, col, dict[key])
+
+            topdaten.write(row, col, dict[key])
             col += 1
         row += 1
         col = 0
+
+
 
     # writing in worksheet 'Redner_Rede'
     row = 1
@@ -654,5 +685,6 @@ print(start_end_nummern_liste)
 redeliste = clean_speeches(liste_alle_reden)
 #print(redeliste)
 create_protocol_workbook(redeliste)
+get_part_till_first_speech()
 
 
