@@ -487,21 +487,12 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
 
     # writing in worksheet 'Redner_Rede'
     row = 1
-    temp_row = 1
     col = 0
     for dict in liste_dictionary_reden_einer_sitzung:
-        for key in ['tagesordnungspunktbezeichnung', 'redner', 'clean_rede', 'rede_id_sitzungen']:
-            if isinstance(dict[key], list):
-                for item in dict[key]:
-                    redner_rede_daten.write(row, col, item)
-                    row += 1
-            else:
-                k = 0
-                while k < len(dict['beifaelle']):
-                    redner_rede_daten.write(temp_row, col, dict[key])
-                    k += 1
-                    temp_row += 1
+        for key in ['tagesordnungspunkt', 'redner', 'clean_rede', 'rede_id_sitzungen']:
+            redner_rede_daten.write(row, col, dict[key])
             col += 1
+        row += 1
         col = 0
 
 
@@ -1090,8 +1081,9 @@ def set_metadaten(sitzung):
 def get_sitzungs_dataset_for_excel(sitzung):
     list_result         = []
     for tagesordnungspunkt in sitzung['TOPs']:
-        dictionary_result = {}
+
         for rede in tagesordnungspunkt['Redner']:
+            dictionary_result = {}
             for redner in rede:
                 dictionary_result['10_frequently_words']            = rede[redner]['10_frequently_words']
                 dictionary_result['10_seldom_words']                = rede[redner]['10_seldom_words']
@@ -1108,7 +1100,7 @@ def get_sitzungs_dataset_for_excel(sitzung):
                 dictionary_result['tagesordnungspunktbezeichnung']  = rede[redner]['tagesordnungspunktbezeichnung']
                 dictionary_result['wahlperiode']                    = rede[redner]['wahlperiode']
                 dictionary_result['wortmeldungen']                  = rede[redner]['wortmeldungen']
-            list_result.append(dictionary_result)
+                list_result.append(dictionary_result)
 
     return list_result
 
