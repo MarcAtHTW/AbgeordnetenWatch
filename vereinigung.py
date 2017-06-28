@@ -137,7 +137,8 @@ def get_party(element):
 
     party = ''
     if element.__contains__(')'):
-        for letter in (element[element.index('('):element.index(')') +1 ]):
+        index_of_last_open_bracket, index_of_last_closed_bracket = find_last_brackets_in_string(element)
+        for letter in (element[index_of_last_open_bracket:index_of_last_closed_bracket +1 ]):
             party += letter
 
     elif not element.__contains__(')'):
@@ -1138,6 +1139,35 @@ def count_speecher_from_cleaned_sortierte_sitzung(sitzung):
 #        for list_eintrag_redner in tops[top]['Redner']:
 #            redner = {list_eintrag_redner:rede}
 
+def find_last_brackets_in_string(string):
+    i = 0
+    index_of_last_open_bracket      = 0
+    index_of_last_closed_bracket    = 0
+
+    found_higher_index = True
+
+    while found_higher_index == True:
+        for letter in string[i:]:
+            if letter == '(':
+                found_higher_index = True
+                index_of_last_open_bracket = i
+            i += 1
+            if i == len(string):
+                found_higher_index = False
+
+    found_higher_index = True
+
+    i = 0
+    while found_higher_index == True:
+        for letter in string[i:]:
+            if letter == ')':
+                found_higher_index = True
+                index_of_last_closed_bracket = i
+            i += 1
+            if i == len(string):
+                found_higher_index = False
+
+    return index_of_last_open_bracket, index_of_last_closed_bracket
 
 def set_metadaten(sitzung):
     sitzungsdatum   = sitzung['Sitzungsdatum']
