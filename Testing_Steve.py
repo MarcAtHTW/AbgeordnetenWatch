@@ -57,7 +57,7 @@ def get_content():
         print(line)
         string_sitzung = ' '.join(liste_sitzungsinhalt)
         liste_zeilen.append(line)
-    
+
     return string_sitzung
 
 def split_and_analyse_content(string_sitzung):
@@ -86,7 +86,7 @@ def split_and_analyse_content(string_sitzung):
         #     global start_der_ersten_rede
         #     start_der_ersten_rede = i
 
-def get_part_till_first_speech():
+def set_part_till_first_speech():
     matchers = ['Beginn:']
     list_zeilen_till_first_speech = []
     global liste_zeilen
@@ -685,6 +685,6 @@ print(start_end_nummern_liste)
 redeliste = clean_speeches(liste_alle_reden)
 #print(redeliste)
 create_protocol_workbook(redeliste)
-get_part_till_first_speech()
+#get_part_till_first_speech()
 
 
