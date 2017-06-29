@@ -1211,35 +1211,38 @@ def get_sitzungs_dataset_for_excel(sitzung):
         for rede in tagesordnungspunkt['Redner']:
             dictionary_result = {}
             for redner in rede:
+                isSpeecherinSpeech = False
                 #surname = get_surname(redner)
                 party = ''
                 # Parteienvergleich
                 for zeile in liste_zeilen:
                     aktuelle_redner = get_surname(redner)
-                    if aktuelle_redner == 'Brandt':
+                    if aktuelle_redner == 'Pau':
                         print('brandt gefunden !!')
+                    if rede[redner]['clean_rede'].__contains__(aktuelle_redner):
+                        isSpeecherinSpeech = True
                     if zeile.__contains__(aktuelle_redner):
-
                         if check_if_party_is_in_zeile(zeile) == True:
                             party = get_party(zeile)
                             break
-                dictionary_result['10_frequently_words']            = rede[redner]['10_frequently_words']
-                dictionary_result['10_seldom_words']                = rede[redner]['10_seldom_words']
-                dictionary_result['anzahl_beifaelle']               = rede[redner]['anzahl_beifaelle']
-                dictionary_result['anzahl_wortmeldungen']           = rede[redner]['anzahl_wortmeldungen']
-                dictionary_result['beifaelle']                      = rede[redner]['beifaelle']
-                dictionary_result['clean_rede']                     = rede[redner]['clean_rede']
-                dictionary_result['rede_id']                        = str(rede[redner]['sitzungsnummer']) + '_' + str(rede[redner]['rede_id'])
-                dictionary_result['rede_id_sitzungen']              = str(rede[redner]['sitzungsnummer']) + '_' + str(rede[redner]['rede_id'])
-                dictionary_result['redner']                         = redner
-                dictionary_result['sitzungsdatum']                  = rede[redner]['sitzungsdatum']
-                dictionary_result['sitzungsnummer']                 = rede[redner]['sitzungsnummer']
-                dictionary_result['tagesordnungspunkt']             = rede[redner]['tagesordnungspunkt']
-                dictionary_result['tagesordnungspunktbezeichnung']  = rede[redner]['tagesordnungspunktbezeichnung']
-                dictionary_result['wahlperiode']                    = rede[redner]['wahlperiode']
-                dictionary_result['wortmeldungen']                  = rede[redner]['wortmeldungen']
-                dictionary_result['partei']                         = party
-                list_result.append(dictionary_result)
+                if isSpeecherinSpeech == True:
+                    dictionary_result['10_frequently_words']            = rede[redner]['10_frequently_words']
+                    dictionary_result['10_seldom_words']                = rede[redner]['10_seldom_words']
+                    dictionary_result['anzahl_beifaelle']               = rede[redner]['anzahl_beifaelle']
+                    dictionary_result['anzahl_wortmeldungen']           = rede[redner]['anzahl_wortmeldungen']
+                    dictionary_result['beifaelle']                      = rede[redner]['beifaelle']
+                    dictionary_result['clean_rede']                     = rede[redner]['clean_rede']
+                    dictionary_result['rede_id']                        = str(rede[redner]['sitzungsnummer']) + '_' + str(rede[redner]['rede_id'])
+                    dictionary_result['rede_id_sitzungen']              = str(rede[redner]['sitzungsnummer']) + '_' + str(rede[redner]['rede_id'])
+                    dictionary_result['redner']                         = redner
+                    dictionary_result['sitzungsdatum']                  = rede[redner]['sitzungsdatum']
+                    dictionary_result['sitzungsnummer']                 = rede[redner]['sitzungsnummer']
+                    dictionary_result['tagesordnungspunkt']             = rede[redner]['tagesordnungspunkt']
+                    dictionary_result['tagesordnungspunktbezeichnung']  = rede[redner]['tagesordnungspunktbezeichnung']
+                    dictionary_result['wahlperiode']                    = rede[redner]['wahlperiode']
+                    dictionary_result['wortmeldungen']                  = rede[redner]['wortmeldungen']
+                    dictionary_result['partei']                         = party
+                    list_result.append(dictionary_result)
 
     return list_result
 
