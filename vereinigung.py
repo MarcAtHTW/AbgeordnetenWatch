@@ -193,18 +193,22 @@ def analyse_content_element(list_element, i):
     temp_dict_empty_values = {'polName': '', 'partyName': ''}
     # -*- encoding: utf-8 -*-
     matchers = ['erteile das Wort', 'Das Wort hat', 'das Wort.', 'erteile zu Beginn das Wort', 'hat nun das Wort',
-                'Redner das Wort', 'Rednerin das Wort', 'übergebe das Wort', 'Das Wort erhält ',
-                'hat jetzt das Wort für', 'Das Wort für die Bundesregierung hat',
-                'Nächste Rednerin:', 'Nächster Redner', 'Nächste Rednerin für', 'Nächster Redner für',
+                'Redner das Wort', 'Rednerin das Wort', 'übergebe das Wort', 'Das Wort erhält ', 'Das Wort hat',
+                'hat jetzt das Wort für', 'Das Wort für die Bundesregierung hat', 'Das Wort für',
+                'Nächste Rednerin:', 'Nächster Redner:', 'Nächste Rednerin für', 'Nächster Redner für',
                 'Als Nächste hat das Wort', 'Als Nächster hat das Wort', 'Als Nächstes spricht', 'Als Nächste spricht',
-                'Wir befinden uns noch in der Debatte und werden', 'hat jetzt um das Wort für eine',
+                'hat jetzt um das Wort für eine', 'Nächste Rednerin in', ' Nächster Redner in',
                 'Frau Kollegin Schwarzer, möchten Sie darauf antworten?', 'hat um das Wort',
                 'Herr Kollege Sensburg, möchten Sie darauf antworten?', 'Erster Redner ist',
+                'Als nächster Redner spricht', 'Wir befinden uns noch in der Debatte und werden noch zwei Redner hören.',
+                'Als nächste Rednerin spricht', 'Jetzt hat das Wort', 'Als Nächster hat', 'Als Nächste hat',
                 'Ich möchte Ihnen kurz das von den Schriftführerinnen und Schriftführern ermittelte Ergebnis',
                 'Jetzt hat das Wort', 'gebe das Wort', 'nächste Redner', 'nächster Redner', 'nächste Rednerin',
-                'spricht jetzt', 'Nächste Rednerin ist','Nächster Redner ist', 'Nächster Redner in', 'Letzter Redner',
-                'Letzte Rednerin','letzte Rednerin', 'nächste Wortmeldung',
-                'spricht als Nächster', 'spricht als Nächste',
+                'spricht jetzt', 'Nächste Rednerin ist', 'Nächster Redner ist', 'Nächster Redner in', 'Letzter Redner',
+                'Letzte Rednerin', 'letzte Rednerin', 'nächste Wortmeldung', 'Als Nächstem ersteile',
+                'spricht als Nächster', 'spricht als Nächste', 'Als letzte Rednerin', 'Als letzten Redner',
+                'Als letzter Redner', 'Vielen Dank. – Ich möchte Ihnen kurz das von den Schriftführerinnen',
+                'Als letzte Rednerin',
                 'zunächst das Wort', 'zu Beginn das Wort', 'Wort dem',
                 'Nächste Rednerin ist die Kollegin', 'Nächster Redner ist der Kollege', '(Heiterkeit)für die SPD',
                 'Die erste Fragestellerin', 'Der erste Fragesteller', 'Die nächste Fragestellerin',
@@ -457,7 +461,8 @@ def lex_div_without_stopwords(liste_speech_word_tokenized):
     # Redetext ohne stop words
     stop_words = set(stopwords.words("german"))
     #print("\n" + "STOPWORDS: " + "\n" + str(stop_words) + "\n")
-    word_list_extension = ['Dass', 'dass', 'Der', 'Die', 'Das', 'Dem', 'Den']
+    word_list_extension = ['Dass', 'dass', 'Der', 'Die', 'Das', 'Dem', 'Den', 'Wir', 'wir', 'Ihr', 'ihr', 'Sie', 'sie',
+                           'Ich', 'ich', 'Er', 'er', 'Es', 'es', 'Du', 'du']
     for word in word_list_extension:
         stop_words.add(word)
 
@@ -826,8 +831,8 @@ def start_scraping_with_chrome(url):
     '''
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument('--no-sandbox')
-    #chrome = webdriver.Chrome('C:/Python36-32/BrowserDriver/chromedriver.exe', chrome_options=chrome_options)
-    chrome = webdriver.Chrome('/usr/bin/chromedriver', chrome_options=chrome_options)
+    chrome = webdriver.Chrome('C:/Python36-32/BrowserDriver/chromedriver.exe', chrome_options=chrome_options)
+    #chrome = webdriver.Chrome('/usr/bin/chromedriver', chrome_options=chrome_options)
 
     chrome.get(url)
     return chrome
