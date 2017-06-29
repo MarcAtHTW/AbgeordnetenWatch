@@ -831,8 +831,8 @@ def start_scraping_with_chrome(url):
     '''
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument('--no-sandbox')
-    chrome = webdriver.Chrome('C:/Python36-32/BrowserDriver/chromedriver.exe', chrome_options=chrome_options)
-    #chrome = webdriver.Chrome('/usr/bin/chromedriver', chrome_options=chrome_options)
+    #chrome = webdriver.Chrome('C:/Python36-32/BrowserDriver/chromedriver.exe', chrome_options=chrome_options)
+    chrome = webdriver.Chrome('/usr/bin/chromedriver', chrome_options=chrome_options)
 
     chrome.get(url)
     return chrome
@@ -1047,18 +1047,22 @@ def delete_first_and_last_speecher_from_list(dict_sitzungen):
     temp_speecher_list = dict_sitzungen[sitzung]['TOPs']
     top_counter = 0
     while top_counter < len(temp_speecher_list):
-
+        '''Problem mit der ID in lösche Eintrag in der Liste an der Stelle -1'''
+        #if top_counter == 6:
+        #    print('bla')
+        #    pass
         if len(temp_speecher_list[top_counter]['Redner']) >=3:
             temp_top_liste = temp_speecher_list[top_counter]['Redner']
             temp_top_liste.remove(temp_top_liste[0])
-            temp_top_liste.remove(temp_top_liste[len(temp_top_liste) - 1])
+            print(len(temp_top_liste) - 1)
+            del temp_top_liste[-1]
+            # HIER ÜBERPRÜFEN
+            #temp_top_liste.pop(-1)
+            #temp_top_liste.remove(temp_top_liste[len(temp_top_liste) - 1])
             top_counter += 1
 
         elif len(temp_speecher_list[top_counter]['Redner']) < 3:
             del temp_speecher_list[top_counter]
-
-
-
 
     return dict_sitzungen
 
@@ -1211,7 +1215,11 @@ def get_sitzungs_dataset_for_excel(sitzung):
                 party = ''
                 # Parteienvergleich
                 for zeile in liste_zeilen:
-                    if zeile.__contains__(get_surname(redner)):
+                    aktuelle_redner = get_surname(redner)
+                    if aktuelle_redner == 'Brandt':
+                        print('brandt gefunden !!')
+                    if zeile.__contains__(aktuelle_redner):
+
                         if check_if_party_is_in_zeile(zeile) == True:
                             party = get_party(zeile)
                             break
