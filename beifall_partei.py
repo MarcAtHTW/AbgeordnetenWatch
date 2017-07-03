@@ -125,7 +125,7 @@ def get_all_parties_without_brackets():
         'BÜNDNIS',
         'DIE GRÜNEN'
         'FDP',
-        'AF)',
+        'AFD)',
         'DIE PIRATEN',
         'LINKEN'
     ]
@@ -474,15 +474,19 @@ def count_seldom_frequently(freq_CleandedSpeech):
                       reverse=True))  # sortiertes dictionary - beginnend mit groeßter Haeufigkeit
     print(dc_sort[:10])  # 10 haeufigsten Woerter (Wort: Anzahl)
     print([str(w[0]) for w in dc_sort[:10]])  # 10 haeufigsten Woerter (nur Wort)
+    print([str(w[1]) for w in dc_sort[:10]])
     list_frequently_words = [str(w[0]) for w in dc_sort[:10]]
+    list_anzahl_frequently_words = [str(w[1]) for w in dc_sort[:10]]
     print(dc_sort[-10:])  # 10 seltensten Woerter (Wort: Anzahl)
     print([str(w[0]) for w in dc_sort[-10:]])  # 10 seltensten Woerter (nur Wort)
+    print([str(w[1]) for w in dc_sort[-10:]])
     list_seldom_words = [str(w[0]) for w in dc_sort[-10:]]
+    list_anzahl_seldom_words = [str(w[1]) for w in dc_sort[-10:]]
 
     # Wir koennen uns auch eine kummulative Verteilungsfunktion grafisch anzeigen lassen. Dazu können wir die plot()-Methode
     # auf dem fdist1-Objekt anwenden. Dazu muss jedoch das Modul matplotlib installiert sein!
     # freq_CleandedSpeech.plot(10, cumulative=True)
-    return list_seldom_words, list_frequently_words
+    return list_seldom_words, list_anzahl_seldom_words, list_frequently_words, list_anzahl_frequently_words
 
 
 def lex_div_without_stopwords(liste_speech_word_tokenized):
@@ -508,7 +512,7 @@ def lex_div_without_stopwords(liste_speech_word_tokenized):
     # diversity_without_stopwords = len(diff_words_without_doubles) / float(len(complete_text_with_doubles_without_stopwords))
 
     print(freq_Cleanded_without_stopwords)
-    list_seldom_words_without_stopwords, list_frequently_words_without_stopwords = count_seldom_frequently(
+    list_seldom_words_without_stopwords, list_anzahl_seldom_words, list_frequently_words_without_stopwords, list_anzahl_frequently_words = count_seldom_frequently(
         freq_Cleanded_without_stopwords)  # Visualisieren der haufigsten und seltensten Woerter ohne stopwords
     print('rrrrrrrrrrrrrrrrr: ', list_seldom_words_without_stopwords)
     print('rrrrrrrrrrrrrrrrr: ', list_frequently_words_without_stopwords)
@@ -518,7 +522,7 @@ def lex_div_without_stopwords(liste_speech_word_tokenized):
     # print("words:              {0:8d}".format(len(wordlist)))                                       # Anzahl genutzter Woerter
     # print("lexical diversity without stopwords:  {0:8.2f}".format(diversity_without_stopwords))     # Prozentsatz fuer die Sprachvielfalt ohne stopwords
 
-    return list_seldom_words_without_stopwords, list_frequently_words_without_stopwords
+    return list_seldom_words_without_stopwords, list_anzahl_seldom_words, list_frequently_words_without_stopwords, list_anzahl_frequently_words
 
 
 def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
@@ -568,9 +572,11 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
 
     seldom_words_daten.write('A1', 'rede_id', bold)
     seldom_words_daten.write('B1', 'Seldom_words', bold)
+    seldom_words_daten.write('C1', 'number_seldom_words_in_speech', bold)
 
     freq_words_daten.write('A1', 'rede_id', bold)
     freq_words_daten.write('B1', 'freq_words', bold)
+    freq_words_daten.write('C1', 'number_freq_words_in_speech', bold)
 
     # writing in worksheet 'Sitzungsdaten'
     row = 1
@@ -628,20 +634,19 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
 
     # writing in worksheet 'Beifalldaten'
     row = 1
-    row_temp = 1
+    t_row = 1
     temp_row = 1
     col = 0
     for dict in liste_dictionary_reden_einer_sitzung:
         for key in ['rede_id_sitzungen', 'beifaelle', 'beifaelle_von_partei']:
-            if isinstance(dict[key], list):
-                if key == ['beifaelle']:
-                    for item in dict[key]:
-                        beifalldaten.write(row, col, item)
-                        row += 1
-                else:
-                    for item in dict[key]:
-                        beifalldaten.write(row_temp, col, item)
-                        row_temp += 1
+            if isinstance(dict[key], list) and dict[key] == dict['beifaelle']:
+                for item in dict[key]:
+                    beifalldaten.write(row, col, item)
+                    row += 1
+            elif isinstance(dict[key], list) and dict[key] == dict['beifaelle_von_partei']:
+                for item in dict[key]:
+                    beifalldaten.write(t_row, col, item)
+                    t_row += 1
             else:
                 k = 0
                 while k < len(dict['beifaelle']):
@@ -673,13 +678,18 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     # writing in worksheet 'seldom_words_daten'
     row = 1
     temp_row = 1
+    t_row = 1
     col = 0
     for dict in liste_dictionary_reden_einer_sitzung:
-        for key in ['rede_id_sitzungen', '10_seldom_words']:
-            if isinstance(dict[key], list):
+        for key in ['rede_id_sitzungen', '10_seldom_words', 'number_seldom_words']:
+            if isinstance(dict[key], list) and dict[key] == dict['10_seldom_words']:
                 for item in dict[key]:
                     seldom_words_daten.write(row, col, item)
                     row += 1
+            elif isinstance(dict[key], list) and dict[key] == dict['number_seldom_words']:
+                for item in dict[key]:
+                    seldom_words_daten.write_number(t_row, col, int(item))
+                    t_row += 1
             else:
                 k = 0
                 while k < len(dict['10_seldom_words']):
@@ -692,14 +702,18 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     # writing in worksheet 'freq_words_daten'
     row = 1
     temp_row = 1
+    t_row = 1
     col = 0
-
     for dict in liste_dictionary_reden_einer_sitzung:
-        for key in ['rede_id_sitzungen', '10_frequently_words']:
-            if isinstance(dict[key], list):
+        for key in ['rede_id_sitzungen', '10_frequently_words', 'number_frequently_words']:
+            if isinstance(dict[key], list) and dict[key] == dict['10_frequently_words']:
                 for item in dict[key]:
                     freq_words_daten.write(row, col, item)
                     row += 1
+            elif isinstance(dict[key], list) and dict[key] == dict['number_frequently_words']:
+                for item in dict[key]:
+                    freq_words_daten.write_number(t_row, col, int(item))
+                    t_row += 1
             else:
                 k = 0
                 while k < len(dict['10_frequently_words']):
@@ -708,6 +722,7 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
                     temp_row += 1
             col += 1
         col = 0
+
 
     # row = 1
     # row_folge_dict = 1
@@ -834,7 +849,8 @@ def clean_speeches(alle_Reden_einer_Sitzung):
                         liste_beifaelle_extract_partei.append(x)
                     else:
                         liste_beifaelle_extract_partei.append('Keine Partei angegeben')
-                    break
+
+
                     # break
             else:
                 counter_wortmeldungen += 1
@@ -847,7 +863,7 @@ def clean_speeches(alle_Reden_einer_Sitzung):
 
         ### Analyse Redetext - Haufigkeit und lexikalische Diversitaet
         liste_speech_word_tokenized = speech_to_words_if_word_isalpha(string_rede)
-        list_seldom_words_without_stopwords, list_frequently_words_without_stopwords = lex_div_without_stopwords(
+        list_seldom_words_without_stopwords, list_number_seldom_words, list_frequently_words_without_stopwords, list_number_freq_words = lex_div_without_stopwords(
             liste_speech_word_tokenized)
 
         result_dictionary_einer_rede = {
@@ -866,7 +882,9 @@ def clean_speeches(alle_Reden_einer_Sitzung):
             'wortmeldungen': liste_wortmeldungen,
             'anzahl_wortmeldungen': counter_wortmeldungen,
             '10_seldom_words': list_seldom_words_without_stopwords,
-            '10_frequently_words': list_frequently_words_without_stopwords
+            'number_seldom_words': list_number_seldom_words,
+            '10_frequently_words': list_frequently_words_without_stopwords,
+            'number_frequently_words': list_number_freq_words
 
         }
         liste_dictionary_reden_einer_sitzung.append(result_dictionary_einer_rede)
@@ -1298,7 +1316,9 @@ def get_sitzungs_dataset_for_excel(sitzung):
                             break
                 if isSpeecherinSpeech == True:
                     dictionary_result['10_frequently_words'] = rede[redner]['10_frequently_words']
+                    dictionary_result['number_frequently_words'] = rede[redner]['number_frequently_words']
                     dictionary_result['10_seldom_words'] = rede[redner]['10_seldom_words']
+                    dictionary_result['number_seldom_words'] = rede[redner]['number_seldom_words']
                     dictionary_result['anzahl_beifaelle'] = rede[redner]['anzahl_beifaelle']
                     dictionary_result['anzahl_wortmeldungen'] = rede[redner]['anzahl_wortmeldungen']
                     dictionary_result['beifaelle'] = rede[redner]['beifaelle']
