@@ -532,7 +532,7 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     topdaten = workbook.add_worksheet('Topdaten')
     redner_rede_daten = workbook.add_worksheet('Redner_Rede')
     beifalltext = workbook.add_worksheet('Beifalltext')
-    #beifalldaten = workbook.add_worksheet('Beifalldaten')
+    beifalldaten = workbook.add_worksheet('Beifalldaten')
     wortmeldedaten = workbook.add_worksheet('Wortmeldedaten')
     seldom_words_daten = workbook.add_worksheet('seldom_words')
     freq_words_daten = workbook.add_worksheet('freq_words')
@@ -545,7 +545,7 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     topdaten.set_column(1, 1, 15)
     redner_rede_daten.set_column(1, 1, 15)
     beifalltext.set_column(1, 1, 15)
-    #beifalldaten.set_column(1, 1, 15)
+    beifalldaten.set_column(1, 1, 15)
     wortmeldedaten.set_column(1, 1, 15)
     seldom_words_daten.set_column(1, 1, 15)
     freq_words_daten.set_column(1, 1, 15)
@@ -569,8 +569,8 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     beifalltext.write('B1', 'Beifalltext', bold)
     beifalltext.write('C1', 'Beifall_ID', bold)
 
-    #beifalldaten.write('A1', 'Beifall_ID', bold)
-    #beifalldaten.write('B1', 'Beifall_von_welcher_Partei/Abgeordneten', bold)
+    beifalldaten.write('A1', 'Beifall_ID', bold)
+    beifalldaten.write('B1', 'Beifall_von_welcher_Partei/Abgeordneten', bold)
 
     wortmeldedaten.write('A1', 'rede_id', bold)
     wortmeldedaten.write('B1', 'Wortmeldungen', bold)
@@ -665,27 +665,29 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
         col = 0
 
     # writing in worksheet 'Beifalldaten'
-    # row = 1
-    # t_row = 1
-    # temp_row = 1
-    # col = 0
-    # beifall_id = 1
-    # for dict in liste_dictionary_reden_einer_sitzung:
-    #     for key in ['beifall_id', 'beifaelle_von_partei']:
-    #         if isinstance(dict[key], list) and dict[key] == dict['beifaelle_von_partei']:
-    #             for item in dict[key]:
-    #                 beifalldaten.write(row, col, item)
-    #                 row += 1
-    #         if dict[key] == dict['beifall_id']:
-    #             for x in dict[key]:
-    #                 k = 0
-    #                 while k < len(dict['beifaelle_von_partei']):
-    #                     beifalldaten.write(temp_row, col, dict['rede_id_sitzungen'] + '_' + x)
-    #                     k += 1
-    #                 temp_row += 1
-    #
-    #         col += 1
-    #     col = 0
+    row = 1
+    t_row = 1
+    temp_row = 1
+    col = 0
+    beifall_id = 1
+    for dict in liste_dictionary_reden_einer_sitzung:
+        for key in ['beifall_id', 'beifaelle_von_partei']:
+            if isinstance(dict[key], list) and dict[key] == dict['beifaelle_von_partei']:
+                for item in dict[key]:
+                    beifalldaten.write(row, col, item)
+                    row += 1
+            if dict[key] == dict['beifall_id']:
+                for x in dict['liste_counter_beifall_id']:
+                    k = 0
+                    n = 0
+                    while k < x:
+                        beifalldaten.write(temp_row, col, dict['rede_id_sitzungen'] + '_' + str(n))
+                        k += 1
+                        n += 1
+                    temp_row += 1
+
+            col += 1
+        col = 0
 
     # writing in worksheet 'Wortmeldedaten'
     row = 1
@@ -889,19 +891,29 @@ def clean_speeches(alle_Reden_einer_Sitzung):
         liste_parteien = get_all_parties_without_brackets()
         liste_beifall_id = []
         beifall_id = 1
+        liste_counter_beifall_id = []
 
         for i in liste_treffer:
             print('Eintrag: ', i)
+
+            party_found = False
             if i.__contains__('Beifall'):
                 liste_beifall_id.append(str(beifall_id))
                 counter_beifaelle += 1
                 liste_beifaelle.append(i)  # Hinzufügen aller Beifälle einer Rede
+
+                counter = 0
                 for x in liste_parteien:
+                    print(x)
                     if i.__contains__(x):
+                        party_found = True
                         liste_beifaelle_extract_partei.append(x)
-                    else:
-                        liste_beifaelle_extract_partei.append('Keine Partei angegeben')
-                beifall_id += 1
+                        counter += 1
+                if party_found == False:
+                    liste_counter_beifall_id.append(0)
+                elif party_found == True:
+                    liste_counter_beifall_id.append(counter)
+                    beifall_id += 1
             else:
                 counter_wortmeldungen += 1
                 liste_wortmeldungen.append(i)  # Hinzufügen aller Wortmeldungen einer Rede
@@ -930,6 +942,7 @@ def clean_speeches(alle_Reden_einer_Sitzung):
             'beifaelle': liste_beifaelle,
             'beifall_id': liste_beifall_id,
             'beifaelle_von_partei': liste_beifaelle_extract_partei,
+            'liste_counter_beifall_id': liste_counter_beifall_id,
             'anzahl_beifaelle': counter_beifaelle,
             'wortmeldungen': liste_wortmeldungen,
             'anzahl_wortmeldungen': counter_wortmeldungen,
@@ -1376,6 +1389,7 @@ def get_sitzungs_dataset_for_excel(sitzung):
                     dictionary_result['beifaelle'] = rede[redner]['beifaelle']
                     dictionary_result['beifall_id'] = rede[redner]['beifall_id']
                     dictionary_result['beifaelle_von_partei'] = rede[redner]['beifaelle_von_partei']
+                    dictionary_result['liste_counter_beifall_id'] = rede[redner]['liste_counter_beifall_id']
                     dictionary_result['clean_rede'] = rede[redner]['clean_rede']
                     dictionary_result['rede_id'] = str(rede[redner]['sitzungsnummer']) + '_' + str(
                         rede[redner]['rede_id'])
