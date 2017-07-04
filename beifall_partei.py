@@ -531,7 +531,8 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     sitzungsdaten = workbook.add_worksheet('Sitzungsdaten')
     topdaten = workbook.add_worksheet('Topdaten')
     redner_rede_daten = workbook.add_worksheet('Redner_Rede')
-    beifalldaten = workbook.add_worksheet('Beifalldaten')
+    beifalltext = workbook.add_worksheet('Beifalltext')
+    #beifalldaten = workbook.add_worksheet('Beifalldaten')
     wortmeldedaten = workbook.add_worksheet('Wortmeldedaten')
     seldom_words_daten = workbook.add_worksheet('seldom_words')
     freq_words_daten = workbook.add_worksheet('freq_words')
@@ -543,7 +544,8 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     sitzungsdaten.set_column(1, 1, 15)
     topdaten.set_column(1, 1, 15)
     redner_rede_daten.set_column(1, 1, 15)
-    beifalldaten.set_column(1, 1, 15)
+    beifalltext.set_column(1, 1, 15)
+    #beifalldaten.set_column(1, 1, 15)
     wortmeldedaten.set_column(1, 1, 15)
     seldom_words_daten.set_column(1, 1, 15)
     freq_words_daten.set_column(1, 1, 15)
@@ -563,12 +565,18 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     redner_rede_daten.write('D1', 'clean_rede', bold)
     redner_rede_daten.write('E1', 'rede_id', bold)
 
-    beifalldaten.write('A1', 'rede_id', bold)
-    beifalldaten.write('B1', 'Beifalltext', bold)
-    beifalldaten.write('C1', 'Beifall_von_welcher_Partei', bold)
+    beifalltext.write('A1', 'rede_id', bold)
+    beifalltext.write('B1', 'Beifalltext', bold)
+    beifalltext.write('C1', 'Beifall_ID', bold)
+
+    #beifalldaten.write('A1', 'Beifall_ID', bold)
+    #beifalldaten.write('B1', 'Beifall_von_welcher_Partei/Abgeordneten', bold)
 
     wortmeldedaten.write('A1', 'rede_id', bold)
     wortmeldedaten.write('B1', 'Wortmeldungen', bold)
+    wortmeldedaten.write('C1', 'Wer', bold)
+    wortmeldedaten.write('D1', 'Text', bold)
+
 
     seldom_words_daten.write('A1', 'rede_id', bold)
     seldom_words_daten.write('B1', 'Seldom_words', bold)
@@ -632,39 +640,78 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
         row += 1
         col = 0
 
-    # writing in worksheet 'Beifalldaten'
+    # writing in worksheet 'Beifalltext'
     row = 1
-    t_row = 1
+    beifall_id_row = 1
     temp_row = 1
     col = 0
     for dict in liste_dictionary_reden_einer_sitzung:
-        for key in ['rede_id_sitzungen', 'beifaelle', 'beifaelle_von_partei']:
+        for key in ['rede_id_sitzungen', 'beifaelle', 'beifall_id']:
             if isinstance(dict[key], list) and dict[key] == dict['beifaelle']:
                 for item in dict[key]:
-                    beifalldaten.write(row, col, item)
+                    beifalltext.write(row, col, item)
                     row += 1
-            elif isinstance(dict[key], list) and dict[key] == dict['beifaelle_von_partei']:
+            elif isinstance(dict[key], list) and dict[key] == dict['beifall_id']:
                 for item in dict[key]:
-                    beifalldaten.write(t_row, col, item)
-                    t_row += 1
-            else:
+                    beifalltext.write(beifall_id_row, col, dict['rede_id_sitzungen'] + '_' + str(item))
+                    beifall_id_row += 1
+            if dict[key] == dict['rede_id_sitzungen']:
                 k = 0
                 while k < len(dict['beifaelle']):
-                    beifalldaten.write(temp_row, col, dict[key])
+                    beifalltext.write(temp_row, col, dict[key])
                     k += 1
                     temp_row += 1
             col += 1
         col = 0
+
+    # writing in worksheet 'Beifalldaten'
+    # row = 1
+    # t_row = 1
+    # temp_row = 1
+    # col = 0
+    # beifall_id = 1
+    # for dict in liste_dictionary_reden_einer_sitzung:
+    #     for key in ['beifall_id', 'beifaelle_von_partei']:
+    #         if isinstance(dict[key], list) and dict[key] == dict['beifaelle_von_partei']:
+    #             for item in dict[key]:
+    #                 beifalldaten.write(row, col, item)
+    #                 row += 1
+    #         if dict[key] == dict['beifall_id']:
+    #             for x in dict[key]:
+    #                 k = 0
+    #                 while k < len(dict['beifaelle_von_partei']):
+    #                     beifalldaten.write(temp_row, col, dict['rede_id_sitzungen'] + '_' + x)
+    #                     k += 1
+    #                 temp_row += 1
+    #
+    #         col += 1
+    #     col = 0
 
     # writing in worksheet 'Wortmeldedaten'
     row = 1
     temp_row = 1
     col = 0
     for dict in liste_dictionary_reden_einer_sitzung:
+        liste_wer = []
+        liste_text = []
         for key in ['rede_id_sitzungen', 'wortmeldungen']:
-            if isinstance(dict[key], list):
+            if isinstance(dict[key], list) and dict[key] == dict['wortmeldungen']:
                 for item in dict[key]:
+                    wer = ''
+                    text = ''
+                    if item.__contains__(':'):
+                        for letter in (item[:item.index(':')]):
+                            wer += letter
+                        wortmeldedaten.write(row, col + 1, wer)
+                        for letter in (item[item.index(':'):]):
+                            text += letter
+                        text = text.replace(':','')
+                        wortmeldedaten.write(row, col + 2, text)
+                    else:
+                        wortmeldedaten.write(row, col + 1, '')
+                        wortmeldedaten.write(row, col + 2, '')
                     wortmeldedaten.write(row, col, item)
+
                     row += 1
             else:
                 k = 0
@@ -821,6 +868,7 @@ def clean_speeches(alle_Reden_einer_Sitzung):
     liste_dictionary_reden_einer_sitzung = []
     rede_id = 1
 
+
     for rede in alle_Reden_einer_Sitzung:
 
         counter_beifaelle = 0
@@ -838,10 +886,13 @@ def clean_speeches(alle_Reden_einer_Sitzung):
         string_rede = ' '.join(rede)
         liste_treffer = re.findall(regex, string_rede)
         liste_parteien = get_all_parties_without_brackets()
+        liste_beifall_id = []
+        beifall_id = 1
 
         for i in liste_treffer:
             print('Eintrag: ', i)
             if i.__contains__('Beifall'):
+                liste_beifall_id.append(str(beifall_id))
                 counter_beifaelle += 1
                 liste_beifaelle.append(i)  # Hinzufügen aller Beifälle einer Rede
                 for x in liste_parteien:
@@ -849,14 +900,13 @@ def clean_speeches(alle_Reden_einer_Sitzung):
                         liste_beifaelle_extract_partei.append(x)
                     else:
                         liste_beifaelle_extract_partei.append('Keine Partei angegeben')
-
-
-                    # break
+                beifall_id += 1
             else:
                 counter_wortmeldungen += 1
                 liste_wortmeldungen.append(i)  # Hinzufügen aller Wortmeldungen einer Rede
 
             string_rede = string_rede.replace('(' + i + ')', '')
+
 
         # string_beifaelle = ' ; '.join(liste_beifaelle)
         # string_wortmeldungen = ' ; '.join(liste_wortmeldungen)
@@ -877,6 +927,7 @@ def clean_speeches(alle_Reden_einer_Sitzung):
             'rede_id': rede_id,
             'clean_rede': string_rede,
             'beifaelle': liste_beifaelle,
+            'beifall_id': liste_beifall_id,
             'beifaelle_von_partei': liste_beifaelle_extract_partei,
             'anzahl_beifaelle': counter_beifaelle,
             'wortmeldungen': liste_wortmeldungen,
@@ -1322,6 +1373,7 @@ def get_sitzungs_dataset_for_excel(sitzung):
                     dictionary_result['anzahl_beifaelle'] = rede[redner]['anzahl_beifaelle']
                     dictionary_result['anzahl_wortmeldungen'] = rede[redner]['anzahl_wortmeldungen']
                     dictionary_result['beifaelle'] = rede[redner]['beifaelle']
+                    dictionary_result['beifall_id'] = rede[redner]['beifall_id']
                     dictionary_result['beifaelle_von_partei'] = rede[redner]['beifaelle_von_partei']
                     dictionary_result['clean_rede'] = rede[redner]['clean_rede']
                     dictionary_result['rede_id'] = str(rede[redner]['sitzungsnummer']) + '_' + str(
