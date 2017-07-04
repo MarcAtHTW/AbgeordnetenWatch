@@ -712,6 +712,7 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
                         wortmeldedaten.write(row, col + 2, '')
                     wortmeldedaten.write(row, col, item)
 
+
                     row += 1
             else:
                 k = 0
