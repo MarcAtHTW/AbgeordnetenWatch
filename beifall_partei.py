@@ -677,13 +677,14 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
                     beifalldaten.write(row, col, item)
                     row += 1
             if dict[key] == dict['beifall_id']:
+                n = 1
                 for x in dict['liste_counter_beifall_id']:
                     k = 0
-                    n = 0
                     while k < x:
                         beifalldaten.write(temp_row, col, dict['rede_id_sitzungen'] + '_' + str(n))
+                        print(temp_row, col, dict['rede_id_sitzungen'] + '_' + str(n))
                         k += 1
-                        n += 1
+                    n += 1
                     temp_row += 1
 
             col += 1
@@ -970,8 +971,8 @@ def start_scraping_with_chrome(url):
     '''
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument('--no-sandbox')
-    chrome = webdriver.Chrome('C:/Python36-32/BrowserDriver/chromedriver.exe', chrome_options=chrome_options)
-    # chrome = webdriver.Chrome('/usr/bin/chromedriver', chrome_options=chrome_options)
+    #chrome = webdriver.Chrome('C:/Python36-32/BrowserDriver/chromedriver.exe', chrome_options=chrome_options)
+    chrome = webdriver.Chrome('/usr/bin/chromedriver', chrome_options=chrome_options)
 
     chrome.get(url)
     return chrome
