@@ -669,7 +669,6 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     t_row = 1
     temp_row = 1
     col = 0
-    beifall_id = 1
     for dict in liste_dictionary_reden_einer_sitzung:
         for key in ['beifall_id', 'beifaelle_von_partei']:
             if isinstance(dict[key], list) and dict[key] == dict['beifaelle_von_partei']:
@@ -684,8 +683,8 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
                         beifalldaten.write(temp_row, col, dict['rede_id_sitzungen'] + '_' + str(n))
                         print(temp_row, col, dict['rede_id_sitzungen'] + '_' + str(n))
                         k += 1
+                        temp_row += 1
                     n += 1
-                    temp_row += 1
 
             col += 1
         col = 0
@@ -914,7 +913,7 @@ def clean_speeches(alle_Reden_einer_Sitzung):
                     liste_counter_beifall_id.append(0)
                 elif party_found == True:
                     liste_counter_beifall_id.append(counter)
-                    beifall_id += 1
+                beifall_id += 1
             else:
                 counter_wortmeldungen += 1
                 liste_wortmeldungen.append(i)  # Hinzufügen aller Wortmeldungen einer Rede
