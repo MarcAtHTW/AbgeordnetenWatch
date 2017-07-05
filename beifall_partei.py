@@ -13,6 +13,7 @@ import codecs
 import urllib.request, json
 import pickle
 import time
+
 ### Start Testing_Steve ###
 os.environ['JAVAHOME'] = "C:/Program Files/Java/jdk1.8.0_20/bin/java.exe"
 
@@ -179,17 +180,10 @@ def get_surname(full_name):
     surname = ''
     for letter in (full_name[:full_name.index(',')]):
         surname += letter
+    # if surname.__contains__(' '):
+    #     surname.replace(' ','-')
 
     return surname
-
-def get_firstname(full_name):
-    index_of_last_whitespace = get_index_of_last_whitespace_in_string(full_name) + 1
-    firstname = ''
-
-    for letter in full_name[index_of_last_whitespace:]:
-        firstname += letter
-
-    return firstname
 
 def get_index_of_last_whitespace_in_string(string):
     i = 0
@@ -208,6 +202,15 @@ def get_index_of_last_whitespace_in_string(string):
 
     return index_of_last_whitespace
 
+def get_firstname(full_name):
+    index_of_last_whitespace = get_index_of_last_whitespace_in_string(full_name) + 1
+    firstname = ''
+
+    for letter in full_name[index_of_last_whitespace:]:
+        firstname += letter
+
+    return firstname
+
 def set_number(i):
     '''
     Setzt number of listelement
@@ -225,6 +228,18 @@ def get_number():
     '''
     global number_of_last_element
     return number_of_last_element
+
+def serialize_sitzungen(dict_cleaned_sortierte_sitzungen):
+    date = time.strftime("%d_%m_%Y")
+    file = 'scraped_content/serialized_sitzungen_' + date + '.txt'
+    f = open(file, 'wb')
+    pickle.dump(dict_cleaned_sortierte_sitzungen, f)
+
+def deserialize_sitzunen(path_to_serialized_file):
+    file = open(path_to_serialized_file, 'rb')
+    sitzungen = pickle.load(file)
+    return sitzungen
+
 
 
 def analyse_content_element(list_element, i):
@@ -308,8 +323,9 @@ def analyse_content_element(list_element, i):
             list_elements_till_first_speech.append(list_element)  # Teile mit TOP, ZTOP,...
             print('global-> erste Zeilen: ', list_element)
 
+
 def change_umlaute(string):
-    umlaute = ['ü','ö','ä', 'ß']
+    umlaute = ['ü','ö','ä', 'ß', 'é', 'è']
     result_string = ''
 
     for char in string:
@@ -327,6 +343,12 @@ def change_umlaute(string):
             if char == 'ß':
                 char = 's'
 
+            if char == 'é':
+                char = 'e'
+
+            if char == 'è':
+                char = 'e'
+
         result_string += char
 
     return result_string
@@ -337,10 +359,10 @@ def api_abgeordnetenwatch(politican_name):
 
     Unterschied in der URL den Titeln der Redner betreffen dr, prof-dr ..
 
-
     :param politican_name
-    :return: Name, Partei usw.
+    :return: Partei, Geschlecht
     '''
+    print('kkkkkkkkkkkkkk: ',politican_name)
     firstname = get_firstname(politican_name).lower()
     lastname = get_surname(politican_name).lower()
 
@@ -357,6 +379,7 @@ def api_abgeordnetenwatch(politican_name):
             data = json.loads(url.read().decode())
             #politiker_name = data['profile']['personal']['first_name'] + " " + data['profile']['personal']['last_name']
             partei = data['profile']['party']
+            geschlecht = data['profile']['personal']['gender']
 
     except urllib.error.HTTPError as err:
         if err.code == 404:
@@ -366,6 +389,7 @@ def api_abgeordnetenwatch(politican_name):
                     data = json.loads(url2.read().decode())
                     # politiker_name = data['profile']['personal']['first_name'] + " " + data['profile']['personal']['last_name']
                     partei = data['profile']['party']
+                    geschlecht = data['profile']['personal']['gender']
 
             except urllib.error.HTTPError as err:
 
@@ -374,16 +398,17 @@ def api_abgeordnetenwatch(politican_name):
                         data = json.loads(url3.read().decode())
                         # politiker_name = data['profile']['personal']['first_name'] + " " + data['profile']['personal']['last_name']
                         partei = data['profile']['party']
+                        geschlecht = data['profile']['personal']['gender']
 
                 except urllib.error.HTTPError as err:
                     print('Fehler 404 - Seite konnte nicht gefunden werden: ' + "https://www.abgeordnetenwatch.de/api/profile/" + 'prof-dr-' + firstname + '-' + lastname + "/profile.json")
                     partei = 'Api-Error-Code 404: Seite konnte nicht gefunden werden: ' + "https://www.abgeordnetenwatch.de/api/profile/" + firstname + '-' + lastname + '/profile.json'
-
+                    geschlecht = 'Api-Error-Code 404: Seite konnte nicht gefunden werden: ' + "https://www.abgeordnetenwatch.de/api/profile/" + firstname + '-' + lastname + '/profile.json'
         else:
             raise
 
 
-    return '(' + partei + ')'
+    return '(' + partei + ')', geschlecht
 
 
 def get_start_and_end_of_a_speech():
@@ -645,9 +670,10 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
 
     redner_rede_daten.write('A1', 'Tagesordnungspunkt', bold)
     redner_rede_daten.write('B1', 'Redner', bold)
-    redner_rede_daten.write('C1', 'Partei', bold)
-    redner_rede_daten.write('D1', 'clean_rede', bold)
-    redner_rede_daten.write('E1', 'rede_id', bold)
+    redner_rede_daten.write('C1', 'Geschlecht', bold)
+    redner_rede_daten.write('D1', 'Partei', bold)
+    redner_rede_daten.write('E1', 'clean_rede', bold)
+    redner_rede_daten.write('F1', 'rede_id', bold)
 
     beifalltext.write('A1', 'rede_id', bold)
     beifalltext.write('B1', 'Beifalltext', bold)
@@ -659,7 +685,8 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     wortmeldedaten.write('A1', 'rede_id', bold)
     wortmeldedaten.write('B1', 'Wortmeldungen', bold)
     wortmeldedaten.write('C1', 'Wer', bold)
-    wortmeldedaten.write('D1', 'Text', bold)
+    #wortmeldedaten.write('D1', 'Geschlecht', bold)
+    wortmeldedaten.write('E1', 'Text', bold)
 
 
     seldom_words_daten.write('A1', 'rede_id', bold)
@@ -718,7 +745,7 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     row = 1
     col = 0
     for dict in liste_dictionary_reden_einer_sitzung:
-        for key in ['tagesordnungspunkt', 'redner', 'partei', 'clean_rede', 'rede_id_sitzungen']:
+        for key in ['tagesordnungspunkt', 'redner', 'geschlecht', 'partei', 'clean_rede', 'rede_id_sitzungen']:
             redner_rede_daten.write(row, col, dict[key])
             col += 1
         row += 1
@@ -753,7 +780,6 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     t_row = 1
     temp_row = 1
     col = 0
-    beifall_id = 1
     for dict in liste_dictionary_reden_einer_sitzung:
         for key in ['beifall_id', 'beifaelle_von_partei']:
             if isinstance(dict[key], list) and dict[key] == dict['beifaelle_von_partei']:
@@ -761,14 +787,15 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
                     beifalldaten.write(row, col, item)
                     row += 1
             if dict[key] == dict['beifall_id']:
+                n = 1
                 for x in dict['liste_counter_beifall_id']:
                     k = 0
-                    n = 0
                     while k < x:
                         beifalldaten.write(temp_row, col, dict['rede_id_sitzungen'] + '_' + str(n))
+                        print(temp_row, col, dict['rede_id_sitzungen'] + '_' + str(n))
                         k += 1
-                        n += 1
-                    temp_row += 1
+                        temp_row += 1
+                    n += 1
 
             col += 1
         col = 0
@@ -808,7 +835,6 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
                     temp_row += 1
             col += 1
         col = 0
-
     # writing in worksheet 'seldom_words_daten'
     row = 1
     temp_row = 1
@@ -997,7 +1023,7 @@ def clean_speeches(alle_Reden_einer_Sitzung):
                     liste_counter_beifall_id.append(0)
                 elif party_found == True:
                     liste_counter_beifall_id.append(counter)
-                    beifall_id += 1
+                beifall_id += 1
             else:
                 counter_wortmeldungen += 1
                 liste_wortmeldungen.append(i)  # Hinzufügen aller Wortmeldungen einer Rede
@@ -1055,7 +1081,7 @@ def start_scraping_with_chrome(url):
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument('--no-sandbox')
     chrome = webdriver.Chrome('C:/Python36-32/BrowserDriver/chromedriver.exe', chrome_options=chrome_options)
-    # chrome = webdriver.Chrome('/usr/bin/chromedriver', chrome_options=chrome_options)
+    #chrome = webdriver.Chrome('/usr/bin/chromedriver', chrome_options=chrome_options)
 
     chrome.get(url)
     return chrome
@@ -1364,16 +1390,6 @@ def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung):
     return final_cleaned_sortierte_sitzung
 
 
-# def count_speecher():
-#     anz_redner = 0
-#     i = 0
-#     for top in temp_speecher_list:
-#         temp_top_liste.append(temp_speecher_list[i]['Redner'])
-#         anz_redner += len(temp_speecher_list[i]['Redner'])
-#         i += 1
-#     return str(anz_redner)
-
-
 def count_speecher_from_cleaned_sortierte_sitzung(sitzung):
     result = 0
     for anz_redner_je_topic in sitzung['TOPs']:
@@ -1415,16 +1431,6 @@ def find_last_brackets_in_string(string):
 
     return index_of_last_open_bracket, index_of_last_closed_bracket
 
-def serialize_sitzungen(dict_cleaned_sortierte_sitzungen):
-    date = time.strftime("%d_%m_%Y")
-    file = 'scraped_content/serialized_sitzungen_' + date + '.txt'
-    f = open(file, 'wb')
-    pickle.dump(dict_cleaned_sortierte_sitzungen, f)
-
-def deserialize_sitzunen(path_to_serialized_file):
-    file = open(path_to_serialized_file, 'rb')
-    sitzungen = pickle.load(file)
-    return sitzungen
 
 def set_metadaten(sitzung):
     sitzungsdatum = sitzung['Sitzungsdatum']
@@ -1462,11 +1468,10 @@ def get_sitzungs_dataset_for_excel(sitzung):
                 isSpeecherinSpeech = False
                 # surname = get_surname(redner)
                 party = ''
+                geschlecht = ''
                 # Parteienvergleich
                 for zeile in liste_zeilen:
                     aktuelle_redner = get_surname(redner)
-                    if aktuelle_redner == 'Pau':
-                        print('brandt gefunden !!')
                     if rede[redner]['clean_rede'].__contains__(aktuelle_redner):
                         isSpeecherinSpeech = True
                     if zeile.__contains__(aktuelle_redner):
@@ -1474,6 +1479,11 @@ def get_sitzungs_dataset_for_excel(sitzung):
                             party = get_party(zeile)
                             break
                 if isSpeecherinSpeech == True:
+                    if party == '':
+                        party, geschlecht = api_abgeordnetenwatch(redner)
+                    if geschlecht == '':
+                        party, geschlecht = api_abgeordnetenwatch(redner)
+
                     dictionary_result['10_frequently_words'] = rede[redner]['10_frequently_words']
                     dictionary_result['number_frequently_words'] = rede[redner]['number_frequently_words']
                     dictionary_result['10_seldom_words'] = rede[redner]['10_seldom_words']
@@ -1490,6 +1500,7 @@ def get_sitzungs_dataset_for_excel(sitzung):
                     dictionary_result['rede_id_sitzungen'] = str(rede[redner]['sitzungsnummer']) + '_' + str(
                         rede[redner]['rede_id'])
                     dictionary_result['redner'] = redner
+                    dictionary_result['geschlecht'] = geschlecht
                     dictionary_result['sitzungsdatum'] = rede[redner]['sitzungsdatum']
                     dictionary_result['sitzungsnummer'] = rede[redner]['sitzungsnummer']
                     dictionary_result['tagesordnungspunkt'] = rede[redner]['tagesordnungspunkt']
