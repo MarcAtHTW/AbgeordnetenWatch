@@ -107,7 +107,24 @@ def get_all_parties():
         'DIE GRÜNEN)'
         '(FDP)',
         '(AFD)',
-        '(DIE PIRATEN)'
+        '(DIE PIRATEN)',
+        '(LINKEN)'
+    ]
+
+    return list_parties
+
+def get_all_parties_without_brackets():
+    list_parties = [
+        'DIE LINKE',
+        'CDU/CSU',
+        'SPD',
+        'BÜNDNIS 90/DIE GRÜNEN',
+        'BÜNDNIS',
+        'DIE GRÜNEN'
+        'FDP',
+        'AF)',
+        'DIE PIRATEN',
+        'LINKEN'
     ]
 
     return list_parties
@@ -525,6 +542,7 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
 
     beifalldaten.write('A1', 'rede_id', bold)
     beifalldaten.write('B1', 'Beifalltext', bold)
+    beifalldaten.write('C1', 'Beifall_von_welcher_Partei', bold)
 
     wortmeldedaten.write('A1', 'rede_id', bold)
     wortmeldedaten.write('B1', 'Wortmeldungen', bold)
@@ -590,14 +608,20 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
 
     # writing in worksheet 'Beifalldaten'
     row = 1
+    row_temp = 1
     temp_row = 1
     col = 0
     for dict in liste_dictionary_reden_einer_sitzung:
-        for key in ['rede_id_sitzungen', 'beifaelle']:
+        for key in ['rede_id_sitzungen', 'beifaelle', 'beifaelle_von_partei']:
             if isinstance(dict[key], list):
-                for item in dict[key]:
-                    beifalldaten.write(row, col, item)
-                    row += 1
+                if key == ['beifaelle']:
+                    for item in dict[key]:
+                        beifalldaten.write(row, col, item)
+                        row += 1
+                else:
+                    for item in dict[key]:
+                        beifalldaten.write(row_temp, col, item)
+                        row_temp += 1
             else:
                 k = 0
                 while k < len(dict['beifaelle']):
@@ -774,15 +798,24 @@ def clean_speeches(alle_Reden_einer_Sitzung):
         result_dictionary = {}
         string_rede = ''
         liste_treffer = []
+        liste_beifaelle_extract_partei = []
 
         string_rede = ' '.join(rede)
         liste_treffer = re.findall(regex, string_rede)
+        liste_parteien = get_all_parties_without_brackets()
 
         for i in liste_treffer:
             print('Eintrag: ',i)
             if i.__contains__('Beifall'):
                 counter_beifaelle += 1
                 liste_beifaelle.append(i)          # Hinzufügen aller Beifälle einer Rede
+                for x in liste_parteien:
+                    if i.__contains__(x):
+                        liste_beifaelle_extract_partei.append(x)
+                    else:
+                        liste_beifaelle_extract_partei.append('Keine Partei angegeben')
+                    break
+                #break
             else:
                 counter_wortmeldungen += 1
                 liste_wortmeldungen.append(i)  # Hinzufügen aller Wortmeldungen einer Rede
@@ -807,6 +840,7 @@ def clean_speeches(alle_Reden_einer_Sitzung):
                                 'rede_id'               :   rede_id,
                                 'clean_rede'            :   string_rede,
                                 'beifaelle'             :   liste_beifaelle,
+                                'beifaelle_von_partei'  :   liste_beifaelle_extract_partei,
                                 'anzahl_beifaelle'      :   counter_beifaelle,
                                 'wortmeldungen'         :   liste_wortmeldungen,
                                 'anzahl_wortmeldungen'  :   counter_wortmeldungen,
@@ -831,8 +865,8 @@ def start_scraping_with_chrome(url):
     '''
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument('--no-sandbox')
-    #chrome = webdriver.Chrome('C:/Python36-32/BrowserDriver/chromedriver.exe', chrome_options=chrome_options)
-    chrome = webdriver.Chrome('/usr/bin/chromedriver', chrome_options=chrome_options)
+    chrome = webdriver.Chrome('C:/Python36-32/BrowserDriver/chromedriver.exe', chrome_options=chrome_options)
+    #chrome = webdriver.Chrome('/usr/bin/chromedriver', chrome_options=chrome_options)
 
     chrome.get(url)
     return chrome
@@ -1231,6 +1265,7 @@ def get_sitzungs_dataset_for_excel(sitzung):
                     dictionary_result['anzahl_beifaelle']               = rede[redner]['anzahl_beifaelle']
                     dictionary_result['anzahl_wortmeldungen']           = rede[redner]['anzahl_wortmeldungen']
                     dictionary_result['beifaelle']                      = rede[redner]['beifaelle']
+                    dictionary_result['beifaelle_von_partei']           = rede[redner]['beifaelle_von_partei']
                     dictionary_result['clean_rede']                     = rede[redner]['clean_rede']
                     dictionary_result['rede_id']                        = str(rede[redner]['sitzungsnummer']) + '_' + str(rede[redner]['rede_id'])
                     dictionary_result['rede_id_sitzungen']              = str(rede[redner]['sitzungsnummer']) + '_' + str(rede[redner]['rede_id'])
