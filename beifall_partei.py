@@ -13,6 +13,7 @@ import codecs
 import urllib.request, json
 import pickle
 import time
+import xlrd
 
 ### Start Testing_Steve ###
 os.environ['JAVAHOME'] = "C:/Program Files/Java/jdk1.8.0_20/bin/java.exe"
@@ -132,6 +133,18 @@ def get_all_parties_without_brackets():
 
     return list_parties
 
+def get_wahlkampfthemen():
+    list_wahlkampfthemen = [
+            'Terrorismus',
+            'terrorismus',
+            'Geflüchtete',
+            'Bundeswehreinsatz',
+            'flucht',
+            'europäische Union',
+            'EU',
+            'Soziale Gerechtigkeit'
+            'Soziale Gerechtigkeit'
+        ]
 
 def check_if_party_is_in_zeile(zeile):
     # Wenn das Element keinen Hinweis auf eine Partei Enthält, wird es verworfen:
@@ -667,6 +680,8 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     topdaten.write('A1', 'Sitzungsnummer', bold)
     topdaten.write('B1', 'Tagesordnungspunkt', bold)
     topdaten.write('C1', 'Tagesordnungspunktbezeichnung', bold)
+    topdaten.write('D1', 'gefundenes Synonym', bold)
+    topdaten.write('E1', 'Top_Einordnung_Kategorie', bold)
 
     redner_rede_daten.write('A1', 'Tagesordnungspunkt', bold)
     redner_rede_daten.write('B1', 'Redner', bold)
@@ -714,16 +729,42 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     x = 0
     for dict in liste_dictionary_reden_einer_sitzung:
 
+        # Abgleich Vokabular.xlsx mit tagesordnungspunktbezeichnung
+        workbook_vokabular = xlrd.open_workbook('Vokabular.xlsx')
+        worksheet_blatt1 = workbook_vokabular.sheet_by_name('Blatt1')
+        col_synonyms = worksheet_blatt1.col_values(0)  # Spalte mit synonymen
+        col_categorie = worksheet_blatt1.col_values(2)  # Spalte mit kategorie
+        matchers = col_synonyms
+        list_found_synonyms= []
+        string_found_synonyms = ''
+        list_found_categorie = []
+        string_found_categorie = ''
+
         if x > 0:
             # if liste_dictionary_reden_einer_sitzung[x-1]['tagesordnungspunkt'] != dict['tagesordnungspunkt'] and liste_dictionary_reden_einer_sitzung[x-1]['tagesordnungspunktbezeichnung'] !=dict['tagesordnungspunktbezeichnung']:
             if temp_tagesordnungspunkt != liste_dictionary_reden_einer_sitzung[x][
                 'tagesordnungspunkt'] and temp_tagesordnungspunkt_bezeichnung != \
                     liste_dictionary_reden_einer_sitzung[x]['tagesordnungspunktbezeichnung']:
+                counter = 0
                 for key in ['sitzungsnummer', 'tagesordnungspunkt', 'tagesordnungspunktbezeichnung']:
                     if key == 'sitzungsnummer':
                         topdaten.write_number(row, col, int(dict[key]))
                     else:
                         topdaten.write(row, col, dict[key])
+
+                        while counter < 1:
+                            for m in range(len(matchers)):
+                                matcher_element = matchers[m]
+                                if temp_tagesordnungspunkt_bezeichnung.__contains__(matcher_element):
+                                    list_found_synonyms.append(matcher_element)
+                                    list_found_categorie.append(col_categorie[m])
+                            string_found_synonyms = ' , '.join(list_found_synonyms)
+                            string_found_categorie = ' , '.join(list_found_categorie)
+                            topdaten.write(row-1, col + 2, string_found_synonyms)
+                            topdaten.write(row-1, col + 3, string_found_categorie)
+                            list_found_synonyms = []
+                            list_found_categorie = []
+                            counter += 1
                     col += 1
                 row += 1
                 col = 0
@@ -738,7 +779,20 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
             topdaten.write_number(row, col, int(sitzungnummer))
             topdaten.write(row, col + 1, temp_tagesordnungspunkt)
             topdaten.write(row, col + 2, temp_tagesordnungspunkt_bezeichnung)
+
+            # for m in range(len(matchers)):
+            #     matcher_element = matchers[m]
+            #     if temp_tagesordnungspunkt_bezeichnung.__contains__(matcher_element):
+            #         list_found_synonyms.append(matcher_element)
+            #         list_found_categorie.append(col_categorie[m])
+            # string_found_synonyms = ' , '.join(list_found_synonyms)
+            # string_found_categorie = ' , '.join(list_found_categorie)
+            # #topdaten.write(row-1, col + 2, string_found_synonyms)
+            # topdaten.write(row-1, col + 2, string_found_categorie)
+            # list_found_synonyms = []
+            # list_found_categorie = []
             row += 1
+
         x += 1
 
     # writing in worksheet 'Redner_Rede'
