@@ -1,6 +1,3 @@
-# coding=utf-8
-import PyPDF2
-import nltk
 from nltk import FreqDist
 from nltk.corpus import stopwords
 import operator
@@ -13,7 +10,9 @@ from operator import itemgetter
 import xlsxwriter
 import re
 import codecs
-
+import urllib.request, json
+import pickle
+import time
 ### Start Testing_Steve ###
 os.environ['JAVAHOME'] = "C:/Program Files/Java/jdk1.8.0_20/bin/java.exe"
 
@@ -183,6 +182,31 @@ def get_surname(full_name):
 
     return surname
 
+def get_firstname(full_name):
+    index_of_last_whitespace = get_index_of_last_whitespace_in_string(full_name) + 1
+    firstname = ''
+
+    for letter in full_name[index_of_last_whitespace:]:
+        firstname += letter
+
+    return firstname
+
+def get_index_of_last_whitespace_in_string(string):
+    i = 0
+    index_of_last_whitespace        = 0
+
+    found_higher_index = True
+
+    while found_higher_index == True:
+        for letter in string[i:]:
+            if letter == ' ':
+                found_higher_index = True
+                index_of_last_whitespace = i
+            i += 1
+            if i == len(string):
+                found_higher_index = False
+
+    return index_of_last_whitespace
 
 def set_number(i):
     '''
@@ -284,22 +308,82 @@ def analyse_content_element(list_element, i):
             list_elements_till_first_speech.append(list_element)  # Teile mit TOP, ZTOP,...
             print('global-> erste Zeilen: ', list_element)
 
+def change_umlaute(string):
+    umlaute = ['ü','ö','ä', 'ß']
+    result_string = ''
+
+    for char in string:
+        if char in umlaute:
+
+            if char == 'ü':
+                char = 'u'
+
+            if char == 'ö':
+                char = 'o'
+
+            if char == 'ä':
+                char = 'a'
+
+            if char == 'ß':
+                char = 's'
+
+        result_string += char
+
+    return result_string
 
 def api_abgeordnetenwatch(politican_name):
     '''
-    Anbindung an API-Abgeordnetenwatch um sich JSON abzugreifen und weitere Daten zur Person abzugreifen
+    Anbindung an API-Abgeordnetenwatch um sich JSON abzugreifen und weitere Daten zur Person zu erhalten.
+
+    Unterschied in der URL den Titeln der Redner betreffen dr, prof-dr ..
+
+
     :param politican_name
     :return: Name, Partei usw.
     '''
-    import urllib.request, json
-    politican_name = politican_name.lower()
-    politican_name = politican_name.replace(' ', '-')
-    with urllib.request.urlopen(
-                            "https://www.abgeordnetenwatch.de/api/profile/" + politican_name + "/profile.json") as url:
-        data = json.loads(url.read().decode())
-        politiker_name = data['profile']['personal']['first_name'] + " " + data['profile']['personal']['last_name']
-        partei = data['profile']['party']
-    return politican_name, partei
+    firstname = get_firstname(politican_name).lower()
+    lastname = get_surname(politican_name).lower()
+
+    firstname = change_umlaute(firstname)
+    lastname = change_umlaute(lastname)
+
+    url = 'https://www.abgeordnetenwatch.de/api/profile/' + firstname + '-' + lastname + '/profile.json'
+    url2 = 'https://www.abgeordnetenwatch.de/api/profile/' + 'dr-' +firstname + '-' + lastname + '/profile.json'
+    url3 = 'https://www.abgeordnetenwatch.de/api/profile/' + 'prof-dr-' +firstname + '-' + lastname + '/profile.json'
+
+
+    try:
+        with urllib.request.urlopen(url) as url:
+            data = json.loads(url.read().decode())
+            #politiker_name = data['profile']['personal']['first_name'] + " " + data['profile']['personal']['last_name']
+            partei = data['profile']['party']
+
+    except urllib.error.HTTPError as err:
+        if err.code == 404:
+            try:
+
+                with urllib.request.urlopen(url2) as url2:
+                    data = json.loads(url2.read().decode())
+                    # politiker_name = data['profile']['personal']['first_name'] + " " + data['profile']['personal']['last_name']
+                    partei = data['profile']['party']
+
+            except urllib.error.HTTPError as err:
+
+                try:
+                    with urllib.request.urlopen(url3) as url3:
+                        data = json.loads(url3.read().decode())
+                        # politiker_name = data['profile']['personal']['first_name'] + " " + data['profile']['personal']['last_name']
+                        partei = data['profile']['party']
+
+                except urllib.error.HTTPError as err:
+                    print('Fehler 404 - Seite konnte nicht gefunden werden: ' + "https://www.abgeordnetenwatch.de/api/profile/" + 'prof-dr-' + firstname + '-' + lastname + "/profile.json")
+                    partei = 'Api-Error-Code 404: Seite konnte nicht gefunden werden: ' + "https://www.abgeordnetenwatch.de/api/profile/" + firstname + '-' + lastname + '/profile.json'
+
+        else:
+            raise
+
+
+    return '(' + partei + ')'
 
 
 def get_start_and_end_of_a_speech():
@@ -677,15 +761,14 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
                     beifalldaten.write(row, col, item)
                     row += 1
             if dict[key] == dict['beifall_id']:
-                n = 1
-                for counterwert in dict['liste_counter_beifall_id']:
+                for x in dict['liste_counter_beifall_id']:
                     k = 0
-                    while k < counterwert:
+                    n = 0
+                    while k < x:
                         beifalldaten.write(temp_row, col, dict['rede_id_sitzungen'] + '_' + str(n))
                         k += 1
-                        temp_row += 1
-                    n += 1
-
+                        n += 1
+                    temp_row += 1
 
             col += 1
         col = 0
@@ -914,7 +997,7 @@ def clean_speeches(alle_Reden_einer_Sitzung):
                     liste_counter_beifall_id.append(0)
                 elif party_found == True:
                     liste_counter_beifall_id.append(counter)
-                beifall_id += 1
+                    beifall_id += 1
             else:
                 counter_wortmeldungen += 1
                 liste_wortmeldungen.append(i)  # Hinzufügen aller Wortmeldungen einer Rede
@@ -1281,14 +1364,14 @@ def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung):
     return final_cleaned_sortierte_sitzung
 
 
-def count_speecher():
-    anz_redner = 0
-    i = 0
-    for top in temp_speecher_list:
-        temp_top_liste.append(temp_speecher_list[i]['Redner'])
-        anz_redner += len(temp_speecher_list[i]['Redner'])
-        i += 1
-    return str(anz_redner)
+# def count_speecher():
+#     anz_redner = 0
+#     i = 0
+#     for top in temp_speecher_list:
+#         temp_top_liste.append(temp_speecher_list[i]['Redner'])
+#         anz_redner += len(temp_speecher_list[i]['Redner'])
+#         i += 1
+#     return str(anz_redner)
 
 
 def count_speecher_from_cleaned_sortierte_sitzung(sitzung):
@@ -1332,6 +1415,16 @@ def find_last_brackets_in_string(string):
 
     return index_of_last_open_bracket, index_of_last_closed_bracket
 
+def serialize_sitzungen(dict_cleaned_sortierte_sitzungen):
+    date = time.strftime("%d_%m_%Y")
+    file = 'scraped_content/serialized_sitzungen_' + date + '.txt'
+    f = open(file, 'wb')
+    pickle.dump(dict_cleaned_sortierte_sitzungen, f)
+
+def deserialize_sitzunen(path_to_serialized_file):
+    file = open(path_to_serialized_file, 'rb')
+    sitzungen = pickle.load(file)
+    return sitzungen
 
 def set_metadaten(sitzung):
     sitzungsdatum = sitzung['Sitzungsdatum']
