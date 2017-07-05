@@ -13,7 +13,6 @@ import codecs
 import urllib.request, json
 import pickle
 import time
-
 ### Start Testing_Steve ###
 os.environ['JAVAHOME'] = "C:/Program Files/Java/jdk1.8.0_20/bin/java.exe"
 
@@ -183,6 +182,15 @@ def get_surname(full_name):
 
     return surname
 
+def get_firstname(full_name):
+    index_of_last_whitespace = get_index_of_last_whitespace_in_string(full_name) + 1
+    firstname = ''
+
+    for letter in full_name[index_of_last_whitespace:]:
+        firstname += letter
+
+    return firstname
+
 def get_index_of_last_whitespace_in_string(string):
     i = 0
     index_of_last_whitespace        = 0
@@ -199,15 +207,6 @@ def get_index_of_last_whitespace_in_string(string):
                 found_higher_index = False
 
     return index_of_last_whitespace
-
-def get_firstname(full_name):
-    index_of_last_whitespace = get_index_of_last_whitespace_in_string(full_name) + 1
-    firstname = ''
-
-    for letter in full_name[index_of_last_whitespace:]:
-        firstname += letter
-
-    return firstname
 
 def set_number(i):
     '''
@@ -226,18 +225,6 @@ def get_number():
     '''
     global number_of_last_element
     return number_of_last_element
-
-def serialize_sitzungen(dict_cleaned_sortierte_sitzungen):
-    date = time.strftime("%d_%m_%Y")
-    file = 'scraped_content/serialized_sitzungen_' + date + '.txt'
-    f = open(file, 'wb')
-    pickle.dump(dict_cleaned_sortierte_sitzungen, f)
-
-def deserialize_sitzunen(path_to_serialized_file):
-    file = open(path_to_serialized_file, 'rb')
-    sitzungen = pickle.load(file)
-    return sitzungen
-
 
 
 def analyse_content_element(list_element, i):
@@ -320,7 +307,6 @@ def analyse_content_element(list_element, i):
             global list_elements_till_first_speech
             list_elements_till_first_speech.append(list_element)  # Teile mit TOP, ZTOP,...
             print('global-> erste Zeilen: ', list_element)
-
 
 def change_umlaute(string):
     umlaute = ['ü','ö','ä', 'ß']
@@ -767,6 +753,7 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     t_row = 1
     temp_row = 1
     col = 0
+    beifall_id = 1
     for dict in liste_dictionary_reden_einer_sitzung:
         for key in ['beifall_id', 'beifaelle_von_partei']:
             if isinstance(dict[key], list) and dict[key] == dict['beifaelle_von_partei']:
@@ -774,15 +761,14 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
                     beifalldaten.write(row, col, item)
                     row += 1
             if dict[key] == dict['beifall_id']:
-                n = 1
                 for x in dict['liste_counter_beifall_id']:
                     k = 0
+                    n = 0
                     while k < x:
                         beifalldaten.write(temp_row, col, dict['rede_id_sitzungen'] + '_' + str(n))
-                        print(temp_row, col, dict['rede_id_sitzungen'] + '_' + str(n))
                         k += 1
-                        temp_row += 1
-                    n += 1
+                        n += 1
+                    temp_row += 1
 
             col += 1
         col = 0
@@ -1011,7 +997,7 @@ def clean_speeches(alle_Reden_einer_Sitzung):
                     liste_counter_beifall_id.append(0)
                 elif party_found == True:
                     liste_counter_beifall_id.append(counter)
-                beifall_id += 1
+                    beifall_id += 1
             else:
                 counter_wortmeldungen += 1
                 liste_wortmeldungen.append(i)  # Hinzufügen aller Wortmeldungen einer Rede
@@ -1068,8 +1054,8 @@ def start_scraping_with_chrome(url):
     '''
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument('--no-sandbox')
-    #chrome = webdriver.Chrome('C:/Python36-32/BrowserDriver/chromedriver.exe', chrome_options=chrome_options)
-    chrome = webdriver.Chrome('/usr/bin/chromedriver', chrome_options=chrome_options)
+    chrome = webdriver.Chrome('C:/Python36-32/BrowserDriver/chromedriver.exe', chrome_options=chrome_options)
+    # chrome = webdriver.Chrome('/usr/bin/chromedriver', chrome_options=chrome_options)
 
     chrome.get(url)
     return chrome
@@ -1378,6 +1364,16 @@ def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung):
     return final_cleaned_sortierte_sitzung
 
 
+# def count_speecher():
+#     anz_redner = 0
+#     i = 0
+#     for top in temp_speecher_list:
+#         temp_top_liste.append(temp_speecher_list[i]['Redner'])
+#         anz_redner += len(temp_speecher_list[i]['Redner'])
+#         i += 1
+#     return str(anz_redner)
+
+
 def count_speecher_from_cleaned_sortierte_sitzung(sitzung):
     result = 0
     for anz_redner_je_topic in sitzung['TOPs']:
@@ -1419,6 +1415,16 @@ def find_last_brackets_in_string(string):
 
     return index_of_last_open_bracket, index_of_last_closed_bracket
 
+def serialize_sitzungen(dict_cleaned_sortierte_sitzungen):
+    date = time.strftime("%d_%m_%Y")
+    file = 'scraped_content/serialized_sitzungen_' + date + '.txt'
+    f = open(file, 'wb')
+    pickle.dump(dict_cleaned_sortierte_sitzungen, f)
+
+def deserialize_sitzunen(path_to_serialized_file):
+    file = open(path_to_serialized_file, 'rb')
+    sitzungen = pickle.load(file)
+    return sitzungen
 
 def set_metadaten(sitzung):
     sitzungsdatum = sitzung['Sitzungsdatum']
@@ -1459,6 +1465,8 @@ def get_sitzungs_dataset_for_excel(sitzung):
                 # Parteienvergleich
                 for zeile in liste_zeilen:
                     aktuelle_redner = get_surname(redner)
+                    if aktuelle_redner == 'Pau':
+                        print('brandt gefunden !!')
                     if rede[redner]['clean_rede'].__contains__(aktuelle_redner):
                         isSpeecherinSpeech = True
                     if zeile.__contains__(aktuelle_redner):
@@ -1466,9 +1474,6 @@ def get_sitzungs_dataset_for_excel(sitzung):
                             party = get_party(zeile)
                             break
                 if isSpeecherinSpeech == True:
-                    if party == '':
-                        party = api_abgeordnetenwatch(redner)
-
                     dictionary_result['10_frequently_words'] = rede[redner]['10_frequently_words']
                     dictionary_result['number_frequently_words'] = rede[redner]['number_frequently_words']
                     dictionary_result['10_seldom_words'] = rede[redner]['10_seldom_words']
