@@ -8,7 +8,7 @@ import codecs
 
 
 # Rede
-freq_CleandedSpeech = 'Ich hasse die Universität. Wir mögen die Universität. Langsam geht mir das echt auf die Nerven.'
+freq_CleandedSpeech = 'Ich hassen die Universität. Wir mögen die Universität. Langsam geht mir das echt auf die Nerven.'
 # deutsche Stopwords
 stop_words = set(stopwords.words("german"))
 # Erweiterung der Stopwords
@@ -33,33 +33,40 @@ print(word_samples)
 
 
 # Wörter inkl. der Gewichtung ihrer Ausdrucksstärke
-training_set_pos=[]
+training_set=[]
 data_pos = codecs.open('SentiWS_training_set/SentiWS_v1.8c_Positive.txt', 'r', 'utf-8')
 poswords = csv.reader(data_pos, delimiter='|')
 print(poswords)
-training_set_pos.append([(pos[0].lower(), 'positive') for pos in poswords])
+training_set.append([(pos[0].lower(), 'positive') for pos in poswords])
 
 training_set_neg=[]
 data_neg = codecs.open('SentiWS_training_set/SentiWS_v1.8c_Negative.txt', 'r', 'utf-8')
 negwords = csv.reader(data_neg, delimiter='|')
 print(negwords)
-training_set_neg.append([(neg[0].lower(), 'negative') for neg in negwords])
+training_set.append([(neg[0].lower(), 'negative') for neg in negwords])
 
 
-liste_pos = []
-for tupel_training in training_set_pos:
-    for word_training in tupel_training:
-        liste_pos.append(word_training[0])
+# list_pos = []
+# for tupel_training in training_set:
+#     for word_training in tupel_training:
+#         list_pos.append(word_training[0])
+# print(list_pos)
+#
+# list_neg = []
+# for tupel_training in training_set_neg:
+#     for word_training in tupel_training:
+#         list_neg.append(word_training[0])
 
-print(liste_pos)
-
+print(training_set)
+list_treffer = []
 for tupel in word_samples:
-    for ws in tupel:
-        for item in liste_pos:
-            if ws[0].__contains__(item):
-                item = item
+        for item in training_set:
+            if tupel[0].__contains__(item[0][0]):
+                print(tupel[0])
+                print(item[0][0])
+                list_treffer.append(item)
 
-print(liste_pos)
+print(list_treffer)
 
 
 
