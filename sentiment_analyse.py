@@ -70,6 +70,7 @@ for tupel in word_samples:
         if current_word in current_item:
             list_treffer.append(item)
 
+#trefferliste
 print(list_treffer)
 
 
