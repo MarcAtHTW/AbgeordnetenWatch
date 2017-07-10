@@ -34,13 +34,13 @@ print(word_samples)
 
 # Wörter inkl. der Gewichtung ihrer Ausdrucksstärke
 training_set=[]
-data_pos = codecs.open('SentiWS_training_set/SentiWS_v1.8c_Positive.txt', 'r', 'utf-8')
+data_pos = codecs.open('sentiWS_training_set/SentiWS_v1.8c_Positive.txt', 'r', 'utf-8')
 poswords = csv.reader(data_pos, delimiter='|')
 print(poswords)
 training_set.append([(pos[0].lower(), 'positive') for pos in poswords])
 
 training_set_neg=[]
-data_neg = codecs.open('SentiWS_training_set/SentiWS_v1.8c_Negative.txt', 'r', 'utf-8')
+data_neg = codecs.open('sentiWS_training_set/SentiWS_v1.8c_Negative.txt', 'r', 'utf-8')
 negwords = csv.reader(data_neg, delimiter='|')
 print(negwords)
 training_set.append([(neg[0].lower(), 'negative') for neg in negwords])
@@ -60,11 +60,15 @@ training_set.append([(neg[0].lower(), 'negative') for neg in negwords])
 print(training_set)
 list_treffer = []
 for tupel in word_samples:
-        for item in training_set:
-            if tupel[0].__contains__(item[0][0]):
-                print(tupel[0])
-                print(item[0][0])
-                list_treffer.append(item)
+    current_word = tupel[0]
+    for item in training_set[0]:
+        current_item = item[0]
+        if current_word in current_item:
+            list_treffer.append(item)
+    for item in training_set[1]:
+        current_item = item[0]
+        if current_word in current_item:
+            list_treffer.append(item)
 
 print(list_treffer)
 
