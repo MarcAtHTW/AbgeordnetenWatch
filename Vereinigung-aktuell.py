@@ -36,6 +36,7 @@ def get_content():
     '''
     Holt den Content fuer alle Seiten eines Protokolls
 
+    :type page_content: String
     :return: page_content
     '''
     # pdf_file = open('Plenarprotokoll_18_239.pdf', 'rb')
@@ -65,8 +66,7 @@ def split_and_analyse_content(string_sitzung):
     Seiteninhalte des Protokolls werden zu Sätze, die wiederum zu Listenelemente werden
     entfernen von "\n" und "-" aus Listenelemente
 
-    :param page_content:
-    :return:
+    :param string_sitzung: String
     '''
     list = sent_tokenize(string_sitzung)
     print(list)
@@ -88,6 +88,10 @@ def split_and_analyse_content(string_sitzung):
 
 
 def set_part_till_first_speech():
+    '''
+    Nimmt alle Zeilen bis zur ersten Rede auf.
+
+    '''
     matchers = ['Beginn:']
     list_zeilen_till_first_speech = []
     global liste_zeilen
@@ -100,6 +104,12 @@ def set_part_till_first_speech():
 
 
 def get_all_parties():
+    '''
+    Gibt eine Liste zurück, welche die möglichen Parteien der Sitzungen, in Form von Strings zur Verfügung stellt.
+
+    :type list_parties: List
+    :return: list_parties
+    '''
     list_parties = [
         '(DIE LINKE)',
         '(CDU/CSU)',
@@ -117,6 +127,13 @@ def get_all_parties():
 
 
 def get_all_parties_without_brackets():
+    '''
+    Gibt eine Liste zurück, welche die möglichen Parteien der Sitzungen, in Form von Strings zur Verfügung stellt.
+    Die Parteien werden hier ohne Klammern zur Verfügung gestellt.
+
+    :type list_parties: List
+    :return: list_parties
+    '''
     list_parties = [
         'DIE LINKE',
         'CDU/CSU',
@@ -134,6 +151,15 @@ def get_all_parties_without_brackets():
 
 
 def check_if_party_is_in_zeile(zeile):
+    '''
+    Überprüft, ob sich eine Partei in der übergebenen Zeile befindet.
+
+    :type zeile: String
+    :param zeile: Eine Zeile einer Rede.
+
+    :rtype: Boolean
+    :return: found_party
+    '''
     # Wenn das Element keinen Hinweis auf eine Partei Enthält, wird es verworfen:
     liste_parteien = get_all_parties()
     found_party = False
@@ -149,9 +175,11 @@ def get_party(element):
     '''
     Holt den Parteinamen aus dem Rednernamen.
 
-    :type element:String
-    :param element:Parteiname
-    :return:String
+    :type element: String
+    :param element: Parteiname
+
+    :rtype: String
+    :return: party
     '''
 
     # liste_parteien = get_all_parties()
@@ -177,6 +205,15 @@ def get_party(element):
 
 
 def get_surname(full_name):
+    '''
+    Holt den Nachnamen aus dem Vollständigen Namen.
+
+    :type full_name: String
+    :param full_name: Der vollständige Name eines Redners
+
+    :rtype: String
+    :return: surname
+    '''
     surname = ''
     for letter in (full_name[:full_name.index(',')]):
         surname += letter
@@ -184,6 +221,15 @@ def get_surname(full_name):
     return surname
 
 def get_index_of_last_whitespace_in_string(string):
+    '''
+    Identifiziert den Index des zu letzt vorkommenden Leerzeichens in der übergebenen Zeichenkette.
+
+
+    :param string: Eine Zeichenkette mit Leerzeichen.
+
+    :rtype: Integer
+    :return: Index des letzten Leerzeichens.
+    '''
     i = 0
     index_of_last_whitespace        = 0
 
@@ -201,6 +247,15 @@ def get_index_of_last_whitespace_in_string(string):
     return index_of_last_whitespace
 
 def get_firstname(full_name):
+    '''
+    Holt den Vornamen aus dem Vollständigen Namen.
+
+    :type full_name: String
+    :param full_name: Der vollständige Name eines Redners.
+
+    :rtype: String
+    :return: firstname
+    '''
     index_of_last_whitespace = get_index_of_last_whitespace_in_string(full_name) + 1
     firstname = ''
 
