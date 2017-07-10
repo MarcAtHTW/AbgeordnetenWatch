@@ -28,24 +28,40 @@ print(clean_without_stopwords)
 freq_Cleanded_without_stopwords = FreqDist(clean_without_stopwords)
 print(freq_Cleanded_without_stopwords)
 samples = (sorted(freq_Cleanded_without_stopwords.items(), key=operator.itemgetter(1), reverse=True))  # sortiertes dictionary - beginnend mit groeßter Haeufigkeit
-word_features = samples[:10]
-print(word_features)
+word_samples = samples[:10]
+print(word_samples)
 
 
 # Wörter inkl. der Gewichtung ihrer Ausdrucksstärke
-training_set=[]
+training_set_pos=[]
 data_pos = codecs.open('SentiWS_training_set/SentiWS_v1.8c_Positive.txt', 'r', 'utf-8')
 poswords = csv.reader(data_pos, delimiter='|')
 print(poswords)
-training_set.append([(pos[0].lower(), 'positive') for pos in poswords])
+training_set_pos.append([(pos[0].lower(), 'positive') for pos in poswords])
 
+training_set_neg=[]
 data_neg = codecs.open('SentiWS_training_set/SentiWS_v1.8c_Negative.txt', 'r', 'utf-8')
 negwords = csv.reader(data_neg, delimiter='|')
 print(negwords)
-training_set.append([(neg[0].lower(), 'negative') for neg in negwords])
+training_set_neg.append([(neg[0].lower(), 'negative') for neg in negwords])
 
-print(training_set[0])
-print(type(training_set[0]))
+
+liste_pos = []
+for tupel_training in training_set_pos:
+    for word_training in tupel_training:
+        liste_pos.append(word_training[0])
+
+print(liste_pos)
+
+for tupel in word_samples:
+    for ws in tupel:
+        for item in liste_pos:
+            if ws[0].__contains__(item):
+                item = item
+
+print(liste_pos)
+
+
 
 # for word[0] in word_features:
 
