@@ -12,6 +12,8 @@ import urllib.request, json
 import pickle
 import time
 import xlrd
+import csv
+import collections
 
 
 os.environ['JAVAHOME'] = "C:/Program Files/Java/jdk1.8.0_20/bin/java.exe"
@@ -56,7 +58,7 @@ def split_and_analyse_content(string_sitzung):
     entfernen von "\n" und "-" aus Listenelemente.
 
     :type string_sitzung: String
-    :param string_sitzung: String
+    :param string_sitzung: Kompletter Sitzungsinhalt in einer Zeichenkette.
     '''
     list = sent_tokenize(string_sitzung)
     for i in range(len(list)):
@@ -91,7 +93,7 @@ def get_all_parties():
     Gibt eine Liste zurück, welche die möglichen Parteien der Sitzungen, in Form von Strings zur Verfügung stellt.
 
     :type list_parties: list
-    :return: list_parties
+    :return list_parties: Eine Liste der möglichen Parteien mit runden Klammern.
     '''
     list_parties = [
         '(DIE LINKE)',
@@ -115,7 +117,7 @@ def get_all_parties_without_brackets():
     Die Parteien werden hier ohne Klammern zur Verfügung gestellt.
 
     :type list_parties: list
-    :return: list_parties
+    :return list_parties: Eine Liste der möglichen Parteien mit ohne Klammern.
     '''
     list_parties = [
         'DIE LINKE',
@@ -140,8 +142,8 @@ def check_if_party_is_in_zeile(zeile):
     :type zeile: String
     :param zeile: Eine Zeile einer Rede.
 
-    :rtype: Boolean
-    :return: found_party
+    :rtype found_party: Boolean
+    :return found_party: Ergebnis ob eine Partei in der übergebenen Zeile gefunden werden konnte.
     '''
     # Wenn das Element keinen Hinweis auf eine Partei Enthält, wird es verworfen:
     liste_parteien = get_all_parties()
@@ -162,7 +164,7 @@ def get_party(element):
     :param element: Parteiname
 
     :rtype: String
-    :return: party
+    :return party: Die Partei
     '''
 
     party = ''
@@ -400,7 +402,7 @@ def api_abgeordnetenwatch(politican_name):
     :type politican_name: String
     :param politican_name: Der Name eines Politikers.
 
-    :rtype: String
+    :rtype partei: String
     :return partei: Der Parteiname des übergebenen Politikers,
     '''
     firstname = get_firstname(politican_name).lower()
@@ -487,7 +489,7 @@ def get_all_speeches(liste_mit_Startnummern_und_End):
     '''
     Befüllen der Liste "alle_Reden_einer_Sitzung" mit Reden.
 
-    :rtype liste_mit_Startnummern_und_End; List
+    :type liste_mit_Startnummern_und_End; List
     :param liste_mit_Startnummern_und_End: Liste mit der Start- und Endnummer einer Rede.
 
     :rtype alle_Reden_einer_Sitzung: Liste mit allen Reden einer Sitzung.
@@ -639,7 +641,9 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     redner_rede_daten.write('C1', 'Geschlecht', bold)
     redner_rede_daten.write('D1', 'Partei', bold)
     redner_rede_daten.write('E1', 'clean_rede', bold)
-    redner_rede_daten.write('F1', 'rede_id', bold)
+    redner_rede_daten.write('F1', 'Sentiment-Wert-Rede', bold)
+    redner_rede_daten.write('G1', 'Sentiment-Gesamt-Rede', bold)
+    redner_rede_daten.write('H1', 'rede_id', bold)
 
     beifalltext.write('A1', 'rede_id', bold)
     beifalltext.write('B1', 'Beifalltext', bold)
@@ -652,6 +656,8 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     wortmeldedaten.write('B1', 'Wortmeldungen', bold)
     wortmeldedaten.write('C1', 'Wer', bold)
     wortmeldedaten.write('D1', 'Text', bold)
+    wortmeldedaten.write('E1', 'Sentiment-Wert', bold)
+    wortmeldedaten.write('F1', 'Sentiment-Gesamt', bold)
 
 
     seldom_words_daten.write('A1', 'rede_id', bold)
@@ -729,18 +735,6 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
             topdaten.write_number(row, col, int(sitzungnummer))
             topdaten.write(row, col + 1, temp_tagesordnungspunkt)
             topdaten.write(row, col + 2, temp_tagesordnungspunkt_bezeichnung)
-
-            # for m in range(len(matchers)):
-            #     matcher_element = matchers[m]
-            #     if temp_tagesordnungspunkt_bezeichnung.__contains__(matcher_element):
-            #         list_found_synonyms.append(matcher_element)
-            #         list_found_categorie.append(col_categorie[m])
-            # string_found_synonyms = ' , '.join(list_found_synonyms)
-            # string_found_categorie = ' , '.join(list_found_categorie)
-            # #topdaten.write(row-1, col + 2, string_found_synonyms)
-            # topdaten.write(row-1, col + 2, string_found_categorie)
-            # list_found_synonyms = []
-            # list_found_categorie = []
             row += 1
 
         x += 1
@@ -749,9 +743,13 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     row = 1
     col = 0
     for dict in liste_dictionary_reden_einer_sitzung:
-        for key in ['tagesordnungspunkt', 'redner', 'geschlecht', 'partei', 'clean_rede', 'rede_id_sitzungen']:
+        for key in ['tagesordnungspunkt', 'redner', 'geschlecht', 'partei', 'clean_rede']:
             redner_rede_daten.write(row, col, dict[key])
             col += 1
+        pos_neg, gesamt = sentiment_analyse(dict['clean_rede'])
+        redner_rede_daten.write(row, col, pos_neg)
+        redner_rede_daten.write(row, col + 1, gesamt)
+        redner_rede_daten.write(row, col + 2, dict['rede_id_sitzungen'])
         row += 1
         col = 0
 
@@ -824,6 +822,9 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
                             text += letter
                         text = text.replace(':','')
                         wortmeldedaten.write(row, col + 2, text)
+                        pos_neg, gesamt = sentiment_analyse(text)
+                        wortmeldedaten.write(row, col + 3, pos_neg)
+                        wortmeldedaten.write(row, col + 4, gesamt)
                     else:
                         wortmeldedaten.write(row, col + 1, '')
                         wortmeldedaten.write(row, col + 2, '')
@@ -955,10 +956,6 @@ def clean_speeches(alle_Reden_einer_Sitzung):
                 liste_wortmeldungen.append(i)  # Hinzufügen aller Wortmeldungen einer Rede
 
             string_rede = string_rede.replace('(' + i + ')', '')
-
-
-        # string_beifaelle = ' ; '.join(liste_beifaelle)
-        # string_wortmeldungen = ' ; '.join(liste_wortmeldungen)
 
         ### Analyse Redetext - Haufigkeit und lexikalische Diversitaet
         liste_speech_word_tokenized = speech_to_words_if_word_isalpha(string_rede)
@@ -1476,7 +1473,103 @@ def set_metadaten(sitzung):
                 redner[redner_name]['tagesordnungspunkt'] = top_key
                 redner[redner_name]['wahlperiode'] = wahlperiode
 
+def mach_alle_buchstaben_klein(list):
+    '''
+    Wandelt alle Listenelemente um -> toLower()
 
+    :type list: list
+    :param list: Liste mit Strings
+
+    :rtype list_result: list
+    :return list_result: Liste mit Strings.
+    '''
+
+    list_result = []
+
+    for string in list:
+        string = string.lower()
+        list_result.append(string)
+
+    return list_result
+
+
+def sentiment_analyse(string_to_analyse):
+    '''
+    Prüft jedes Wort der Wortmeldungen, anhand eines Sentiment-Wortschatzes, ob Wörter als positiv, oder negativ gerwertet werden können.
+
+    :type string_to_analyse: string
+    :param string_to_analyse: Die Wortmeldungen zu einer Rede, oder die Rede selbst.
+
+    :rtype pos_or_neg: string
+    :return pos_or_neg: Gibt "positiv", oder "negativ" zurück.
+    '''
+
+
+    # Wörter inkl. der Gewichtung ihrer Ausdrucksstärke
+    training_set = []
+    data_pos = codecs.open('sentiWS_training_set/SentiWS_v1.8c_Positive.txt', 'r', 'utf-8')
+    poswords = csv.reader(data_pos, delimiter='|')
+    #print(poswords)
+    training_set.append([(pos[0].lower(), 'positive') for pos in poswords])
+
+    data_neg = codecs.open('sentiWS_training_set/SentiWS_v1.8c_Negative.txt', 'r', 'utf-8')
+    negwords = csv.reader(data_neg, delimiter='|')
+    #print(negwords)
+    training_set.append([(neg[0].lower(), 'negative') for neg in negwords])
+
+
+    only_words = speech_to_words_if_word_isalpha(string_to_analyse)
+    only_lower_words_in_list = mach_alle_buchstaben_klein(only_words)
+
+    pos_or_neg = ''
+
+    list_treffer = []
+    for word in only_lower_words_in_list:
+        current_word = word
+        # Wir gehen alle positiven wörter durch und gleichen mit dem current_word ab
+        for item in training_set[0]:
+            current_item = item[0]
+            if current_item == current_word:
+                list_treffer.append(item)
+        # Wir gehen alle negativen wörter durch und gleichen mit dem current_word ab
+        for item in training_set[1]:
+            current_item = item[0]
+            if current_item == current_word:
+                list_treffer.append(item)
+    #print(list_treffer)
+    if len(list_treffer)>0:
+        for treffer in list_treffer:
+            pos_or_neg += '; ' + ','.join(treffer)
+    if pos_or_neg:
+        gesamt_pos_or_neg = gesamtauswertung_sentiment_wortmeldungen(pos_or_neg)
+        return pos_or_neg, gesamt_pos_or_neg
+    else:
+        return 'kein Eintrag in Sentiment gefunden', 'nicht definierbar'
+
+def gesamtauswertung_sentiment_wortmeldungen(pos_or_neg):
+    '''
+    Zählt die positiv und negativ getaggeden Wörter einer Wortmeldung, oder einer Rede und gibt ein Fazit über das
+    Gesamtergebnis zurück. Mögliche Werte: positive, negative, nicht definierbar.
+
+
+    :type pos_or_neg: String
+    :param pos_or_neg: Der zu analyisierende String
+
+    :rtype wortmeldung: String
+    :return wortmeldung: Das Ergebnis
+    '''
+    tokenized = word_tokenize(pos_or_neg)
+    conter = collections.Counter(tokenized)
+    number_pos = conter['positive']
+    number_neg = conter['negative']
+    if number_pos > number_neg:
+        result = 'positive'
+    elif number_pos == number_neg:
+        result = 'nicht definierbar'
+    else:
+        result = 'negative'
+
+    return result
 def get_sitzungs_dataset_for_excel(sitzung):
     '''
     Befüllung der einzelnen Dictionaries mit den extrahierten Daten. Extrahiert die benötigten Informationen aus einer
