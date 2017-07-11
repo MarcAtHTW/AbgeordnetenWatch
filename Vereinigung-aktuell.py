@@ -11,6 +11,7 @@ import codecs
 import urllib.request, json
 import pickle
 import time
+import xlrd
 
 
 os.environ['JAVAHOME'] = "C:/Program Files/Java/jdk1.8.0_20/bin/java.exe"
@@ -418,6 +419,7 @@ def api_abgeordnetenwatch(politican_name):
             data = json.loads(url.read().decode())
             #politiker_name = data['profile']['personal']['first_name'] + " " + data['profile']['personal']['last_name']
             partei = data['profile']['party']
+            geschlecht = data['profile']['personal']['gender']
 
     except urllib.error.HTTPError as err:
         if err.code == 404:
@@ -427,6 +429,7 @@ def api_abgeordnetenwatch(politican_name):
                     data = json.loads(url2.read().decode())
                     # politiker_name = data['profile']['personal']['first_name'] + " " + data['profile']['personal']['last_name']
                     partei = data['profile']['party']
+                    geschlecht = data['profile']['personal']['gender']
 
             except urllib.error.HTTPError as err:
 
@@ -435,15 +438,17 @@ def api_abgeordnetenwatch(politican_name):
                         data = json.loads(url3.read().decode())
                         # politiker_name = data['profile']['personal']['first_name'] + " " + data['profile']['personal']['last_name']
                         partei = data['profile']['party']
+                        geschlecht = data['profile']['personal']['gender']
 
                 except urllib.error.HTTPError as err:
                     partei = 'Api-Error-Code 404: Seite konnte nicht gefunden werden: ' + "https://www.abgeordnetenwatch.de/api/profile/" + firstname + '-' + lastname + '/profile.json'
+                    geschlecht = 'Api-Error-Code 404: Seite konnte nicht gefunden werden: ' + "https://www.abgeordnetenwatch.de/api/profile/" + firstname + '-' + lastname + '/profile.json'
 
         else:
             raise
 
 
-    return '(' + partei + ')'
+    return '(' + partei + ')', geschlecht
 
 
 def get_start_and_end_of_a_speech():
@@ -626,12 +631,15 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     topdaten.write('A1', 'Sitzungsnummer', bold)
     topdaten.write('B1', 'Tagesordnungspunkt', bold)
     topdaten.write('C1', 'Tagesordnungspunktbezeichnung', bold)
+    topdaten.write('D1', 'gefundenes Synonym', bold)
+    topdaten.write('E1', 'Top_Einordnung_Kategorie', bold)
 
     redner_rede_daten.write('A1', 'Tagesordnungspunkt', bold)
     redner_rede_daten.write('B1', 'Redner', bold)
-    redner_rede_daten.write('C1', 'Partei', bold)
-    redner_rede_daten.write('D1', 'clean_rede', bold)
-    redner_rede_daten.write('E1', 'rede_id', bold)
+    redner_rede_daten.write('C1', 'Geschlecht', bold)
+    redner_rede_daten.write('D1', 'Partei', bold)
+    redner_rede_daten.write('E1', 'clean_rede', bold)
+    redner_rede_daten.write('F1', 'rede_id', bold)
 
     beifalltext.write('A1', 'rede_id', bold)
     beifalltext.write('B1', 'Beifalltext', bold)
@@ -671,16 +679,42 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     x = 0
     for dict in liste_dictionary_reden_einer_sitzung:
 
+        # Abgleich Vokabular.xlsx mit tagesordnungspunktbezeichnung
+        workbook_vokabular = xlrd.open_workbook('Vokabular.xlsx')
+        worksheet_blatt1 = workbook_vokabular.sheet_by_name('Blatt1')
+        col_synonyms = worksheet_blatt1.col_values(0)  # Spalte mit synonymen
+        col_categorie = worksheet_blatt1.col_values(2)  # Spalte mit kategorie
+        matchers = col_synonyms
+        list_found_synonyms = []
+        string_found_synonyms = ''
+        list_found_categorie = []
+        string_found_categorie = ''
+
         if x > 0:
             # if liste_dictionary_reden_einer_sitzung[x-1]['tagesordnungspunkt'] != dict['tagesordnungspunkt'] and liste_dictionary_reden_einer_sitzung[x-1]['tagesordnungspunktbezeichnung'] !=dict['tagesordnungspunktbezeichnung']:
             if temp_tagesordnungspunkt != liste_dictionary_reden_einer_sitzung[x][
                 'tagesordnungspunkt'] and temp_tagesordnungspunkt_bezeichnung != \
                     liste_dictionary_reden_einer_sitzung[x]['tagesordnungspunktbezeichnung']:
+                counter = 0
                 for key in ['sitzungsnummer', 'tagesordnungspunkt', 'tagesordnungspunktbezeichnung']:
                     if key == 'sitzungsnummer':
                         topdaten.write_number(row, col, int(dict[key]))
                     else:
                         topdaten.write(row, col, dict[key])
+
+                        while counter < 1:
+                            for m in range(len(matchers)):
+                                matcher_element = matchers[m]
+                                if temp_tagesordnungspunkt_bezeichnung.__contains__(matcher_element):
+                                    list_found_synonyms.append(matcher_element)
+                                    list_found_categorie.append(col_categorie[m])
+                            string_found_synonyms = ' , '.join(list_found_synonyms)
+                            string_found_categorie = ' , '.join(list_found_categorie)
+                            topdaten.write(row - 1, col + 2, string_found_synonyms)
+                            topdaten.write(row - 1, col + 3, string_found_categorie)
+                            list_found_synonyms = []
+                            list_found_categorie = []
+                            counter += 1
                     col += 1
                 row += 1
                 col = 0
@@ -695,14 +729,27 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
             topdaten.write_number(row, col, int(sitzungnummer))
             topdaten.write(row, col + 1, temp_tagesordnungspunkt)
             topdaten.write(row, col + 2, temp_tagesordnungspunkt_bezeichnung)
+
+            # for m in range(len(matchers)):
+            #     matcher_element = matchers[m]
+            #     if temp_tagesordnungspunkt_bezeichnung.__contains__(matcher_element):
+            #         list_found_synonyms.append(matcher_element)
+            #         list_found_categorie.append(col_categorie[m])
+            # string_found_synonyms = ' , '.join(list_found_synonyms)
+            # string_found_categorie = ' , '.join(list_found_categorie)
+            # #topdaten.write(row-1, col + 2, string_found_synonyms)
+            # topdaten.write(row-1, col + 2, string_found_categorie)
+            # list_found_synonyms = []
+            # list_found_categorie = []
             row += 1
+
         x += 1
 
     # writing in worksheet 'Redner_Rede'
     row = 1
     col = 0
     for dict in liste_dictionary_reden_einer_sitzung:
-        for key in ['tagesordnungspunkt', 'redner', 'partei', 'clean_rede', 'rede_id_sitzungen']:
+        for key in ['tagesordnungspunkt', 'redner', 'geschlecht', 'partei', 'clean_rede', 'rede_id_sitzungen']:
             redner_rede_daten.write(row, col, dict[key])
             col += 1
         row += 1
@@ -1454,6 +1501,7 @@ def get_sitzungs_dataset_for_excel(sitzung):
                 isSpeecherinSpeech = False
                 # surname = get_surname(redner)
                 party = ''
+                geschlecht = ''
                 # Parteienvergleich
                 for zeile in liste_zeilen:
                     aktuelle_redner = get_surname(redner)
@@ -1465,7 +1513,9 @@ def get_sitzungs_dataset_for_excel(sitzung):
                             break
                 if isSpeecherinSpeech == True:
                     if party == '':
-                        party = api_abgeordnetenwatch(redner)
+                        party, geschlecht = api_abgeordnetenwatch(redner)
+                    if geschlecht == '':
+                        party, geschlecht = api_abgeordnetenwatch(redner)
 
                     dictionary_result['10_frequently_words'] = rede[redner]['10_frequently_words']
                     dictionary_result['number_frequently_words'] = rede[redner]['number_frequently_words']
@@ -1483,6 +1533,7 @@ def get_sitzungs_dataset_for_excel(sitzung):
                     dictionary_result['rede_id_sitzungen'] = str(rede[redner]['sitzungsnummer']) + '_' + str(
                         rede[redner]['rede_id'])
                     dictionary_result['redner'] = redner
+                    dictionary_result['geschlecht'] = geschlecht
                     dictionary_result['sitzungsdatum'] = rede[redner]['sitzungsdatum']
                     dictionary_result['sitzungsnummer'] = rede[redner]['sitzungsnummer']
                     dictionary_result['tagesordnungspunkt'] = rede[redner]['tagesordnungspunkt']
@@ -1534,6 +1585,7 @@ print("Anzahl vorhandene Reden in Redeliste: " + str(len(redeliste)))
 set_part_till_first_speech()
 print('Vereinige die Sitzungsstruktur mit den Reden.')
 merged_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzungen)
+print('Setze Sitzungsdaten...')
 set_metadaten(merged_sitzung['Sitzung 240'])
 dataset_for_excel = get_sitzungs_dataset_for_excel(merged_sitzung['Sitzung 240'])
 print('Speicher Excel-Sheet')
