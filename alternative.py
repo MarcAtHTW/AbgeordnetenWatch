@@ -3,6 +3,8 @@ from nltk.corpus import stopwords
 import operator
 from nltk import sent_tokenize, word_tokenize
 import os
+
+from os import remove
 from selenium import webdriver
 from bs4 import BeautifulSoup
 import xlsxwriter
@@ -33,6 +35,7 @@ isMatchergefunden               = False
 isNameGefunden                  = False
 redner_zaehler_fuer_iteration_durch_alle_redner = 0
 
+
 def get_content():
     '''
     ÄNDERUNG! Wir gehen alle Zeilen der TXT durch und übergeben die Zeilen in die Liste "liste_zeilen"
@@ -52,6 +55,9 @@ def get_content():
         # liste_sitzungsinhalt.append(line)
         # #print(line)
         # string_sitzung = ' '.join(liste_sitzungsinhalt)
+        if line.__contains__('ğ'):
+            line = line.replace('ğ', 'g')
+            # print(list_element)
         liste_zeilen.append(line)
 
     return liste_zeilen
@@ -120,36 +126,73 @@ def analyse_content_element(list_element, i, alle_redner_einer_sitzung):
     global isMatchergefunden
     global redner_zaehler_fuer_iteration_durch_alle_redner
 
-    if any(m in list_element for m in matchers) and ':' in list_element and '!' not in list_element:
-        global isMatchergefunden
+    surname = get_surname(alle_redner_einer_sitzung[redner_zaehler_fuer_iteration_durch_alle_redner])
+
+    if any(m in list_element for m in matchers) and ':' in list_element and '!' not in list_element and '?' not in list_element:
         isMatchergefunden = True
+        print('setze isMatchergefunden auf True')
+        if surname.__contains__('('):
+            surname = remove_brackets_from_surname(surname)
+        if list_element.__contains__(surname):
+            redner_zaehler_fuer_iteration_durch_alle_redner += 1
+            print('TRIGGER ########################################################')
+            print(list_element)
+            isMatchergefunden = True
+            print('setze isMatchergefunden auf True')
+            if check_if_redner_in_next_5_lines(i, surname)== False:
+                isMatchergefunden = False
+
         global isMatcherAndNameGefunden
         isMatcherAndNameGefunden = False
+        print('setze isMatcherAndNameGefunden auf False')
 
-        merke_i_bei_matcher_treffer =i
 
-    elif list_element.__contains__(get_surname(alle_redner_einer_sitzung[redner_zaehler_fuer_iteration_durch_alle_redner])) and list_element.__contains__(':') and isMatchergefunden == True:
+
+    elif list_element.__contains__(surname) and list_element.__contains__(':') and isMatchergefunden == True and check_if_redner_in_next_5_lines(i, surname) == True:
 
         redner_zaehler_fuer_iteration_durch_alle_redner +=1
+        print('Rednerzaehler wird erhoeht!')
         global isNameGefunden
         isNameGefunden = True
+        print('setze isMatcherAndNameGefunden auf True')
         print(list_element)
+
+    # if any(m in list_element for m in matchers) and ':' in list_element and '!' not in list_element and '?' not in list_element and surname in list_element:
+    #     isMatchergefunden = False
+    #     redner_zaehler_fuer_iteration_durch_alle_redner +=1
 
     if isNameGefunden == True and isMatchergefunden == True:
         isMatcherAndNameGefunden = True
+        print('setze isMatcherAndNameGefunden auf True')
 
     if isMatcherAndNameGefunden == True:
         isMatchergefunden = False
         isNameGefunden = False
         isMatcherAndNameGefunden = False
+        print('Startpunkt gefunden, setze alles auf False')
 
-        start_Element_Rede = i + 1
+        start_Element_Rede = i
         list_with_startelement_numbers.append(start_Element_Rede)
         # print("Start_Index_Redetext: ", start_Element_Rede)
         print(start_Element_Rede)
-
+        print(list_element)
         print('laenge Liste Startelemente')
         print(len(list_with_startelement_numbers))
+
+def check_if_redner_in_next_5_lines(counter, redner_nachname):
+    isFound = False
+    global liste_zeilen
+    i = counter
+    lines_to_go = counter + 5
+
+    while i <= lines_to_go:
+        if redner_nachname in liste_zeilen[i]:
+            isFound = True
+        i += 1
+
+    return isFound
+
+
 
 def set_part_till_first_speech():
     '''
@@ -387,7 +430,7 @@ def change_umlaute(string):
     :rtype result_string: string
     :return result_string: Der String ohne Umlaute.
     '''
-    umlaute = ['ü','ö','ä', 'ß', 'é','è']
+    umlaute = ['ü','ö','ä', 'ß', 'é','è', 'ğ']
     result_string = ''
 
     for char in string:
@@ -410,6 +453,9 @@ def change_umlaute(string):
 
             if char == 'è':
                 char = 'e'
+
+            if char == 'ğ':
+                char = 'g'
 
         result_string += char
 
@@ -1423,6 +1469,15 @@ def count_speecher_from_cleaned_sortierte_sitzung(sitzung):
         result += len(anz_redner_je_topic['Redner'])
     return result
 
+def remove_brackets_from_surname(surname):
+    index = 0
+    for letter in surname:
+        if letter == ' ':
+            rm_entry = index
+            break
+        index +=1
+    surname = surname[:rm_entry]
+    return surname
 
 def find_last_brackets_in_string(string):
     '''
@@ -1674,6 +1729,7 @@ alle_sitzungen_mit_start_und_ende_der_topic = get_alle_sitzungen_mit_start_und_e
                                                                                               alle_sitzungen)
 sortierte_sitzungen = sort_topics_to_sitzung(alle_sitzungen_mit_start_und_ende_der_topic)
 cleaned_sortierte_sitzungen = delete_first_and_last_speecher_from_list(sortierte_sitzungen)
+
 
 print('Serialisiere gescrapte Sitzungsstruktur')
 serialize_sitzungen(cleaned_sortierte_sitzungen)
