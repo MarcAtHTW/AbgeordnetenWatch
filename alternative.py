@@ -126,11 +126,17 @@ def analyse_content_element(list_element, i, alle_redner_einer_sitzung):
     global isMatchergefunden
     global redner_zaehler_fuer_iteration_durch_alle_redner
 
-    surname = get_surname(alle_redner_einer_sitzung[redner_zaehler_fuer_iteration_durch_alle_redner])
+    try:
+        surname = get_surname(alle_redner_einer_sitzung[redner_zaehler_fuer_iteration_durch_alle_redner])
+    except IndexError as err:
+        print(err)
+        surname = 'Letzer Redner wurd durchlaufen'
 
+    if surname == 'Ludwig':
+        print('Ludwig gefunden !!')
     if any(m in list_element for m in matchers) and ':' in list_element and '!' not in list_element and '?' not in list_element:
         isMatchergefunden = True
-        print('setze isMatchergefunden auf True')
+        #print('setze isMatchergefunden auf True')
         if surname.__contains__('('):
             surname = remove_brackets_from_surname(surname)
         if list_element.__contains__(surname):
@@ -138,13 +144,13 @@ def analyse_content_element(list_element, i, alle_redner_einer_sitzung):
             print('TRIGGER ########################################################')
             print(list_element)
             isMatchergefunden = True
-            print('setze isMatchergefunden auf True')
+            #print('setze isMatchergefunden auf True')
             if check_if_redner_in_next_5_lines(i, surname)== False:
                 isMatchergefunden = False
 
         global isMatcherAndNameGefunden
         isMatcherAndNameGefunden = False
-        print('setze isMatcherAndNameGefunden auf False')
+        #print('setze isMatcherAndNameGefunden auf False')
 
 
 
@@ -154,8 +160,8 @@ def analyse_content_element(list_element, i, alle_redner_einer_sitzung):
         print('Rednerzaehler wird erhoeht!')
         global isNameGefunden
         isNameGefunden = True
-        print('setze isMatcherAndNameGefunden auf True')
-        print(list_element)
+        #print('setze isMatcherAndNameGefunden auf True')
+        #print(list_element)
 
     # if any(m in list_element for m in matchers) and ':' in list_element and '!' not in list_element and '?' not in list_element and surname in list_element:
     #     isMatchergefunden = False
@@ -1743,11 +1749,11 @@ content = get_content()
 print('Hole Content')
 
 names_of_entities = split_and_analyse_content(content, cleaned_sortierte_sitzungen)
-#start_end_nummern_liste = get_start_and_end_of_a_speech()
-#liste_alle_reden = get_all_speeches(start_end_nummern_liste)
-#print('Hole alle Reden einer Sitzung.')
+start_end_nummern_liste = get_start_and_end_of_a_speech()
+liste_alle_reden = get_all_speeches(start_end_nummern_liste)
+print('Hole alle Reden einer Sitzung.')
 
-#redeliste = clean_speeches(liste_alle_reden)
+redeliste = clean_speeches(liste_alle_reden)
 
 sitzung_240 = cleaned_sortierte_sitzungen['Sitzung 240']
 anzahl_redner = count_speecher_from_cleaned_sortierte_sitzung(sitzung_240)
