@@ -45,7 +45,7 @@ def get_content():
     :rtype string_sitzung: String
     :return string_sitzung: Kompletter Sitzungsinhalt in einer Zeichenkette.
     '''
-    f = codecs.open("18243-data.txt", "r", "utf-8")
+    f = codecs.open("18244-data.txt", "r", "utf-8")
     lines = f.readlines()
     f.close()
     liste_sitzungsinhalt = []
@@ -71,10 +71,10 @@ def get_content():
 
 
 def hole_alle_redner_aus_cleaned_sortierte_sitzung(cleaned_sortierte_sitzung):
-    sitzung_243 = cleaned_sortierte_sitzung['Sitzung 243']
+    sitzung_244 = cleaned_sortierte_sitzung['Sitzung 244']
     liste_alle_redner = []
 
-    for topic in sitzung_243['TOPs']:
+    for topic in sitzung_244['TOPs']:
         for redner in topic['Redner']:
             liste_alle_redner.append(redner)
     return liste_alle_redner
@@ -106,7 +106,7 @@ def split_and_analyse_content(liste_zeilen, sitzungen):
         list_elements.append(liste_zeilen[i])
         indexierte_liste.append(liste_zeilen[i])
         list_element = liste_zeilen[i]
-        analyse_content_element(list_element, i, alle_redner_einer_sitzung)
+        analyse_content_element(list_element, i, alle_redner_einer_sitzung, sitzungen)
 
         #set_number(i)
         #if list_element.__contains__('(Schluss:'):
@@ -114,7 +114,7 @@ def split_and_analyse_content(liste_zeilen, sitzungen):
           #  ende_der_letzten_rede = i
 
 
-def analyse_content_element(list_element, i, alle_redner_einer_sitzung):
+def analyse_content_element(list_element, i, alle_redner_einer_sitzung, sitzungen):
     '''
     ÄNDERUNG
 
@@ -128,6 +128,8 @@ def analyse_content_element(list_element, i, alle_redner_einer_sitzung):
     :type i: int
     :param i: Nummerierung des Listenelements
     '''
+
+    sitzung_244 = sitzungen['Sitzung 244']
 
     temp_dict_empty_values = {'polName': '', 'partyName': ''}
     # -*- encoding: utf-8 -*-
@@ -178,6 +180,12 @@ def analyse_content_element(list_element, i, alle_redner_einer_sitzung):
                     print('Start-Element der Rede von' + surname + ': ' + str(start_Element_Rede))
                     print('Listen-Element: ' + str(list_element))
                     print('Laenge Liste Startelemente' + str(len(list_with_startelement_numbers)))
+                elif isMatchergefunden == True and wichtiger_index == 0:
+                    speecher_to_delete = (alle_redner_einer_sitzung[redner_zaehler_fuer_iteration_durch_alle_redner-1])
+
+                    remove_speecher_from_list(sitzung_244, speecher_to_delete)
+                    #alle_redner_einer_sitzung.remove(surname_to_delete)
+
 
 
 
@@ -1411,7 +1419,7 @@ def delete_first_and_last_speecher_from_list(dict_sitzungen):
     '''
 
     # temporär nur für eine Sitzung 244
-    sitzung = 'Sitzung 243'
+    sitzung = 'Sitzung 244'
     temp_speecher_list = dict_sitzungen[sitzung]['TOPs']
     top_counter = 0
     while top_counter < len(temp_speecher_list):
@@ -1482,8 +1490,8 @@ def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung, lenRe
     :rtype final_cleaned_sortierte_sitzung: dict
     :return final_cleaned_sortierte_sitzung: Die zusammengefügte, finale, gesäuberte Sitzung.
     '''
-    aktuelle_sitzungsbezeichnung = 'Sitzung 243'
-    aktuelle_sitzung = cleaned_sortierte_sitzungen['Sitzung 243']
+    aktuelle_sitzungsbezeichnung = 'Sitzung 244'
+    aktuelle_sitzung = cleaned_sortierte_sitzungen['Sitzung 244']
 
 
     '''
@@ -1558,8 +1566,11 @@ def count_speecher_from_cleaned_sortierte_sitzung(sitzung):
         result += len(anz_redner_je_topic['Redner'])
     return result
 
-def remove_speecher_from_list(surname):
-    pass
+def remove_speecher_from_list(sitzung, surname):
+    for top in sitzung['TOPs']:
+        for redner in top['Redner']:
+            if redner.__contains__(surname):
+                top['Redner'].remove(redner)
 
 def remove_brackets_from_surname(surname):
     index = 0
@@ -1843,8 +1854,8 @@ print('Hole alle Reden einer Sitzung.')
 
 redeliste = clean_speeches(liste_alle_reden)
 
-sitzung_243 = cleaned_sortierte_sitzungen['Sitzung 243']
-anzahl_redner = count_speecher_from_cleaned_sortierte_sitzung(sitzung_243)
+sitzung_244 = cleaned_sortierte_sitzungen['Sitzung 244']
+anzahl_redner = count_speecher_from_cleaned_sortierte_sitzung(sitzung_244)
 
 print('Ergebniszusammenfassung: ')
 print('#########################')
@@ -1855,8 +1866,8 @@ set_part_till_first_speech()
 print('Vereinige die Sitzungsstruktur mit den Reden.')
 merged_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzungen, len(redeliste))
 print('Setze Sitzungsdaten...')
-set_metadaten(merged_sitzung['Sitzung 243'])
-dataset_for_excel = get_sitzungs_dataset_for_excel(merged_sitzung['Sitzung 243'])
+set_metadaten(merged_sitzung['Sitzung 244'])
+dataset_for_excel = get_sitzungs_dataset_for_excel(merged_sitzung['Sitzung 244'])
 print('Speicher Excel-Sheet')
 create_protocol_workbook(dataset_for_excel)
 print('Skript beendet')
