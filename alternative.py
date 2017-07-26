@@ -57,6 +57,13 @@ def get_content():
         # string_sitzung = ' '.join(liste_sitzungsinhalt)
         if line.__contains__('ğ'):
             line = line.replace('ğ', 'g')
+
+        if line.__contains__('è'):
+            line = line.replace('è', 'e')
+
+        if line.__contains__('é'):
+            line = line.replace('é', 'e')
+
             # print(list_element)
         liste_zeilen.append(line)
 
@@ -88,6 +95,7 @@ def split_and_analyse_content(liste_zeilen, cleaned_sortierte_sitzung):
             isActive = False
         else:
             global list_elements_till_first_speech
+            indexierte_liste.append(liste_zeilen[counter])
             list_elements_till_first_speech.append(liste_zeilen[counter])  # Teile mit TOP, ZTOP,...
             counter += 1
     print(list_elements_till_first_speech)
@@ -96,6 +104,7 @@ def split_and_analyse_content(liste_zeilen, cleaned_sortierte_sitzung):
     list_elements = []
     for i in range(counter+1,len(liste_zeilen)):
         list_elements.append(liste_zeilen[i])
+        indexierte_liste.append(liste_zeilen[i])
         list_element = liste_zeilen[i]
         analyse_content_element(list_element, i, alle_redner_einer_sitzung)
 
@@ -103,7 +112,7 @@ def split_and_analyse_content(liste_zeilen, cleaned_sortierte_sitzung):
         #if list_element.__contains__('(Schluss:'):
          #   global ende_der_letzten_rede
           #  ende_der_letzten_rede = i
-    print('Alle Zeilen durchlaufen')
+
 
 def analyse_content_element(list_element, i, alle_redner_einer_sitzung):
     '''
@@ -132,8 +141,6 @@ def analyse_content_element(list_element, i, alle_redner_einer_sitzung):
         print(err)
         surname = 'Letzer Redner wurd durchlaufen'
 
-    if surname == 'Ludwig':
-        print('Ludwig gefunden !!')
     if any(m in list_element for m in matchers) and ':' in list_element and '!' not in list_element and '?' not in list_element:
         isMatchergefunden = True
         #print('setze isMatchergefunden auf True')
@@ -141,6 +148,8 @@ def analyse_content_element(list_element, i, alle_redner_einer_sitzung):
             surname = remove_brackets_from_surname(surname)
         if list_element.__contains__(surname):
             redner_zaehler_fuer_iteration_durch_alle_redner += 1
+            start_Element_Rede = i-1
+            list_with_startelement_numbers.append(start_Element_Rede)
             print('TRIGGER ########################################################')
             print(list_element)
             isMatchergefunden = True
@@ -177,7 +186,7 @@ def analyse_content_element(list_element, i, alle_redner_einer_sitzung):
         isMatcherAndNameGefunden = False
         print('Startpunkt gefunden, setze alles auf False')
 
-        start_Element_Rede = i
+        start_Element_Rede = i-1
         list_with_startelement_numbers.append(start_Element_Rede)
         # print("Start_Index_Redetext: ", start_Element_Rede)
         print(start_Element_Rede)
@@ -999,6 +1008,7 @@ def clean_speeches(alle_Reden_einer_Sitzung):
         liste_beifaelle_extract_partei = []
 
         string_rede = ' '.join(rede)
+        print(string_rede)
         liste_treffer = re.findall(regex, string_rede)
         liste_parteien = get_all_parties_without_brackets()
         liste_beifall_id = []
@@ -1358,7 +1368,7 @@ def delete_first_and_last_speecher_from_list(dict_sitzungen):
 
 
 def sort_reden_eines_tops_in_tagesordnungspunkt(reden_eines_tops, top_counter, cleaned_sortierte_sitzungen,
-                                                aktuelle_sitzungsbezeichnung):
+                                                aktuelle_sitzungsbezeichnung, lenRedeliste):
     '''
     Sortiert die Reden zu deren entsprechenden Tagesordnungspunkt.
 
@@ -1379,15 +1389,23 @@ def sort_reden_eines_tops_in_tagesordnungspunkt(reden_eines_tops, top_counter, c
     '''
     i = 0
     list_sorted_redner_temp = []
+    isDisplayed = False
     for redner in cleaned_sortierte_sitzungen[aktuelle_sitzungsbezeichnung]['TOPs'][top_counter]['Redner']:
-        dict_temp_redner = {str(redner): reden_eines_tops[i]}
-        list_sorted_redner_temp.append(dict_temp_redner)
+        if i < lenRedeliste:
+            try:
+                dict_temp_redner = {str(redner): reden_eines_tops[i]}
+                list_sorted_redner_temp.append(dict_temp_redner)
+            except IndexError as err:
+                if isDisplayed == False:
+                    isDisplayed = True
+                    print('BLUBB')
+
         i += 1
     cleaned_sortierte_sitzungen[aktuelle_sitzungsbezeichnung]['TOPs'][top_counter]['Redner'] = list_sorted_redner_temp
     return cleaned_sortierte_sitzungen
 
 
-def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung):
+def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung, lenRedeliste):
     '''
     Vereint die Sitzungsstruktur mit den Reden.
 
@@ -1396,6 +1414,9 @@ def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung):
 
     :type cleaned_sortierte_sitzung
     :param cleaned_sortierte_sitzung: Die gescrapte Sitzungsstruktur.
+
+    :type lenRedeliste: int
+    :param lenRedeliste: Die Anzahl der gefundenen Reden.
 
     :rtype final_cleaned_sortierte_sitzung: dict
     :return final_cleaned_sortierte_sitzung: Die zusammengefügte, finale, gesäuberte Sitzung.
@@ -1444,9 +1465,10 @@ def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung):
         while i < anzahl_redner_in_topic:
             reden_eines_tagesordnungspunkts.append(reden.pop(0))
             i += 1
+
         if len(reden_eines_tagesordnungspunkts) > 1:
             final_cleaned_sortierte_sitzung = sort_reden_eines_tops_in_tagesordnungspunkt(
-                reden_eines_tagesordnungspunkts, j, cleaned_sortierte_sitzung, aktuelle_sitzungsbezeichnung)
+                reden_eines_tagesordnungspunkts, j, cleaned_sortierte_sitzung, aktuelle_sitzungsbezeichnung, lenRedeliste)
             j += 1
             top_counter += 1
         else:
@@ -1474,6 +1496,9 @@ def count_speecher_from_cleaned_sortierte_sitzung(sitzung):
     for anz_redner_je_topic in sitzung['TOPs']:
         result += len(anz_redner_je_topic['Redner'])
     return result
+
+def remove_speecher_from_list(surname):
+    pass
 
 def remove_brackets_from_surname(surname):
     index = 0
@@ -1681,6 +1706,8 @@ def get_sitzungs_dataset_for_excel(sitzung):
                 # Parteienvergleich
                 for zeile in liste_zeilen:
                     aktuelle_redner = get_surname(redner)
+                    if aktuelle_redner.__contains__('('):
+                        aktuelle_redner = remove_brackets_from_surname(aktuelle_redner)
                     if rede[redner]['clean_rede'].__contains__(aktuelle_redner):
                         isSpeecherinSpeech = True
                     if zeile.__contains__(aktuelle_redner):
@@ -1765,7 +1792,7 @@ print("Anzahl vorhandene Reden in Redeliste: " + str(len(redeliste)))
 
 set_part_till_first_speech()
 print('Vereinige die Sitzungsstruktur mit den Reden.')
-merged_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzungen)
+merged_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzungen, len(redeliste))
 print('Setze Sitzungsdaten...')
 set_metadaten(merged_sitzung['Sitzung 240'])
 dataset_for_excel = get_sitzungs_dataset_for_excel(merged_sitzung['Sitzung 240'])
