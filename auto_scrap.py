@@ -45,7 +45,7 @@ def get_content():
     :rtype string_sitzung: String
     :return string_sitzung: Kompletter Sitzungsinhalt in einer Zeichenkette.
     '''
-    f = codecs.open("18" + aktuelle_sitzungsnummer + "-data.txt", "r", "utf-8")
+    f = codecs.open("txt_protokolle/18" + aktuelle_sitzungsnummer + "-data.txt", "r", "utf-8")
     lines = f.readlines()
     f.close()
     liste_sitzungsinhalt = []
@@ -1197,7 +1197,7 @@ def get_files_from_server_via_sitzungsnummern(list_sitzungsnummern):
             list_link_txts.append('http://www.bundestag.de' + (link.get('href')))
 
     for url in list_link_txts:
-        os.system('wget ', url)
+        os.system('wget -N -P txt_protokolle/'+ ' ' + url)
 
 def get_new_zp_topic(topic):
     '''
@@ -1873,51 +1873,73 @@ alle_tops_und_alle_sitzungen, alle_sitzungsnummern_der_vorhandenen_plenarprotoko
 
 get_files_from_server_via_sitzungsnummern(alle_sitzungsnummern_der_vorhandenen_plenarprotokolle)
 
-aktuelle_sitzungsnummer = alle_sitzungsnummern_der_vorhandenen_plenarprotokolle[0]
-
-print('Sitzungsstruktur vorhalten')
+session_counter = 0
 
 
-
-alle_tops_list = alle_tops_und_alle_sitzungen['TOPs']
-alle_sitzungen = alle_tops_und_alle_sitzungen['Alle_Sitzungen']
-alle_sitzungen_mit_start_und_ende_der_topic = get_alle_sitzungen_mit_start_und_ende_der_topic(alle_tops_list,
-                                                                                              alle_sitzungen)
-sortierte_sitzungen = sort_topics_to_sitzung(alle_sitzungen_mit_start_und_ende_der_topic)
-cleaned_sortierte_sitzungen = delete_first_and_last_speecher_from_list(sortierte_sitzungen)
-
-print('Serialisiere gescrapte Sitzungsstruktur - derzeit deaktiv')
-serialize_sitzungen(cleaned_sortierte_sitzungen)
-#deserialisierte_cleaned_sortierte_sitzungen = deserialize_sitzunen('scraped_content/serialized_sitzungen_04_07_2017.txt')
-print('Serialisierung/Deserialisierung beendet.')
-print('Scraping beendet')
-# Hole HTML Struktur ENDE
-
-content = get_content()
-print('Hole Content')
-
-names_of_entities = split_and_analyse_content(content, cleaned_sortierte_sitzungen)
-start_end_nummern_liste = get_start_and_end_of_a_speech()
-liste_alle_reden = get_all_speeches(start_end_nummern_liste)
-print('Hole alle Reden einer Sitzung.')
-
-redeliste = clean_speeches(liste_alle_reden)
-
-aktuelle_sitzung = cleaned_sortierte_sitzungen['Sitzung ' + aktuelle_sitzungsnummer]
-anzahl_redner = count_speecher_from_cleaned_sortierte_sitzung(aktuelle_sitzung)
+def set_globals_null():
+    global indexierte_liste, start_Element_Rede, list_with_startelement_numbers, list_with_startEnd_numbers, number_of_last_element, list_elements_till_first_speech, politican_name, party_name, liste_zeilen, isMatcherAndNameGefunden, isMatchergefunden, isNameGefunden, redner_zaehler_fuer_iteration_durch_alle_redner, aktuelle_sitzungsnummer
+    indexierte_liste = []  # Vorhalten von Redeteilen
+    start_Element_Rede = 0
+    list_with_startelement_numbers = []  # enthält Start item aller Redetexte
+    list_with_startEnd_numbers = []  # enthält Start und Ende item aller Redetexte
+    number_of_last_element = 0
+    list_elements_till_first_speech = []  # enthält listenelemente bis zur ersten Rede
+    politican_name = ""
+    party_name = ""
+    liste_zeilen = []
+    isMatcherAndNameGefunden = False
+    isMatchergefunden = False
+    isNameGefunden = False
+    redner_zaehler_fuer_iteration_durch_alle_redner = 0
+    aktuelle_sitzungsnummer = ''
 
 
-print('#########################')
-print('Ergebniszusammenfassung ', 'Sitzung', aktuelle_sitzungsnummer)
-print('Anzahl Redner: ' + str(anzahl_redner))
-print("Anzahl vorhandene Reden in Redeliste: " + str(len(redeliste)))
+while session_counter < len(alle_sitzungsnummern_der_vorhandenen_plenarprotokolle):
 
-set_part_till_first_speech()
-print('Vereinige die Sitzungsstruktur mit den Reden.')
-merged_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzungen, len(redeliste))
-print('Setze Sitzungsdaten...')
-set_metadaten(merged_sitzung['Sitzung ' + aktuelle_sitzungsnummer])
-dataset_for_excel = get_sitzungs_dataset_for_excel(merged_sitzung['Sitzung ' + aktuelle_sitzungsnummer])
-print('Speicher Excel-Sheet')
-create_protocol_workbook(dataset_for_excel)
+    aktuelle_sitzungsnummer = alle_sitzungsnummern_der_vorhandenen_plenarprotokolle[session_counter]
+    session_counter += 1
+    #print('Sitzungsstruktur vorhalten')
+
+    alle_tops_list = alle_tops_und_alle_sitzungen['TOPs']
+    alle_sitzungen = alle_tops_und_alle_sitzungen['Alle_Sitzungen']
+    alle_sitzungen_mit_start_und_ende_der_topic = get_alle_sitzungen_mit_start_und_ende_der_topic(alle_tops_list,
+                                                                                                  alle_sitzungen)
+    sortierte_sitzungen = sort_topics_to_sitzung(alle_sitzungen_mit_start_und_ende_der_topic)
+    cleaned_sortierte_sitzungen = delete_first_and_last_speecher_from_list(sortierte_sitzungen)
+
+    print('Serialisiere gescrapte Sitzungsstruktur - derzeit deaktiv')
+    serialize_sitzungen(cleaned_sortierte_sitzungen)
+    #deserialisierte_cleaned_sortierte_sitzungen = deserialize_sitzunen('scraped_content/serialized_sitzungen_04_07_2017.txt')
+    print('Serialisierung/Deserialisierung beendet.')
+    print('Scraping beendet')
+    # Hole HTML Struktur ENDE
+
+    content = get_content()
+    print('Hole Content')
+
+    names_of_entities = split_and_analyse_content(content, cleaned_sortierte_sitzungen)
+    start_end_nummern_liste = get_start_and_end_of_a_speech()
+    liste_alle_reden = get_all_speeches(start_end_nummern_liste)
+    print('Hole alle Reden einer Sitzung.')
+
+    redeliste = clean_speeches(liste_alle_reden)
+
+    aktuelle_sitzung = cleaned_sortierte_sitzungen['Sitzung ' + aktuelle_sitzungsnummer]
+    anzahl_redner = count_speecher_from_cleaned_sortierte_sitzung(aktuelle_sitzung)
+
+
+    print('#########################')
+    print('Ergebniszusammenfassung ', 'Sitzung', aktuelle_sitzungsnummer)
+    print('Anzahl Redner: ' + str(anzahl_redner))
+    print("Anzahl vorhandene Reden in Redeliste: " + str(len(redeliste)))
+
+    set_part_till_first_speech()
+    print('Vereinige die Sitzungsstruktur mit den Reden.')
+    merged_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzungen, len(redeliste))
+    print('Setze Sitzungsdaten...')
+    set_metadaten(merged_sitzung['Sitzung ' + aktuelle_sitzungsnummer])
+    dataset_for_excel = get_sitzungs_dataset_for_excel(merged_sitzung['Sitzung ' + aktuelle_sitzungsnummer])
+    set_globals_null()
+    print('Speicher Excel-Sheet')
+    create_protocol_workbook(dataset_for_excel)
 print('Skript beendet')
