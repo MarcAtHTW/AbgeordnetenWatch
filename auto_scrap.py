@@ -822,19 +822,19 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     freq_words_daten.write('C1', 'number_freq_words_in_speech', bold)
 
     # writing in worksheet 'Sitzungsdaten'
-    row = 1
-    col = 0
+    row_sitzungsdaten = 1
+    col_sitzungsdaten= 0
     sitzungnummer = liste_dictionary_reden_einer_sitzung[0]['sitzungsnummer']
     sitzungsdatum = liste_dictionary_reden_einer_sitzung[0]['sitzungsdatum']
     wahlperiode = liste_dictionary_reden_einer_sitzung[0]['wahlperiode']
 
-    sitzungsdaten.write_number(row, col, int(sitzungnummer))
-    sitzungsdaten.write(row, col + 1, sitzungsdatum)
-    sitzungsdaten.write_number(row, col + 2, int(wahlperiode))
+    sitzungsdaten.write_number(row_sitzungsdaten, col_sitzungsdaten, int(sitzungnummer))
+    sitzungsdaten.write(row_sitzungsdaten, col_sitzungsdaten + 1, sitzungsdatum)
+    sitzungsdaten.write_number(row_sitzungsdaten, col_sitzungsdaten + 2, int(wahlperiode))
 
     # writing in worksheet 'Topdaten'
-    row = 1
-    col = 0
+    row_topdaten = 1
+    col_topdaten = 0
     x = 0
     for dict in liste_dictionary_reden_einer_sitzung:
 
@@ -857,9 +857,9 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
                 counter = 0
                 for key in ['sitzungsnummer', 'tagesordnungspunkt', 'tagesordnungspunktbezeichnung']:
                     if key == 'sitzungsnummer':
-                        topdaten.write_number(row, col, int(dict[key]))
+                        topdaten.write_number(row_topdaten, col_topdaten, int(dict[key]))
                     else:
-                        topdaten.write(row, col, dict[key])
+                        topdaten.write(row_topdaten, col_topdaten, dict[key])
 
                         while counter < 1:
                             for m in range(len(matchers)):
@@ -869,14 +869,14 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
                                     list_found_categorie.append(col_categorie[m])
                             string_found_synonyms = ' , '.join(list_found_synonyms)
                             string_found_categorie = ' , '.join(list_found_categorie)
-                            topdaten.write(row - 1, col + 2, string_found_synonyms)
-                            topdaten.write(row - 1, col + 3, string_found_categorie)
+                            topdaten.write(row_topdaten - 1, col_topdaten + 2, string_found_synonyms)
+                            topdaten.write(row_topdaten - 1, col_topdaten + 3, string_found_categorie)
                             list_found_synonyms = []
                             list_found_categorie = []
                             counter += 1
-                    col += 1
-                row += 1
-                col = 0
+                    col_topdaten += 1
+                row_topdaten += 1
+                col_topdaten = 0
                 temp_tagesordnungspunkt = liste_dictionary_reden_einer_sitzung[x]['tagesordnungspunkt']
                 temp_tagesordnungspunkt_bezeichnung = liste_dictionary_reden_einer_sitzung[x][
                     'tagesordnungspunktbezeichnung']
@@ -885,83 +885,83 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
             temp_tagesordnungspunkt_bezeichnung = liste_dictionary_reden_einer_sitzung[x][
                 'tagesordnungspunktbezeichnung']
 
-            topdaten.write_number(row, col, int(sitzungnummer))
-            topdaten.write(row, col + 1, temp_tagesordnungspunkt)
-            topdaten.write(row, col + 2, temp_tagesordnungspunkt_bezeichnung)
-            row += 1
+            topdaten.write_number(row_topdaten, col_topdaten, int(sitzungnummer))
+            topdaten.write(row_topdaten, col_topdaten + 1, temp_tagesordnungspunkt)
+            topdaten.write(row_topdaten, col_topdaten + 2, temp_tagesordnungspunkt_bezeichnung)
+            row_topdaten += 1
 
         x += 1
 
     # writing in worksheet 'Redner_Rede'
-    row = 1
-    col = 0
+    row_redner_rede = 1
+    col_redner_rede = 0
     for dict in liste_dictionary_reden_einer_sitzung:
         for key in ['tagesordnungspunkt', 'redner', 'geschlecht', 'partei', 'clean_rede']:
-            redner_rede_daten.write(row, col, dict[key])
-            col += 1
+            redner_rede_daten.write(row_redner_rede, col_redner_rede, dict[key])
+            col_redner_rede += 1
         pos_neg, gesamt = sentiment_analyse(dict['clean_rede'])
-        redner_rede_daten.write(row, col, pos_neg)
-        redner_rede_daten.write(row, col + 1, gesamt)
-        redner_rede_daten.write(row, col + 2, dict['rede_id_sitzungen'])
-        row += 1
-        col = 0
+        redner_rede_daten.write(row_redner_rede, col_redner_rede, pos_neg)
+        redner_rede_daten.write(row_redner_rede, col_redner_rede + 1, gesamt)
+        redner_rede_daten.write(row_redner_rede, col_redner_rede + 2, dict['rede_id_sitzungen'])
+        row_redner_rede += 1
+        col_redner_rede = 0
 
     # writing in worksheet 'Beifalltext'
-    row = 1
+    row_beifalltext = 1
     beifall_id_row = 1
-    temp_row = 1
-    col = 0
+    temp_row_beifalltext = 1
+    col_beifalltext = 0
     for dict in liste_dictionary_reden_einer_sitzung:
         for key in ['rede_id_sitzungen', 'beifaelle', 'beifall_id']:
             if isinstance(dict[key], list) and dict[key] == dict['beifaelle']:
                 for item in dict[key]:
-                    beifalltext.write(row, col, item)
-                    row += 1
+                    beifalltext.write(row_beifalltext, col_beifalltext, item)
+                    row_beifalltext += 1
             elif isinstance(dict[key], list) and dict[key] == dict['beifall_id']:
                 for item in dict[key]:
-                    beifalltext.write(beifall_id_row, col, dict['rede_id_sitzungen'] + '_' + str(item))
+                    beifalltext.write(beifall_id_row, col_beifalltext, dict['rede_id_sitzungen'] + '_' + str(item))
                     beifall_id_row += 1
             if dict[key] == dict['rede_id_sitzungen']:
                 k = 0
                 while k < len(dict['beifaelle']):
-                    beifalltext.write(temp_row, col, dict[key])
+                    beifalltext.write(temp_row_beifalltext, col_beifalltext, dict[key])
                     k += 1
-                    temp_row += 1
-            col += 1
-        col = 0
+                    temp_row_beifalltext += 1
+            col_beifalltext += 1
+        col_beifalltext = 0
 
     # writing in worksheet 'Beifalldaten'
-    row = 1
+    row_beifalldaten = 1
     t_row = 1
-    temp_row = 1
-    col = 0
+    temp_row_beifalldaten = 1
+    col_beifalldaten = 0
     counter = 1
     for dict in liste_dictionary_reden_einer_sitzung:
         for key in ['beifall_id', 'beifaelle_von_partei']:
             if isinstance(dict[key], list) and dict[key] == dict['beifaelle_von_partei']:
                 for item in dict[key]:
-                    beifalldaten.write(row, col, item)
-                    beifalldaten.write(row, col+1, counter)
-                    row += 1
+                    beifalldaten.write(row_beifalldaten, col_beifalldaten, item)
+                    beifalldaten.write(row_beifalldaten, col_beifalldaten+1, counter)
+                    row_beifalldaten += 1
                     counter +=1
             if dict[key] == dict['beifall_id']:
                 n = 1
                 for x in dict['liste_counter_beifall_id']:
                     k = 0
                     while k < x:
-                        beifalldaten.write(temp_row, col, dict['rede_id_sitzungen'] + '_' + str(n))
-                        #print(temp_row, col, dict['rede_id_sitzungen'] + '_' + str(n))
+                        beifalldaten.write(temp_row_beifalldaten, col_beifalldaten, dict['rede_id_sitzungen'] + '_' + str(n))
+                        #print(temp_row_beifalldaten, col, dict['rede_id_sitzungen'] + '_' + str(n))
                         k += 1
-                        temp_row += 1
+                        temp_row_beifalldaten += 1
                     n += 1
 
-            col += 1
-        col = 0
+            col_beifalldaten += 1
+        col_beifalldaten = 0
 
     # writing in worksheet 'Wortmeldedaten'
-    row = 1
-    temp_row = 1
-    col = 0
+    row_wortmeldedaten = 1
+    temp_row_wortmeldedaten = 1
+    col_wortmeldedaten = 0
     parteiliste = get_all_parties_without_brackets()
 
     for dict in liste_dictionary_reden_einer_sitzung:
@@ -976,85 +976,85 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
                     if item.__contains__(':'):
                         for letter in (item[:item.index(':')]):
                             wer += letter
-                        wortmeldedaten.write(row, col + 1, wer)
+                        wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 1, wer)
 
                         for party in parteiliste:
                             if party in wer:
                                 partei = party
                                 break
-                        wortmeldedaten.write(row, col + 2, partei)
+                        wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 2, partei)
 
 
                         for letter in (item[item.index(':'):]):
                             text += letter
                         text = text.replace(':','')
-                        wortmeldedaten.write(row, col + 3, text)
+                        wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 3, text)
                         pos_neg, gesamt = sentiment_analyse(text)
-                        wortmeldedaten.write(row, col + 4, pos_neg)
-                        wortmeldedaten.write(row, col + 5, gesamt)
+                        wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 4, pos_neg)
+                        wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 5, gesamt)
                     else:
-                        wortmeldedaten.write(row, col + 1, '')
-                        wortmeldedaten.write(row, col + 2, '')
-                    wortmeldedaten.write(row, col, item)
+                        wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 1, '')
+                        wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 2, '')
+                    wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten, item)
 
 
-                    row += 1
+                    row_wortmeldedaten += 1
             else:
                 k = 0
                 while k < len(dict['wortmeldungen']):
-                    wortmeldedaten.write(temp_row, col, dict[key])
+                    wortmeldedaten.write(temp_row_wortmeldedaten, col_wortmeldedaten, dict[key])
                     k += 1
-                    temp_row += 1
-            col += 1
-        col = 0
+                    temp_row_wortmeldedaten += 1
+            col_wortmeldedaten += 1
+        col_wortmeldedaten = 0
 
     # writing in worksheet 'seldom_words_daten'
-    row = 1
-    temp_row = 1
+    row_seldom_words_daten = 1
+    temp_row_seldom_words_daten = 1
     t_row = 1
-    col = 0
+    col_seldom_words_daten = 0
     for dict in liste_dictionary_reden_einer_sitzung:
         for key in ['rede_id_sitzungen', '10_seldom_words', 'number_seldom_words']:
             if isinstance(dict[key], list) and dict[key] == dict['10_seldom_words']:
                 for item in dict[key]:
-                    seldom_words_daten.write(row, col, item)
-                    row += 1
+                    seldom_words_daten.write(row_seldom_words_daten, col_seldom_words_daten, item)
+                    row_seldom_words_daten += 1
             elif isinstance(dict[key], list) and dict[key] == dict['number_seldom_words']:
                 for item in dict[key]:
-                    seldom_words_daten.write_number(t_row, col, int(item))
+                    seldom_words_daten.write_number(t_row, col_seldom_words_daten, int(item))
                     t_row += 1
             else:
                 k = 0
                 while k < len(dict['10_seldom_words']):
-                    seldom_words_daten.write(temp_row, col, dict[key])
+                    seldom_words_daten.write(temp_row_seldom_words_daten, col_seldom_words_daten, dict[key])
                     k += 1
-                    temp_row += 1
-            col += 1
-        col = 0
+                    temp_row_seldom_words_daten += 1
+            col_seldom_words_daten += 1
+        col_seldom_words_daten = 0
 
     # writing in worksheet 'freq_words_daten'
-    row = 1
-    temp_row = 1
+    row_freq_words_daten = 1
+    temp_row_freq_words_daten = 1
     t_row = 1
-    col = 0
+    col_freq_words_daten = 0
     for dict in liste_dictionary_reden_einer_sitzung:
         for key in ['rede_id_sitzungen', '10_frequently_words', 'number_frequently_words']:
             if isinstance(dict[key], list) and dict[key] == dict['10_frequently_words']:
                 for item in dict[key]:
-                    freq_words_daten.write(row, col, item)
-                    row += 1
+                    freq_words_daten.write(row_freq_words_daten, col_freq_words_daten, item)
+                    row_freq_words_daten += 1
             elif isinstance(dict[key], list) and dict[key] == dict['number_frequently_words']:
                 for item in dict[key]:
-                    freq_words_daten.write_number(t_row, col, int(item))
+                    freq_words_daten.write_number(t_row, col_freq_words_daten, int(item))
                     t_row += 1
             else:
                 k = 0
                 while k < len(dict['10_frequently_words']):
-                    freq_words_daten.write(temp_row, col, dict[key])
+                    freq_words_daten.write(temp_row_freq_words_daten, col_freq_words_daten, dict[key])
                     k += 1
-                    temp_row += 1
-            col += 1
-        col = 0
+                    temp_row_freq_words_daten += 1
+            col_freq_words_daten += 1
+        col_freq_words_daten = 0
 
     workbook.close()
 
@@ -1893,8 +1893,8 @@ def set_globals_null():
     redner_zaehler_fuer_iteration_durch_alle_redner = 0
     aktuelle_sitzungsnummer = ''
 
-
-while session_counter < len(alle_sitzungsnummern_der_vorhandenen_plenarprotokolle):
+while session_counter < 2:
+#while session_counter < len(alle_sitzungsnummern_der_vorhandenen_plenarprotokolle):
 
     aktuelle_sitzungsnummer = alle_sitzungsnummern_der_vorhandenen_plenarprotokolle[session_counter]
     session_counter += 1
@@ -1942,4 +1942,5 @@ while session_counter < len(alle_sitzungsnummern_der_vorhandenen_plenarprotokoll
     set_globals_null()
     print('Speicher Excel-Sheet')
     create_protocol_workbook(dataset_for_excel)
+
 print('Skript beendet')
