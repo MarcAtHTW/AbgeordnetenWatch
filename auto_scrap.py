@@ -34,7 +34,7 @@ isMatcherAndNameGefunden        = False
 isMatchergefunden               = False
 isNameGefunden                  = False
 redner_zaehler_fuer_iteration_durch_alle_redner = 0
-aktuelle_sitzungsnummer = '241'
+aktuelle_sitzungsnummer = '240'
 
 def get_content():
     '''
@@ -807,9 +807,10 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     wortmeldedaten.write('A1', 'rede_id', bold)
     wortmeldedaten.write('B1', 'Wortmeldungen', bold)
     wortmeldedaten.write('C1', 'Wer', bold)
-    wortmeldedaten.write('D1', 'Text', bold)
-    wortmeldedaten.write('E1', 'Sentiment-Wert', bold)
-    wortmeldedaten.write('F1', 'Sentiment-Gesamt', bold)
+    wortmeldedaten.write('D1', 'Partei', bold)
+    wortmeldedaten.write('E1', 'Text', bold)
+    wortmeldedaten.write('F1', 'Sentiment-Wert', bold)
+    wortmeldedaten.write('G1', 'Sentiment-Gesamt', bold)
 
 
     seldom_words_daten.write('A1', 'rede_id', bold)
@@ -961,6 +962,8 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     row = 1
     temp_row = 1
     col = 0
+    parteiliste = get_all_parties_without_brackets()
+
     for dict in liste_dictionary_reden_einer_sitzung:
         liste_wer = []
         liste_text = []
@@ -968,18 +971,27 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
             if isinstance(dict[key], list) and dict[key] == dict['wortmeldungen']:
                 for item in dict[key]:
                     wer = ''
+                    partei = ''
                     text = ''
                     if item.__contains__(':'):
                         for letter in (item[:item.index(':')]):
                             wer += letter
                         wortmeldedaten.write(row, col + 1, wer)
+
+                        for party in parteiliste:
+                            if party in wer:
+                                partei = party
+                                break
+                        wortmeldedaten.write(row, col + 2, partei)
+
+
                         for letter in (item[item.index(':'):]):
                             text += letter
                         text = text.replace(':','')
-                        wortmeldedaten.write(row, col + 2, text)
+                        wortmeldedaten.write(row, col + 3, text)
                         pos_neg, gesamt = sentiment_analyse(text)
-                        wortmeldedaten.write(row, col + 3, pos_neg)
-                        wortmeldedaten.write(row, col + 4, gesamt)
+                        wortmeldedaten.write(row, col + 4, pos_neg)
+                        wortmeldedaten.write(row, col + 5, gesamt)
                     else:
                         wortmeldedaten.write(row, col + 1, '')
                         wortmeldedaten.write(row, col + 2, '')
