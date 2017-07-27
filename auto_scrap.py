@@ -34,7 +34,7 @@ isMatcherAndNameGefunden        = False
 isMatchergefunden               = False
 isNameGefunden                  = False
 redner_zaehler_fuer_iteration_durch_alle_redner = 0
-aktuelle_sitzungsnummer = '240'
+aktuelle_sitzungsnummer = ''
 
 def get_content():
     '''
@@ -1180,6 +1180,24 @@ def start_scraping_with_chrome(url):
     chrome.get(url)
     return chrome
 
+def get_files_from_server_via_sitzungsnummern(list_sitzungsnummern):
+    '''
+    Nimmt eine Liste mit Sitzungsnummern entgegen und lädt die Plenarprotokolle anhand der Sitzungsnummern vom Server herunter
+
+    :type list_sitzungsnummern: list
+    :param list_sitzungsnummern: Liste mit Sitzungsnummern.
+    '''
+
+    chrome = start_scraping_with_chrome('http://www.bundestag.de/ajax/filterlist/de/dokumente/protokolle/plenarprotokolle/plenarprotokolle/-/455046/h_6810466be65964217012227c14bad20f?limit=10&noFilterSet=true')
+    soup = BeautifulSoup(chrome.page_source, 'lxml')
+    list_link_txts = []
+
+    for item in soup.find_all(attrs={'class': 'bt-linkliste'}):
+        for link in item.find_all('a'):
+            list_link_txts.append('http://www.bundestag.de' + (link.get('href')))
+
+    for url in list_link_txts:
+        os.system('wget ', url)
 
 def get_new_zp_topic(topic):
     '''
@@ -1267,12 +1285,14 @@ def get_alle_tops_and_alle_sitzungen_from_soup(soup):
     liste_dict = []
     liste_top = []
     alle_tops_list = []
+    alle_sitzungsnummern_der_vorhandenen_plenarprotokolle = []
 
     for item in soup.find_all('strong'):
         # print(item.get_text())
         if item.get_text().__contains__('Wahlperiode'):
             dict = {'num_Sitzung': item.get_text()[7:10], 'num_Wahlperiode': item.get_text()[21:23],
                     'dat_Sitzung': item.get_text()[38:48]}
+            alle_sitzungsnummern_der_vorhandenen_plenarprotokolle.append(item.get_text()[7:10])
             liste_dict.append(dict)
         if item.get_text().__contains__('TOP'):
             # print(para.get_text())
@@ -1281,7 +1301,7 @@ def get_alle_tops_and_alle_sitzungen_from_soup(soup):
 
     dict_tops_and_sitzungen = {'TOPs': alle_tops_list, 'Alle_Sitzungen': liste_dict}
 
-    return dict_tops_and_sitzungen
+    return dict_tops_and_sitzungen, alle_sitzungsnummern_der_vorhandenen_plenarprotokolle
 
 
 def get_alle_sitzungen_mit_start_und_ende_der_topic(alle_tops_list, alle_sitzungen):
@@ -1849,8 +1869,15 @@ chrome = start_scraping_with_chrome('http://www.bundestag.de/ajax/filterlist/de/
 print('Starte Scraping-Vorgang...')
 
 soup = BeautifulSoup(chrome.page_source, 'lxml')
-alle_tops_und_alle_sitzungen = get_alle_tops_and_alle_sitzungen_from_soup(soup)
+alle_tops_und_alle_sitzungen, alle_sitzungsnummern_der_vorhandenen_plenarprotokolle = get_alle_tops_and_alle_sitzungen_from_soup(soup)
+
+get_files_from_server_via_sitzungsnummern(alle_sitzungsnummern_der_vorhandenen_plenarprotokolle)
+
+aktuelle_sitzungsnummer = alle_sitzungsnummern_der_vorhandenen_plenarprotokolle[0]
+
 print('Sitzungsstruktur vorhalten')
+
+
 
 alle_tops_list = alle_tops_und_alle_sitzungen['TOPs']
 alle_sitzungen = alle_tops_und_alle_sitzungen['Alle_Sitzungen']
