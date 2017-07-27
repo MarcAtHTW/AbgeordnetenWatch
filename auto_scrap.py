@@ -34,7 +34,7 @@ isMatcherAndNameGefunden        = False
 isMatchergefunden               = False
 isNameGefunden                  = False
 redner_zaehler_fuer_iteration_durch_alle_redner = 0
-aktuelle_sitzungsnummer = '242'
+aktuelle_sitzungsnummer = '241'
 
 def get_content():
     '''
@@ -934,12 +934,15 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     t_row = 1
     temp_row = 1
     col = 0
+    counter = 1
     for dict in liste_dictionary_reden_einer_sitzung:
         for key in ['beifall_id', 'beifaelle_von_partei']:
             if isinstance(dict[key], list) and dict[key] == dict['beifaelle_von_partei']:
                 for item in dict[key]:
                     beifalldaten.write(row, col, item)
+                    beifalldaten.write(row, col+1, counter)
                     row += 1
+                    counter +=1
             if dict[key] == dict['beifall_id']:
                 n = 1
                 for x in dict['liste_counter_beifall_id']:
@@ -1531,8 +1534,15 @@ def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung, lenRe
             anzahl_redner_in_topic))
 
         while i < anzahl_redner_in_topic:
-            reden_eines_tagesordnungspunkts.append(reden.pop(0))
-            i += 1
+            try:
+                i += 1
+                reden_eines_tagesordnungspunkts.append(reden.pop(0))
+
+            except IndexError as err:
+                print(err)
+
+
+
 
         if len(reden_eines_tagesordnungspunkts) > 1:
             final_cleaned_sortierte_sitzung = sort_reden_eines_tops_in_tagesordnungspunkt(
@@ -1646,11 +1656,13 @@ def set_metadaten(sitzung):
         for redner in tagesordnungspunkt['Redner']:
             for redner_name_temp in redner:
                 redner_name = redner_name_temp
-                redner[redner_name]['sitzungsnummer'] = sitzungsnummer
-                redner[redner_name]['sitzungsdatum'] = sitzungsdatum
-                redner[redner_name]['tagesordnungspunktbezeichnung'] = tagesordnungspunkt_bezeichnung
-                redner[redner_name]['tagesordnungspunkt'] = top_key
-                redner[redner_name]['wahlperiode'] = wahlperiode
+                if len(redner_name) > 1:
+                    redner[redner_name]['sitzungsnummer'] = sitzungsnummer
+                    redner[redner_name]['sitzungsdatum'] = sitzungsdatum
+                    redner[redner_name]['tagesordnungspunktbezeichnung'] = tagesordnungspunkt_bezeichnung
+                    redner[redner_name]['tagesordnungspunkt'] = top_key
+                    redner[redner_name]['wahlperiode'] = wahlperiode
+
 
 def mach_alle_buchstaben_klein(list):
     '''
@@ -1776,15 +1788,16 @@ def get_sitzungs_dataset_for_excel(sitzung):
                 geschlecht = ''
                 # Parteienvergleich
                 for zeile in liste_zeilen:
-                    aktuelle_redner = get_surname(redner)
-                    if aktuelle_redner.__contains__('('):
-                        aktuelle_redner = remove_brackets_from_surname(aktuelle_redner)
-                    if rede[redner]['clean_rede'].__contains__(aktuelle_redner):
-                        isSpeecherinSpeech = True
-                    if zeile.__contains__(aktuelle_redner):
-                        if check_if_party_is_in_zeile(zeile) == True:
-                            party = get_party(zeile)
-                            break
+                    if(len(redner)>1):
+                        aktuelle_redner = get_surname(redner)
+                        if aktuelle_redner.__contains__('('):
+                            aktuelle_redner = remove_brackets_from_surname(aktuelle_redner)
+                        if rede[redner]['clean_rede'].__contains__(aktuelle_redner):
+                            isSpeecherinSpeech = True
+                        if zeile.__contains__(aktuelle_redner):
+                            if check_if_party_is_in_zeile(zeile) == True:
+                                party = get_party(zeile)
+                                break
                 if isSpeecherinSpeech == True:
                     if party == '':
                         party, geschlecht = api_abgeordnetenwatch(redner)
