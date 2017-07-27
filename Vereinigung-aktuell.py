@@ -15,7 +15,6 @@ import xlrd
 import csv
 import collections
 
-
 os.environ['JAVAHOME'] = "C:/Program Files/Java/jdk1.8.0_20/bin/java.exe"
 
 ''' Globals '''
@@ -51,7 +50,6 @@ def get_content():
 
     return string_sitzung
 
-
 def split_and_analyse_content(string_sitzung):
     '''
     Seiteninhalte des Protokolls werden zu Sätze, die wiederum zu Listenelemente werden
@@ -64,13 +62,14 @@ def split_and_analyse_content(string_sitzung):
     for i in range(len(list)):
         list_element = list[i]
         indexierte_liste.append(list_element)  # liste ohne -, \n
+
+
         analyse_content_element(list_element, i)
 
         set_number(i)
         if list_element.__contains__('(Schluss:'):
             global ende_der_letzten_rede
             ende_der_letzten_rede = i
-
 
 def set_part_till_first_speech():
     '''
@@ -86,7 +85,6 @@ def set_part_till_first_speech():
         else:
             list_zeilen_till_first_speech.append(zeile)
             #print('erste Zeilen: ', zeile)
-
 
 def get_all_parties():
     '''
@@ -109,7 +107,6 @@ def get_all_parties():
     ]
 
     return list_parties
-
 
 def get_all_parties_without_brackets():
     '''
@@ -134,7 +131,6 @@ def get_all_parties_without_brackets():
 
     return list_parties
 
-
 def check_if_party_is_in_zeile(zeile):
     '''
     Überprüft, ob sich eine Partei in der übergebenen Zeile befindet.
@@ -154,7 +150,6 @@ def check_if_party_is_in_zeile(zeile):
             found_party = True
 
     return found_party
-
 
 def get_party(element):
     '''
@@ -185,7 +180,6 @@ def get_party(element):
         party = ('(CDU/CSU)')
 
     return party
-
 
 def get_surname(full_name):
     '''
@@ -257,7 +251,6 @@ def set_number(i):
     global number_of_last_element
     number_of_last_element = i
 
-
 def get_number():
     '''
     Holt den Index der Startreden.
@@ -295,8 +288,6 @@ def deserialize_sitzunen(path_to_serialized_file):
     sitzungen = pickle.load(file)
     return sitzungen
 
-
-
 def analyse_content_element(list_element, i):
     '''
     Nimmt das listenelement auseinander und prüft, ob ein Wechsel der Redner stattfindet oder ob es sich um ein Redeteil handelt
@@ -310,39 +301,25 @@ def analyse_content_element(list_element, i):
     :param i: Nummerierung des Listenelements
     '''
     temp_dict_empty_values = {'polName': '', 'partyName': ''}
-    # -*- encoding: utf-8 -*-
-    matchers = ['erteile das Wort', 'Das Wort hat', 'das Wort.', 'erteile zu Beginn das Wort', 'hat nun das Wort',
-                'Redner das Wort', 'Rednerin das Wort', 'übergebe das Wort', 'Das Wort erhält ', 'Das Wort hat',
-                'hat jetzt das Wort für', 'Das Wort für die Bundesregierung hat', 'Das Wort für',
-                'Nächste Rednerin:', 'Nächster Redner:', 'Nächste Rednerin für', 'Nächster Redner für',
-                'Als Nächste hat das Wort', 'Als Nächster hat das Wort', 'Als Nächstes spricht', 'Als Nächste spricht',
-                'hat jetzt um das Wort für eine', 'Nächste Rednerin in', ' Nächster Redner in',
-                'Frau Kollegin Schwarzer, möchten Sie darauf antworten?', 'hat um das Wort',
-                'Herr Kollege Sensburg, möchten Sie darauf antworten?', 'Erster Redner ist',
-                'Als nächster Redner spricht',
-                'Wir befinden uns noch in der Debatte und werden noch zwei Redner hören.',
-                'Als nächste Rednerin spricht', 'Jetzt hat das Wort', 'Als Nächster hat', 'Als Nächste hat',
-                'Ich möchte Ihnen kurz das von den Schriftführerinnen und Schriftführern ermittelte Ergebnis',
-                'Jetzt hat das Wort', 'gebe das Wort', 'nächste Redner', 'nächster Redner', 'nächste Rednerin',
-                'spricht jetzt', 'Nächste Rednerin ist', 'Nächster Redner ist', 'Nächster Redner in', 'Letzter Redner',
-                'Letzte Rednerin', 'letzte Rednerin', 'nächste Wortmeldung', 'Als Nächstem ersteile',
-                'spricht als Nächster', 'spricht als Nächste', 'Als letzte Rednerin', 'Als letzten Redner',
-                'Als letzter Redner', 'Vielen Dank. – Ich möchte Ihnen kurz das von den Schriftführerinnen',
-                'Als letzte Rednerin',
-                'zunächst das Wort', 'zu Beginn das Wort', 'Wort dem',
-                'Nächste Rednerin ist die Kollegin', 'Nächster Redner ist der Kollege', '(Heiterkeit)für die SPD',
-                'Die erste Fragestellerin', 'Der erste Fragesteller', 'Die nächste Fragestellerin',
-                'Der nächste Fragensteller', 'die nächste Fragestellerin', 'der nächste Fragensteller']
+    # -*- encoding: utf-8 -*-   ]
+
+   vorhalte_i = 0
+
     # [x.encode('utf-8') for x in matchers]
     if any(m in list_element for m in matchers):
         #print("\nWechsel Redner", i, ":", list_element)  # Listenelemente, die matchers enthalten
-        if list_element.__contains__('Außerdem haben Sie nachher das Wort.') or list_element.__contains__(
-                'Jetzt hat der Kollege Herzog das Wort.'):
-            pass
-        else:
-            start_Element_Rede = i + 1
-            list_with_startelement_numbers.append(start_Element_Rede)
-            #print("Start_Index_Redetext: ", start_Element_Rede)
+
+        vorhalte_i = i
+
+
+
+
+    start_Element_Rede = i + 1
+    list_with_startelement_numbers.append(start_Element_Rede)
+    #print("Start_Index_Redetext: ", start_Element_Rede)
+
+
+
 
     else:
         Rede = []
@@ -452,7 +429,6 @@ def api_abgeordnetenwatch(politican_name):
 
     return '(' + partei + ')', geschlecht
 
-
 def get_start_and_end_of_a_speech():
     '''
     Bestimmung von Start und Ende der Reden.
@@ -483,7 +459,6 @@ def get_start_and_end_of_a_speech():
     #print('Liste mit Start-und Endnummern: ', liste_mit_Startnummern_und_End)
     #print(len(liste_mit_Startnummern_und_End))
     return liste_mit_Startnummern_und_End
-
 
 def get_all_speeches(liste_mit_Startnummern_und_End):
     '''
@@ -530,7 +505,6 @@ def speech_to_words_if_word_isalpha(string_speech):
     liste_speech_word_tokenized = [word for word in words if word.isalpha()]
     return liste_speech_word_tokenized
 
-
 def count_seldom_frequently(freq_CleandedSpeech):
     '''
     Ermittlung der Vorkommenshaeufigkeit der Woerter im gesaeuberten RedeText ohne stopwords.
@@ -555,7 +529,6 @@ def count_seldom_frequently(freq_CleandedSpeech):
     # auf dem fdist1-Objekt anwenden. Dazu muss jedoch das Modul matplotlib installiert sein!
     # freq_CleandedSpeech.plot(10, cumulative=True)
     return list_seldom_words, list_anzahl_seldom_words, list_frequently_words, list_anzahl_frequently_words
-
 
 def lex_div_without_stopwords(liste_speech_word_tokenized):
     '''
@@ -591,7 +564,6 @@ def lex_div_without_stopwords(liste_speech_word_tokenized):
 
 
     return list_seldom_words_without_stopwords, list_anzahl_seldom_words, list_frequently_words_without_stopwords, list_anzahl_frequently_words
-
 
 def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     '''
@@ -806,7 +778,7 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     row = 1
     temp_row = 1
     col = 0
-    for dict in liste_dictionary_reden_einer_sitzung:
+    for dict in liste_dictionary_reden_einer_s itzung:
         liste_wer = []
         liste_text = []
         for key in ['rede_id_sitzungen', 'wortmeldungen']:
@@ -890,7 +862,6 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
         col = 0
 
     workbook.close()
-
 
 def clean_speeches(alle_Reden_einer_Sitzung):
     '''
@@ -989,7 +960,6 @@ def clean_speeches(alle_Reden_einer_Sitzung):
         rede_id += 1
     return liste_dictionary_reden_einer_sitzung
 
-
 def start_scraping_with_chrome(url):
     '''
     Scrapt eine Webseite mit dem Google-Chrome-Browser anhand einer übergebenen URL.
@@ -1012,7 +982,6 @@ def start_scraping_with_chrome(url):
     chrome.get(url)
     return chrome
 
-
 def get_new_zp_topic(topic):
     '''
     Erstellt eine neue Bezeichnungen für einen Zusatztagespunkt.
@@ -1032,7 +1001,6 @@ def get_new_zp_topic(topic):
             counter += 1
             new_topic += letter
     return new_topic
-
 
 def rebuild_topic(topic, whitespaces_to_jump):
     '''
@@ -1066,7 +1034,6 @@ def rebuild_topic(topic, whitespaces_to_jump):
                 found_spaces = found_spaces + 1
     return new_topic.strip()
 
-
 def get_topic_name_from_topic_number(top, topic):
     '''
     Entfernt die 'TOP X' Nummer aus dem Tagesordnungspunkt und gibt dann nur den/die eigentlichen Namen/Beschreibung zurück
@@ -1083,7 +1050,6 @@ def get_topic_name_from_topic_number(top, topic):
     topic_name = topic.replace(top, '')
     topic_name = topic_name.strip()
     return topic_name
-
 
 def get_alle_tops_and_alle_sitzungen_from_soup(soup):
     '''
@@ -1114,7 +1080,6 @@ def get_alle_tops_and_alle_sitzungen_from_soup(soup):
     dict_tops_and_sitzungen = {'TOPs': alle_tops_list, 'Alle_Sitzungen': liste_dict}
 
     return dict_tops_and_sitzungen
-
 
 def get_alle_sitzungen_mit_start_und_ende_der_topic(alle_tops_list, alle_sitzungen):
     '''
@@ -1160,7 +1125,6 @@ def get_alle_sitzungen_mit_start_und_ende_der_topic(alle_tops_list, alle_sitzung
 
     return alle_sitzungen
 
-
 def sort_dict_topics_via_topic_id(dict_topics):
     '''
     Erhält ein Dictionary und sortiert es anhand der Topic-ID in eine Liste.
@@ -1185,7 +1149,6 @@ def sort_dict_topics_via_topic_id(dict_topics):
             list_sorted_topics.append(temp_item)
 
         return list_sorted_topics
-
 
 def sort_topics_to_sitzung(alle_sitzungen):
     '''
@@ -1253,7 +1216,6 @@ def sort_topics_to_sitzung(alle_sitzungen):
 
     return dict_sitzungen
 
-
 def delete_first_and_last_speecher_from_list(dict_sitzungen):
     '''
     Entfernt den ersten und den letzten Redner aus jedem Tagesordnungspunkt.
@@ -1281,7 +1243,6 @@ def delete_first_and_last_speecher_from_list(dict_sitzungen):
             del temp_speecher_list[top_counter]
 
     return dict_sitzungen
-
 
 def sort_reden_eines_tops_in_tagesordnungspunkt(reden_eines_tops, top_counter, cleaned_sortierte_sitzungen,
                                                 aktuelle_sitzungsbezeichnung):
@@ -1311,7 +1272,6 @@ def sort_reden_eines_tops_in_tagesordnungspunkt(reden_eines_tops, top_counter, c
         i += 1
     cleaned_sortierte_sitzungen[aktuelle_sitzungsbezeichnung]['TOPs'][top_counter]['Redner'] = list_sorted_redner_temp
     return cleaned_sortierte_sitzungen
-
 
 def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung):
     '''
@@ -1385,7 +1345,6 @@ def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung):
 
     return final_cleaned_sortierte_sitzung
 
-
 def count_speecher_from_cleaned_sortierte_sitzung(sitzung):
     '''
     Zählt die Redner einer Sitzung.
@@ -1400,7 +1359,6 @@ def count_speecher_from_cleaned_sortierte_sitzung(sitzung):
     for anz_redner_je_topic in sitzung['TOPs']:
         result += len(anz_redner_je_topic['Redner'])
     return result
-
 
 def find_last_brackets_in_string(string):
     '''
@@ -1443,7 +1401,6 @@ def find_last_brackets_in_string(string):
                 found_higher_index = False
 
     return index_of_last_open_bracket, index_of_last_closed_bracket
-
 
 def set_metadaten(sitzung):
     '''
@@ -1491,7 +1448,6 @@ def mach_alle_buchstaben_klein(list):
         list_result.append(string)
 
     return list_result
-
 
 def sentiment_analyse(string_to_analyse):
     '''
@@ -1570,6 +1526,7 @@ def gesamtauswertung_sentiment_wortmeldungen(pos_or_neg):
         result = 'negative'
 
     return result
+
 def get_sitzungs_dataset_for_excel(sitzung):
     '''
     Befüllung der einzelnen Dictionaries mit den extrahierten Daten. Extrahiert die benötigten Informationen aus einer
