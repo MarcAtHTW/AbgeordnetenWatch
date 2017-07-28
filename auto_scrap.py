@@ -36,35 +36,27 @@ isNameGefunden                  = False
 redner_zaehler_fuer_iteration_durch_alle_redner = 0
 aktuelle_sitzungsnummer = ''
 deleted_speechers_in_analyse_content = []
+zeitstrahl_counter_beginn              = 0
+zeitstrahl_counter_ende                = 1
 
 '''Globals fuer Excelsheet'''
 row_sitzungsdaten = 1
-#col_sitzungsdaten= 0
 row_topdaten = 1
-#col_topdaten = 0
 row_redner_rede = 1
-#col_redner_rede = 0
 row_beifalltext = 1
 beifall_id_row = 1
 temp_row_beifalltext = 1
-#col_beifalltext = 0
 row_beifalldaten = 1
 t_row = 1
 temp_row_beifalldaten = 1
-#col_beifalldaten = 0
-#counter = 1
 row_wortmeldedaten = 1
 temp_row_wortmeldedaten = 1
-#col_wortmeldedaten = 0
 row_seldom_words_daten = 1
 temp_row_seldom_words_daten = 1
 t_row = 1
-#col_seldom_words_daten = 0
 row_freq_words_daten = 1
 temp_row_freq_words_daten = 1
 t_row_freq_words_daten = 1
-#col_freq_words_daten = 0
-
 
 workbook = xlsxwriter.Workbook('bundestag_protokolle.xlsx')
 sitzungsdaten = workbook.add_worksheet('Sitzungsdaten')
@@ -105,24 +97,30 @@ redner_rede_daten.write('B1', 'Redner', bold)
 redner_rede_daten.write('C1', 'Geschlecht', bold)
 redner_rede_daten.write('D1', 'Partei', bold)
 redner_rede_daten.write('E1', 'clean_rede', bold)
-redner_rede_daten.write('F1', 'Sentiment-Wert-Rede', bold)
-redner_rede_daten.write('G1', 'Sentiment-Gesamt-Rede', bold)
-redner_rede_daten.write('H1', 'rede_id', bold)
+redner_rede_daten.write('F1', 'Zeile_Beginn', bold)
+redner_rede_daten.write('G1', 'Zeile_Ende', bold)
+redner_rede_daten.write('H1', 'Sentiment-Wert-Rede', bold)
+redner_rede_daten.write('I1', 'Sentiment-Gesamt-Rede', bold)
+redner_rede_daten.write('J1', 'rede_id', bold)
 
 beifalltext.write('A1', 'rede_id', bold)
 beifalltext.write('B1', 'Beifalltext', bold)
-beifalltext.write('C1', 'Beifall_ID', bold)
+beifalltext.write('C1', 'Zeile_Beifalltext', bold)
+beifalltext.write('D1', 'Beifall_ID', bold)
 
 beifalldaten.write('A1', 'Beifall_ID', bold)
 beifalldaten.write('B1', 'Beifall_von_welcher_Partei/Abgeordneten', bold)
+beifalldaten.write('C1', 'Zeile_Beifalltext_Uebernahme', bold)
+beifalldaten.write('D1', 'Zaehler', bold)
 
 wortmeldedaten.write('A1', 'rede_id', bold)
 wortmeldedaten.write('B1', 'Wortmeldungen', bold)
 wortmeldedaten.write('C1', 'Wer', bold)
 wortmeldedaten.write('D1', 'Partei', bold)
 wortmeldedaten.write('E1', 'Text', bold)
-wortmeldedaten.write('F1', 'Sentiment-Wert', bold)
-wortmeldedaten.write('G1', 'Sentiment-Gesamt', bold)
+wortmeldedaten.write('F1', 'Zeile_Wortmeldung', bold)
+wortmeldedaten.write('G1', 'Sentiment-Wert', bold)
+wortmeldedaten.write('H1', 'Sentiment-Gesamt', bold)
 
 
 seldom_words_daten.write('A1', 'rede_id', bold)
@@ -143,6 +141,7 @@ def get_content():
     :rtype string_sitzung: String
     :return string_sitzung: Kompletter Sitzungsinhalt in einer Zeichenkette.
     '''
+    global liste_zeilen
     f = codecs.open("txt_protokolle/18" + aktuelle_sitzungsnummer + "-data.txt", "r", "utf-8")
     lines = f.readlines()
     f.close()
@@ -176,6 +175,13 @@ def hole_alle_redner_aus_cleaned_sortierte_sitzung(cleaned_sortierte_sitzung):
         for redner in topic['Redner']:
             liste_alle_redner.append(redner)
     return liste_alle_redner
+
+
+def get_zeile_of_txt_from_string(string, list_sitzungs_zeilen):
+
+    index = list_sitzungs_zeilen.index(string)
+    return index
+
 
 def split_and_analyse_content(liste_zeilen, sitzungen):
     '''
@@ -735,6 +741,8 @@ def get_start_and_end_of_a_speech():
         i += 1
     #print('Liste mit Start-und Endnummern: ', liste_mit_Startnummern_und_End)
     #print(len(liste_mit_Startnummern_und_End))
+    global list_with_startEnd_numbers
+    list_with_startEnd_numbers = liste_mit_Startnummern_und_End
     return liste_mit_Startnummern_und_End
 
 
@@ -846,7 +854,7 @@ def lex_div_without_stopwords(liste_speech_word_tokenized):
     return list_seldom_words_without_stopwords, list_anzahl_seldom_words, list_frequently_words_without_stopwords, list_anzahl_frequently_words
 
 
-def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
+def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs_zeilen):
     '''
     Erstellt ein Excel-Sheet aus den gesammelten Informationen der Sitzung(en).
 
@@ -934,7 +942,7 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     global redner_rede_daten
     col_redner_rede = 0
     for dict in liste_dictionary_reden_einer_sitzung:
-        for key in ['tagesordnungspunkt', 'redner', 'geschlecht', 'partei', 'clean_rede']:
+        for key in ['tagesordnungspunkt', 'redner', 'geschlecht', 'partei', 'clean_rede', 'Zeile_Rede_Beginn', 'Zeile_Rede_Ende']:
             redner_rede_daten.write(row_redner_rede, col_redner_rede, dict[key])
             col_redner_rede += 1
         pos_neg, gesamt = sentiment_analyse(dict['clean_rede'])
@@ -1030,9 +1038,11 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
                             text += letter
                         text = text.replace(':','')
                         wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 3, text)
+                        if item.__contains__('['):
+                            wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 4, get_zeile_of_txt_from_string('(' + item + ')', list_sitzungs_zeilen))
                         pos_neg, gesamt = sentiment_analyse(text)
-                        wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 4, pos_neg)
-                        wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 5, gesamt)
+                        wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 5, pos_neg)
+                        wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 6, gesamt)
                     else:
                         wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 1, '')
                         wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 2, '')
@@ -1856,7 +1866,10 @@ def get_sitzungs_dataset_for_excel(sitzung):
     '''
     list_result = []
 
-    global liste_zeilen
+    global list_with_startelement_numbers
+    global list_with_startEnd_numbers
+    global zeitstrahl_counter_beginn
+    global zeitstrahl_counter_ende
 
     for tagesordnungspunkt in sitzung['TOPs']:
 
@@ -1909,7 +1922,15 @@ def get_sitzungs_dataset_for_excel(sitzung):
                     dictionary_result['wahlperiode'] = rede[redner]['wahlperiode']
                     dictionary_result['wortmeldungen'] = rede[redner]['wortmeldungen']
                     dictionary_result['partei'] = party
+                    dictionary_result['Zeile_Rede_Beginn']  = list_with_startelement_numbers[zeitstrahl_counter_beginn]
+                    dictionary_result['Zeile_Rede_Ende'] = list_with_startEnd_numbers[zeitstrahl_counter_ende]
+                    # dictionary_result['Zeile_Wortmeldung']  =
+                    # dictionary_result['Zeile_Beifalltext']  =
+                    # dictionary_result['Zeile_Beifalltext_Uebernahme'] =
+
                     list_result.append(dictionary_result)
+                    zeitstrahl_counter_beginn += 1
+                    zeitstrahl_counter_ende += 2
 
     return list_result
 
@@ -1942,9 +1963,10 @@ def set_globals_null():
     redner_zaehler_fuer_iteration_durch_alle_redner = 0
     aktuelle_sitzungsnummer = ''
 
-#while session_counter < 2:
-while session_counter < len(alle_sitzungsnummern_der_vorhandenen_plenarprotokolle):
-
+while session_counter < 1:
+#while session_counter < len(alle_sitzungsnummern_der_vorhandenen_plenarprotokolle):
+    zeitstrahl_counter_beginn = 0
+    zeitstrahl_counter_ende = 1
     aktuelle_sitzungsnummer = alle_sitzungsnummern_der_vorhandenen_plenarprotokolle[session_counter]
     session_counter += 1
     #print('Sitzungsstruktur vorhalten')
@@ -1990,7 +2012,7 @@ while session_counter < len(alle_sitzungsnummern_der_vorhandenen_plenarprotokoll
     dataset_for_excel = get_sitzungs_dataset_for_excel(merged_sitzung['Sitzung ' + aktuelle_sitzungsnummer])
     set_globals_null()
     print('Speicher Excel-Sheet')
-    create_protocol_workbook(dataset_for_excel)
+    create_protocol_workbook(dataset_for_excel, content)
 
 workbook.close()
 print('Skript beendet')
