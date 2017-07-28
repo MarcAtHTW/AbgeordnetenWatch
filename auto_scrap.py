@@ -854,6 +854,22 @@ def lex_div_without_stopwords(liste_speech_word_tokenized):
     return list_seldom_words_without_stopwords, list_anzahl_seldom_words, list_frequently_words_without_stopwords, list_anzahl_frequently_words
 
 
+def get_zeile_of_txt_from_string_in_range(zeile_rede_beginn, zeile_rede_ende, list_sitzungs_zeilen, string):
+
+    result_index = 0
+    counter = 1
+    string = '(' + string + ')'
+
+    for zeile in list_sitzungs_zeilen[zeile_rede_beginn:zeile_rede_ende]:
+
+        if zeile == string:
+            result_index = list_sitzungs_zeilen.index(zeile)
+            list_sitzungs_zeilen[result_index] = list_sitzungs_zeilen[result_index] + 'gefunden' + str(counter)
+            counter +=1
+            break
+
+    return result_index+1
+
 def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs_zeilen):
     '''
     Erstellt ein Excel-Sheet aus den gesammelten Informationen der Sitzung(en).
@@ -963,10 +979,14 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
             if isinstance(dict[key], list) and dict[key] == dict['beifaelle']:
                 for item in dict[key]:
                     beifalltext.write(row_beifalltext, col_beifalltext, item)
+                    zeile_rede_beginn = dict['Zeile_Rede_Beginn']
+                    zeile_rede_ende = dict['Zeile_Rede_Ende']
+                    index_beifalltext = get_zeile_of_txt_from_string_in_range(zeile_rede_beginn, zeile_rede_ende,list_sitzungs_zeilen, item)
+                    beifalltext.write(row_beifalltext, col_beifalltext +1, index_beifalltext)
                     row_beifalltext += 1
             elif isinstance(dict[key], list) and dict[key] == dict['beifall_id']:
                 for item in dict[key]:
-                    beifalltext.write(beifall_id_row, col_beifalltext, dict['rede_id_sitzungen'] + '_' + str(item))
+                    beifalltext.write(beifall_id_row, col_beifalltext+1, dict['rede_id_sitzungen'] + '_' + str(item))
                     beifall_id_row += 1
             if dict[key] == dict['rede_id_sitzungen']:
                 k = 0
