@@ -193,6 +193,7 @@ def get_zeile_of_txt_from_string(string, list_sitzungs_zeilen):
 
     except ValueError as err:
         print(err)
+        print('Exception abgefangen in get_zeile_of_txt_from_string()')
         return index
 
     return index
@@ -261,12 +262,14 @@ def analyse_content_element(list_element, i, alle_redner_einer_sitzung, sitzunge
     global redner_zaehler_fuer_iteration_durch_alle_redner
 
     try:
+        debug_rednerzaehler = redner_zaehler_fuer_iteration_durch_alle_redner
         surname = get_surname(alle_redner_einer_sitzung[redner_zaehler_fuer_iteration_durch_alle_redner])
 
         if surname.__contains__('('):
             surname = remove_brackets_from_surname(surname)
     except IndexError as err:
         print(err)
+        print('Exception abgefangen in analyse_content_element()')
         surname = 'Letzer Redner wurd durchlaufen'
 
     if any(m in list_element for m in matchers) and ':' in list_element and '!' not in list_element and '?' not in list_element:
@@ -703,6 +706,7 @@ def api_abgeordnetenwatch(politican_name):
 
     except urllib.error.HTTPError as err:
         if err.code == 404:
+            print('exception abgefangen in api_abgeordnetenwatch')
             try:
 
                 with urllib.request.urlopen(url2) as url2:
@@ -906,7 +910,7 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
     sitzungsdatum                                   = liste_dictionary_reden_einer_sitzung[0]['sitzungsdatum']
     wahlperiode                                     = liste_dictionary_reden_einer_sitzung[0]['wahlperiode']
     anzahl_redner_insgesamt                         = aktuelle_sitzung['Anzahl_Redner_insgesamt']
-    anzahl_redner_nach_bereinigung                  = anzahl_redner_insgesamt
+    anzahl_redner_nach_bereinigung                  = aktuelle_sitzung['Anzahl_Redner_nach_Bereinigung']
     anzahl_tagesordnungspunkte                      = aktuelle_sitzung['Anzahl_Tagesordnungspunkte']
     anzahl_tagesordnungspunkte_nach_bereinigung     = anzahl_tagesordnungspunkte
     anzahl_wortmeldungen                            = count_wortmeldungen_einer_sitzung(aktuelle_sitzung)
@@ -1619,7 +1623,7 @@ def sort_reden_eines_tops_in_tagesordnungspunkt(reden_eines_tops, top_counter, c
             except IndexError as err:
                 if isDisplayed == False:
                     isDisplayed = True
-                    print('BLUBB')
+                    print('Exception abgefangen in sort_reden_eines_tops_in_tagesordnungspunkt()')
 
         i += 1
     cleaned_sortierte_sitzungen[aktuelle_sitzungsbezeichnung]['TOPs'][top_counter]['Redner'] = list_sorted_redner_temp
@@ -1690,6 +1694,7 @@ def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung, lenRe
 
             except IndexError as err:
                 print(err)
+                print('Exception abgefangen in merge_sitzungsstruktur_mit_reden()')
 
 
 
@@ -1739,6 +1744,7 @@ def count_wortmeldungen_einer_sitzung(sitzung):
 
     except TypeError as err:
         print(err)
+        print('Exception abgefangen in count_wortmeldungen_einer_sitzung()')
         return 0
 
     return result
@@ -1760,6 +1766,7 @@ def count_beifaelle_einer_sitzung(sitzung):
                     result += dict_redner[redner]['anzahl_beifaelle']
     except TypeError as err:
         print(err)
+        print('Exception abgefangen in count_beifaelle_einer_sitzung()')
         return result
 
     return result
@@ -2100,7 +2107,7 @@ while session_counter < len(alle_sitzungsnummern_der_vorhandenen_plenarprotokoll
     print('Ergebniszusammenfassung ', 'Sitzung', aktuelle_sitzungsnummer)
     print('Anzahl Redner: ' + str(anzahl_redner))
     print("Anzahl vorhandene Reden in Redeliste: " + str(len(redeliste)))
-
+    aktuelle_sitzung['Anzahl_Redner_nach_Bereinigung'] = str(len(redeliste)-1)
 
     set_part_till_first_speech()
     print('Vereinige Sitzungsstruktur mit Reden.')
