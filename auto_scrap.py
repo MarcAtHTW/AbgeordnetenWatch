@@ -35,45 +35,40 @@ isMatchergefunden               = False
 isNameGefunden                  = False
 redner_zaehler_fuer_iteration_durch_alle_redner = 0
 aktuelle_sitzungsnummer = ''
+deleted_speechers_in_analyse_content = []
+zeitstrahl_counter_beginn              = 0
+zeitstrahl_counter_ende                = 1
+temp_counter = 0
 
 '''Globals fuer Excelsheet'''
 row_sitzungsdaten = 1
-#col_sitzungsdaten= 0
 row_topdaten = 1
-#col_topdaten = 0
 row_redner_rede = 1
-#col_redner_rede = 0
 row_beifalltext = 1
 beifall_id_row = 1
 temp_row_beifalltext = 1
-#col_beifalltext = 0
 row_beifalldaten = 1
 t_row = 1
 temp_row_beifalldaten = 1
-#col_beifalldaten = 0
-#counter = 1
 row_wortmeldedaten = 1
 temp_row_wortmeldedaten = 1
-#col_wortmeldedaten = 0
 row_seldom_words_daten = 1
 temp_row_seldom_words_daten = 1
 t_row = 1
-#col_seldom_words_daten = 0
 row_freq_words_daten = 1
 temp_row_freq_words_daten = 1
 t_row_freq_words_daten = 1
-#col_freq_words_daten = 0
+temp_row_beifalldaten_text = 1
 
-
-with xlsxwriter.Workbook('bundestag_protokolle.xlsx') as workbook:
-    sitzungsdaten = workbook.add_worksheet('Sitzungsdaten')
-    topdaten = workbook.add_worksheet('Topdaten')
-    redner_rede_daten = workbook.add_worksheet('Redner_Rede')
-    beifalltext = workbook.add_worksheet('Beifalltext')
-    beifalldaten = workbook.add_worksheet('Beifalldaten')
-    wortmeldedaten = workbook.add_worksheet('Wortmeldedaten')
-    seldom_words_daten = workbook.add_worksheet('seldom_words')
-    freq_words_daten = workbook.add_worksheet('freq_words')
+workbook = xlsxwriter.Workbook('bundestag_protokolle.xlsx')
+sitzungsdaten = workbook.add_worksheet('Sitzungsdaten')
+topdaten = workbook.add_worksheet('Topdaten')
+redner_rede_daten = workbook.add_worksheet('Redner_Rede')
+beifalltext = workbook.add_worksheet('Beifalltext')
+beifalldaten = workbook.add_worksheet('Beifalldaten')
+wortmeldedaten = workbook.add_worksheet('Wortmeldedaten')
+seldom_words_daten = workbook.add_worksheet('seldom_words')
+freq_words_daten = workbook.add_worksheet('freq_words')
 
 # Add a bold format to use to highlight cells.
 bold = workbook.add_format({'bold': 1})
@@ -92,6 +87,13 @@ freq_words_daten.set_column(1, 1, 15)
 sitzungsdaten.write('A1', 'Sitzungsnummer', bold)
 sitzungsdaten.write('B1', 'Sitzungsdatum', bold)
 sitzungsdaten.write('C1', 'Wahlperiode', bold)
+sitzungsdaten.write('D1', 'Anzahl_Redner', bold)
+sitzungsdaten.write('E1', 'Anzahl_Redner_nach_Bereinigung', bold)
+sitzungsdaten.write('F1', 'Anzahl_Tagesordnungspunkte', bold)
+sitzungsdaten.write('G1', 'Anzahl_Tagesordnungspunkte_nach_Bereinigung', bold)
+sitzungsdaten.write('H1', 'Anzahl_Wortmeldungen', bold)
+sitzungsdaten.write('I1', 'Anzahl_Beifaelle', bold)
+
 
 topdaten.write('A1', 'Sitzungsnummer', bold)
 topdaten.write('B1', 'Tagesordnungspunkt', bold)
@@ -104,24 +106,30 @@ redner_rede_daten.write('B1', 'Redner', bold)
 redner_rede_daten.write('C1', 'Geschlecht', bold)
 redner_rede_daten.write('D1', 'Partei', bold)
 redner_rede_daten.write('E1', 'clean_rede', bold)
-redner_rede_daten.write('F1', 'Sentiment-Wert-Rede', bold)
-redner_rede_daten.write('G1', 'Sentiment-Gesamt-Rede', bold)
-redner_rede_daten.write('H1', 'rede_id', bold)
+redner_rede_daten.write('F1', 'Zeile_Beginn', bold)
+redner_rede_daten.write('G1', 'Zeile_Ende', bold)
+redner_rede_daten.write('H1', 'Sentiment-Wert-Rede', bold)
+redner_rede_daten.write('I1', 'Sentiment-Gesamt-Rede', bold)
+redner_rede_daten.write('J1', 'rede_id', bold)
 
 beifalltext.write('A1', 'rede_id', bold)
 beifalltext.write('B1', 'Beifalltext', bold)
-beifalltext.write('C1', 'Beifall_ID', bold)
+beifalltext.write('C1', 'Zeile_Beifalltext', bold)
+beifalltext.write('D1', 'Beifall_ID', bold)
 
 beifalldaten.write('A1', 'Beifall_ID', bold)
 beifalldaten.write('B1', 'Beifall_von_welcher_Partei/Abgeordneten', bold)
+#beifalldaten.write('C1', 'Zeile_Beifalltext_Uebernahme', bold)
+beifalldaten.write('C1', 'Zaehler', bold)
 
 wortmeldedaten.write('A1', 'rede_id', bold)
 wortmeldedaten.write('B1', 'Wortmeldungen', bold)
 wortmeldedaten.write('C1', 'Wer', bold)
 wortmeldedaten.write('D1', 'Partei', bold)
 wortmeldedaten.write('E1', 'Text', bold)
-wortmeldedaten.write('F1', 'Sentiment-Wert', bold)
-wortmeldedaten.write('G1', 'Sentiment-Gesamt', bold)
+wortmeldedaten.write('F1', 'Zeile_Wortmeldung', bold)
+wortmeldedaten.write('G1', 'Sentiment-Wert', bold)
+wortmeldedaten.write('H1', 'Sentiment-Gesamt', bold)
 
 
 seldom_words_daten.write('A1', 'rede_id', bold)
@@ -142,6 +150,7 @@ def get_content():
     :rtype string_sitzung: String
     :return string_sitzung: Kompletter Sitzungsinhalt in einer Zeichenkette.
     '''
+    global liste_zeilen
     f = codecs.open("txt_protokolle/18" + aktuelle_sitzungsnummer + "-data.txt", "r", "utf-8")
     lines = f.readlines()
     f.close()
@@ -176,6 +185,20 @@ def hole_alle_redner_aus_cleaned_sortierte_sitzung(cleaned_sortierte_sitzung):
             liste_alle_redner.append(redner)
     return liste_alle_redner
 
+
+def get_zeile_of_txt_from_string(string, list_sitzungs_zeilen):
+    index = 0
+    try:
+        index = list_sitzungs_zeilen.index(string)
+
+    except ValueError as err:
+        print(err)
+        print('Exception abgefangen in get_zeile_of_txt_from_string()')
+        return index
+
+    return index
+
+
 def split_and_analyse_content(liste_zeilen, sitzungen):
     '''
     ÄNDERUNG
@@ -187,6 +210,8 @@ def split_and_analyse_content(liste_zeilen, sitzungen):
     '''
     isActive = True
     counter = 0
+    global deleted_speechers_in_analyse_content
+    deleted_speechers_in_analyse_content = []
     while isActive:
         if 'Beginn:' in liste_zeilen[counter]:
             isActive = False
@@ -237,12 +262,14 @@ def analyse_content_element(list_element, i, alle_redner_einer_sitzung, sitzunge
     global redner_zaehler_fuer_iteration_durch_alle_redner
 
     try:
+        debug_rednerzaehler = redner_zaehler_fuer_iteration_durch_alle_redner
         surname = get_surname(alle_redner_einer_sitzung[redner_zaehler_fuer_iteration_durch_alle_redner])
 
         if surname.__contains__('('):
             surname = remove_brackets_from_surname(surname)
     except IndexError as err:
         print(err)
+        print('Exception abgefangen in analyse_content_element()')
         surname = 'Letzer Redner wurd durchlaufen'
 
     if any(m in list_element for m in matchers) and ':' in list_element and '!' not in list_element and '?' not in list_element:
@@ -279,8 +306,9 @@ def analyse_content_element(list_element, i, alle_redner_einer_sitzung, sitzunge
                     print('Laenge Liste Startelemente' + str(len(list_with_startelement_numbers)))
                 elif isMatchergefunden == True and wichtiger_index == 0:
                     speecher_to_delete = (alle_redner_einer_sitzung[redner_zaehler_fuer_iteration_durch_alle_redner-1])
-
                     remove_speecher_from_list(aktuelle_sitzung, speecher_to_delete)
+                    deleted_speechers_in_analyse_content.append(speecher_to_delete)
+
                     #alle_redner_einer_sitzung.remove(surname_to_delete)
 
 
@@ -330,6 +358,9 @@ def analyse_content_element(list_element, i, alle_redner_einer_sitzung, sitzunge
         print('Start-Element der Rede von' + surname + ': ' + str(start_Element_Rede))
         print('Listen-Element: ' +  str(list_element))
         print('Laenge Liste Startelemente' + str(len(list_with_startelement_numbers)))
+
+    print(len(deleted_speechers_in_analyse_content))
+
 
 def check_if_redner_in_next_5_lines(counter, redner_nachname):
     isFound = False
@@ -659,6 +690,7 @@ def api_abgeordnetenwatch(politican_name):
 
     firstname = change_umlaute(firstname)
     lastname = change_umlaute(lastname)
+    geschlecht = 'n/a'
 
     url = 'https://www.abgeordnetenwatch.de/api/profile/' + firstname + '-' + lastname + '/profile.json'
     url2 = 'https://www.abgeordnetenwatch.de/api/profile/' + 'dr-' +firstname + '-' + lastname + '/profile.json'
@@ -674,6 +706,7 @@ def api_abgeordnetenwatch(politican_name):
 
     except urllib.error.HTTPError as err:
         if err.code == 404:
+            print('exception abgefangen in api_abgeordnetenwatch')
             try:
 
                 with urllib.request.urlopen(url2) as url2:
@@ -696,7 +729,7 @@ def api_abgeordnetenwatch(politican_name):
                     geschlecht = 'Api-Error-Code 404: Seite konnte nicht gefunden werden: ' + "https://www.abgeordnetenwatch.de/api/profile/" + firstname + '-' + lastname + '/profile.json'
 
         else:
-            raise
+            partei = 'AW-API nicht erreichbar'
 
 
     return '(' + partei + ')', geschlecht
@@ -731,6 +764,8 @@ def get_start_and_end_of_a_speech():
         i += 1
     #print('Liste mit Start-und Endnummern: ', liste_mit_Startnummern_und_End)
     #print(len(liste_mit_Startnummern_und_End))
+    global list_with_startEnd_numbers
+    list_with_startEnd_numbers = liste_mit_Startnummern_und_End
     return liste_mit_Startnummern_und_End
 
 
@@ -842,7 +877,23 @@ def lex_div_without_stopwords(liste_speech_word_tokenized):
     return list_seldom_words_without_stopwords, list_anzahl_seldom_words, list_frequently_words_without_stopwords, list_anzahl_frequently_words
 
 
-def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
+def get_zeile_of_txt_from_string_in_range(zeile_rede_beginn, zeile_rede_ende, list_sitzungs_zeilen, string):
+
+    result_index = 0
+    counter = 1
+    string = '(' + string + ')'
+
+    for zeile in list_sitzungs_zeilen[zeile_rede_beginn:zeile_rede_ende]:
+
+        if zeile == string:
+            result_index = list_sitzungs_zeilen.index(zeile)
+            list_sitzungs_zeilen[result_index] = list_sitzungs_zeilen[result_index] + 'gefunden' + str(counter)
+            counter +=1
+            break
+
+    return result_index+1
+
+def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs_zeilen, aktuelle_sitzung):
     '''
     Erstellt ein Excel-Sheet aus den gesammelten Informationen der Sitzung(en).
 
@@ -851,89 +902,34 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
     '''
     global workbook
 
-    # Create a workbook and add a worksheet.
-    # sitzungsdaten = workbook.add_worksheet('Sitzungsdaten')
-    # topdaten = workbook.add_worksheet('Topdaten')
-    # redner_rede_daten = workbook.add_worksheet('Redner_Rede')
-    # beifalltext = workbook.add_worksheet('Beifalltext')
-    # beifalldaten = workbook.add_worksheet('Beifalldaten')
-    # wortmeldedaten = workbook.add_worksheet('Wortmeldedaten')
-    # seldom_words_daten = workbook.add_worksheet('seldom_words')
-    # freq_words_daten = workbook.add_worksheet('freq_words')
-
-    # # Add a bold format to use to highlight cells.
-    # bold = workbook.add_format({'bold': 1})
-    #
-    # # Adjust the column width.
-    # sitzungsdaten.set_column(1, 1, 15)
-    # topdaten.set_column(1, 1, 15)
-    # redner_rede_daten.set_column(1, 1, 15)
-    # beifalltext.set_column(1, 1, 15)
-    # beifalldaten.set_column(1, 1, 15)
-    # wortmeldedaten.set_column(1, 1, 15)
-    # seldom_words_daten.set_column(1, 1, 15)
-    # freq_words_daten.set_column(1, 1, 15)
-    #
-    # # Write data headers.
-    # sitzungsdaten.write('A1', 'Sitzungsnummer', bold)
-    # sitzungsdaten.write('B1', 'Sitzungsdatum', bold)
-    # sitzungsdaten.write('C1', 'Wahlperiode', bold)
-    #
-    # topdaten.write('A1', 'Sitzungsnummer', bold)
-    # topdaten.write('B1', 'Tagesordnungspunkt', bold)
-    # topdaten.write('C1', 'Tagesordnungspunktbezeichnung', bold)
-    # topdaten.write('D1', 'gefundenes Synonym', bold)
-    # topdaten.write('E1', 'Top_Einordnung_Kategorie', bold)
-    #
-    # redner_rede_daten.write('A1', 'Tagesordnungspunkt', bold)
-    # redner_rede_daten.write('B1', 'Redner', bold)
-    # redner_rede_daten.write('C1', 'Geschlecht', bold)
-    # redner_rede_daten.write('D1', 'Partei', bold)
-    # redner_rede_daten.write('E1', 'clean_rede', bold)
-    # redner_rede_daten.write('F1', 'Sentiment-Wert-Rede', bold)
-    # redner_rede_daten.write('G1', 'Sentiment-Gesamt-Rede', bold)
-    # redner_rede_daten.write('H1', 'rede_id', bold)
-    #
-    # beifalltext.write('A1', 'rede_id', bold)
-    # beifalltext.write('B1', 'Beifalltext', bold)
-    # beifalltext.write('C1', 'Beifall_ID', bold)
-    #
-    # beifalldaten.write('A1', 'Beifall_ID', bold)
-    # beifalldaten.write('B1', 'Beifall_von_welcher_Partei/Abgeordneten', bold)
-    #
-    # wortmeldedaten.write('A1', 'rede_id', bold)
-    # wortmeldedaten.write('B1', 'Wortmeldungen', bold)
-    # wortmeldedaten.write('C1', 'Wer', bold)
-    # wortmeldedaten.write('D1', 'Partei', bold)
-    # wortmeldedaten.write('E1', 'Text', bold)
-    # wortmeldedaten.write('F1', 'Sentiment-Wert', bold)
-    # wortmeldedaten.write('G1', 'Sentiment-Gesamt', bold)
-    #
-    #
-    # seldom_words_daten.write('A1', 'rede_id', bold)
-    # seldom_words_daten.write('B1', 'Seldom_words', bold)
-    # seldom_words_daten.write('C1', 'number_seldom_words_in_speech', bold)
-    #
-    # freq_words_daten.write('A1', 'rede_id', bold)
-    # freq_words_daten.write('B1', 'freq_words', bold)
-    # freq_words_daten.write('C1', 'number_freq_words_in_speech', bold)
-
-    global row_sitzungsdaten
     # writing in worksheet 'Sitzungsdaten'
-    # row_sitzungsdaten = 1
+    global row_sitzungsdaten
+    global sitzungsdaten
     col_sitzungsdaten= 0
-    sitzungnummer = liste_dictionary_reden_einer_sitzung[0]['sitzungsnummer']
-    sitzungsdatum = liste_dictionary_reden_einer_sitzung[0]['sitzungsdatum']
-    wahlperiode = liste_dictionary_reden_einer_sitzung[0]['wahlperiode']
+    sitzungnummer                                   = liste_dictionary_reden_einer_sitzung[0]['sitzungsnummer']
+    sitzungsdatum                                   = liste_dictionary_reden_einer_sitzung[0]['sitzungsdatum']
+    wahlperiode                                     = liste_dictionary_reden_einer_sitzung[0]['wahlperiode']
+    anzahl_redner_insgesamt                         = aktuelle_sitzung['Anzahl_Redner_insgesamt']
+    anzahl_redner_nach_bereinigung                  = aktuelle_sitzung['Anzahl_Redner_nach_Bereinigung']
+    anzahl_tagesordnungspunkte                      = aktuelle_sitzung['Anzahl_Tagesordnungspunkte']
+    anzahl_tagesordnungspunkte_nach_bereinigung     = anzahl_tagesordnungspunkte
+    anzahl_wortmeldungen                            = count_wortmeldungen_einer_sitzung(aktuelle_sitzung)
+    anzahl_beifalle                                 = count_beifaelle_einer_sitzung(aktuelle_sitzung)
 
     sitzungsdaten.write_number(row_sitzungsdaten, col_sitzungsdaten, int(sitzungnummer))
     sitzungsdaten.write(row_sitzungsdaten, col_sitzungsdaten + 1, sitzungsdatum)
     sitzungsdaten.write_number(row_sitzungsdaten, col_sitzungsdaten + 2, int(wahlperiode))
-
+    sitzungsdaten.write_number(row_sitzungsdaten, col_sitzungsdaten + 3, int(anzahl_redner_insgesamt))
+    sitzungsdaten.write_number(row_sitzungsdaten, col_sitzungsdaten + 4, int(anzahl_redner_nach_bereinigung))
+    sitzungsdaten.write_number(row_sitzungsdaten, col_sitzungsdaten + 5, int(anzahl_tagesordnungspunkte))
+    sitzungsdaten.write_number(row_sitzungsdaten, col_sitzungsdaten + 6, int(anzahl_tagesordnungspunkte_nach_bereinigung))
+    sitzungsdaten.write_number(row_sitzungsdaten, col_sitzungsdaten + 7, int(anzahl_wortmeldungen))
+    sitzungsdaten.write_number(row_sitzungsdaten, col_sitzungsdaten + 8, int(anzahl_beifalle))
+    row_sitzungsdaten += 1
 
     # writing in worksheet 'Topdaten'
     global row_topdaten
-    # row_topdaten = 1
+    global topdaten
     col_topdaten = 0
     x = 0
     for dict in liste_dictionary_reden_einer_sitzung:
@@ -976,7 +972,7 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
                             counter += 1
                     col_topdaten += 1
                 row_topdaten += 1
-                #col_topdaten = 0
+                col_topdaten = 0
                 temp_tagesordnungspunkt = liste_dictionary_reden_einer_sitzung[x]['tagesordnungspunkt']
                 temp_tagesordnungspunkt_bezeichnung = liste_dictionary_reden_einer_sitzung[x][
                     'tagesordnungspunktbezeichnung']
@@ -994,10 +990,10 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
 
     # writing in worksheet 'Redner_Rede'
     global row_redner_rede
-    # row_redner_rede = 1
+    global redner_rede_daten
     col_redner_rede = 0
     for dict in liste_dictionary_reden_einer_sitzung:
-        for key in ['tagesordnungspunkt', 'redner', 'geschlecht', 'partei', 'clean_rede']:
+        for key in ['tagesordnungspunkt', 'redner', 'geschlecht', 'partei', 'clean_rede', 'Zeile_Rede_Beginn', 'Zeile_Rede_Ende']:
             redner_rede_daten.write(row_redner_rede, col_redner_rede, dict[key])
             col_redner_rede += 1
         pos_neg, gesamt = sentiment_analyse(dict['clean_rede'])
@@ -1007,21 +1003,63 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
         row_redner_rede += 1
         col_redner_rede = 0
 
+    # writing in worksheet 'Beifalldaten'
+    global row_beifalldaten
+    global temp_row_beifalldaten
+    global temp_row_beifalldaten_text
+    global beifalldaten
+    global aktuelle_sitzungsnummer
+
+    col_beifalldaten = 0
+    counter = 1
+    for dict in liste_dictionary_reden_einer_sitzung:
+        for key in ['beifall_id', 'beifaelle_von_partei']:
+            if isinstance(dict[key], list) and dict[key] == dict['beifaelle_von_partei']:
+                for item in dict[key]:
+                    beifalldaten.write(row_beifalldaten, col_beifalldaten, item)
+                    beifalldaten.write(row_beifalldaten, col_beifalldaten + 1,
+                                       str(counter) + '_' + str(dict['sitzungsnummer']))
+                    row_beifalldaten += 1
+                    counter += 1
+            if dict[key] == dict['beifall_id']:
+                n = 1
+                list_anzahl_beifall_ids = []
+                for x in dict['liste_counter_beifall_id']:
+                    k = 0
+                    l = 0
+                    while k < x:
+                        beifalldaten.write(temp_row_beifalldaten, col_beifalldaten,
+                                           dict['rede_id_sitzungen'] + '_' + str(n))
+                        # print(temp_row_beifalldaten, col, dict['rede_id_sitzungen'] + '_' + str(n))
+                        k += 1
+                        temp_row_beifalldaten += 1
+                    list_anzahl_beifall_ids.append(k)
+                    n += 1
+
+            col_beifalldaten += 1
+        col_beifalldaten = 0
+
     # writing in worksheet 'Beifalltext'
-    global row_beifalltext, beifall_id_row, temp_row_beifalltext, col_beifalltext
-    # row_beifalltext = 1
-    # beifall_id_row = 1
-    # temp_row_beifalltext = 1
+    global row_beifalltext
+    global beifall_id_row
+    global temp_row_beifalltext
+    global beifalltext
+    #global beifalldaten
+    #global temp_row_beifalldaten_text
     col_beifalltext = 0
     for dict in liste_dictionary_reden_einer_sitzung:
         for key in ['rede_id_sitzungen', 'beifaelle', 'beifall_id']:
             if isinstance(dict[key], list) and dict[key] == dict['beifaelle']:
                 for item in dict[key]:
                     beifalltext.write(row_beifalltext, col_beifalltext, item)
-                    row_beifalltext += 1
+                    zeile_rede_beginn = dict['Zeile_Rede_Beginn']
+                    zeile_rede_ende = dict['Zeile_Rede_Ende']
+                    index_beifalltext = get_zeile_of_txt_from_string_in_range(zeile_rede_beginn, zeile_rede_ende,list_sitzungs_zeilen, item)
+                    beifalltext.write(row_beifalltext, col_beifalltext +1, index_beifalltext)
+                row_beifalltext += 1
             elif isinstance(dict[key], list) and dict[key] == dict['beifall_id']:
                 for item in dict[key]:
-                    beifalltext.write(beifall_id_row, col_beifalltext, dict['rede_id_sitzungen'] + '_' + str(item))
+                    beifalltext.write(beifall_id_row, col_beifalltext+1, dict['rede_id_sitzungen'] + '_' + str(item))
                     beifall_id_row += 1
             if dict[key] == dict['rede_id_sitzungen']:
                 k = 0
@@ -1032,39 +1070,10 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
             col_beifalltext += 1
         col_beifalltext = 0
 
-    # writing in worksheet 'Beifalldaten'
-    global row_beifalldaten, temp_row_beifalldaten
-    row_beifalldaten = 1
-    #t_row = 1
-    temp_row_beifalldaten = 1
-    col_beifalldaten = 0
-    counter = 1
-    for dict in liste_dictionary_reden_einer_sitzung:
-        for key in ['beifall_id', 'beifaelle_von_partei']:
-            if isinstance(dict[key], list) and dict[key] == dict['beifaelle_von_partei']:
-                for item in dict[key]:
-                    beifalldaten.write(row_beifalldaten, col_beifalldaten, item)
-                    beifalldaten.write(row_beifalldaten, col_beifalldaten+1, counter)
-                    row_beifalldaten += 1
-                    counter +=1
-            if dict[key] == dict['beifall_id']:
-                n = 1
-                for x in dict['liste_counter_beifall_id']:
-                    k = 0
-                    while k < x:
-                        beifalldaten.write(temp_row_beifalldaten, col_beifalldaten, dict['rede_id_sitzungen'] + '_' + str(n))
-                        #print(temp_row_beifalldaten, col, dict['rede_id_sitzungen'] + '_' + str(n))
-                        k += 1
-                        temp_row_beifalldaten += 1
-                    n += 1
-
-            col_beifalldaten += 1
-        col_beifalldaten = 0
-
     # writing in worksheet 'Wortmeldedaten'
-    global row_wortmeldedaten, temp_row_wortmeldedaten
-    #row_wortmeldedaten = 1
-    #temp_row_wortmeldedaten = 1
+    global row_wortmeldedaten
+    global temp_row_wortmeldedaten
+    global wortmeldedaten
     col_wortmeldedaten = 0
     parteiliste = get_all_parties_without_brackets()
 
@@ -1088,14 +1097,15 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
                                 break
                         wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 2, partei)
 
-
                         for letter in (item[item.index(':'):]):
                             text += letter
                         text = text.replace(':','')
                         wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 3, text)
+                        if item.__contains__('[') and not item.__contains__('–\\xa'):
+                            wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 4, get_zeile_of_txt_from_string('(' + item + ')', list_sitzungs_zeilen))
                         pos_neg, gesamt = sentiment_analyse(text)
-                        wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 4, pos_neg)
-                        wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 5, gesamt)
+                        wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 5, pos_neg)
+                        wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 6, gesamt)
                     else:
                         wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 1, '')
                         wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 2, '')
@@ -1113,11 +1123,12 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
         col_wortmeldedaten = 0
 
     # writing in worksheet 'seldom_words_daten'
-    global row_seldom_words_daten, temp_row_seldom_words_daten, t_row
-    # row_seldom_words_daten = 1
-    # temp_row_seldom_words_daten = 1
-    # t_row = 1
+    global row_seldom_words_daten
+    global temp_row_seldom_words_daten
+    global t_row
+    global seldom_words_daten
     col_seldom_words_daten = 0
+
     for dict in liste_dictionary_reden_einer_sitzung:
         for key in ['rede_id_sitzungen', '10_seldom_words', 'number_seldom_words']:
             if isinstance(dict[key], list) and dict[key] == dict['10_seldom_words']:
@@ -1138,11 +1149,12 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
         col_seldom_words_daten = 0
 
     # writing in worksheet 'freq_words_daten'
-    global row_freq_words_daten, temp_row_freq_words_daten, t_row_freq_words_daten
-    # row_freq_words_daten = 1
-    # temp_row_freq_words_daten = 1
-    # t_row_freq_words_daten = 1
+    global row_freq_words_daten
+    global temp_row_freq_words_daten
+    global t_row_freq_words_daten
+    global freq_words_daten
     col_freq_words_daten = 0
+
     for dict in liste_dictionary_reden_einer_sitzung:
         for key in ['rede_id_sitzungen', '10_frequently_words', 'number_frequently_words']:
             if isinstance(dict[key], list) and dict[key] == dict['10_frequently_words']:
@@ -1151,8 +1163,8 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
                     row_freq_words_daten += 1
             elif isinstance(dict[key], list) and dict[key] == dict['number_frequently_words']:
                 for item in dict[key]:
-                    freq_words_daten.write_number(t_row, col_freq_words_daten, int(item))
-                    t_row += 1
+                    freq_words_daten.write_number(t_row_freq_words_daten, col_freq_words_daten, int(item))
+                    t_row_freq_words_daten += 1
             else:
                 k = 0
                 while k < len(dict['10_frequently_words']):
@@ -1161,8 +1173,6 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung):
                     temp_row_freq_words_daten += 1
             col_freq_words_daten += 1
         col_freq_words_daten = 0
-
-    workbook.close()
 
 
 def clean_speeches(alle_Reden_einer_Sitzung):
@@ -1573,6 +1583,12 @@ def delete_first_and_last_speecher_from_list(dict_sitzungen):
         elif len(temp_speecher_list[top_counter]['Redner']) < 3:
             del temp_speecher_list[top_counter]
 
+    anzahl_redner_in_aktueller_sitzung = count_speecher_from_cleaned_sortierte_sitzung(dict_sitzungen[sitzung])
+    anzahl_topics_in_aktueller_sitzung = len(dict_sitzungen[sitzung]['TOPs'])
+
+    dict_sitzungen[sitzung]['Anzahl_Redner_insgesamt'] = anzahl_redner_in_aktueller_sitzung
+    dict_sitzungen[sitzung]['Anzahl_Tagesordnungspunkte'] = anzahl_topics_in_aktueller_sitzung
+
     return dict_sitzungen
 
 
@@ -1607,7 +1623,7 @@ def sort_reden_eines_tops_in_tagesordnungspunkt(reden_eines_tops, top_counter, c
             except IndexError as err:
                 if isDisplayed == False:
                     isDisplayed = True
-                    print('BLUBB')
+                    print('Exception abgefangen in sort_reden_eines_tops_in_tagesordnungspunkt()')
 
         i += 1
     cleaned_sortierte_sitzungen[aktuelle_sitzungsbezeichnung]['TOPs'][top_counter]['Redner'] = list_sorted_redner_temp
@@ -1678,6 +1694,7 @@ def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung, lenRe
 
             except IndexError as err:
                 print(err)
+                print('Exception abgefangen in merge_sitzungsstruktur_mit_reden()')
 
 
 
@@ -1712,6 +1729,48 @@ def count_speecher_from_cleaned_sortierte_sitzung(sitzung):
     for anz_redner_je_topic in sitzung['TOPs']:
         result += len(anz_redner_je_topic['Redner'])
     return result
+
+def count_wortmeldungen_einer_sitzung(sitzung):
+    '''
+    Zählt die Wortmeldungen einer Sitzung.
+    :return:
+    '''
+    result = 0
+    try:
+        for top in sitzung['TOPs']:
+            for dict_redner in top['Redner']:
+                for redner in dict_redner:
+                    result += len(dict_redner[redner]['wortmeldungen'])
+
+    except TypeError as err:
+        print(err)
+        print('Exception abgefangen in count_wortmeldungen_einer_sitzung()')
+        return 0
+
+    return result
+
+def count_beifaelle_einer_sitzung(sitzung):
+    '''
+    Zählt die Beifälle einer Sitzung.
+
+    :param sitzung: Die aktuelle
+    :return:
+    '''
+    global temp_counter
+
+    result = 0
+    try:
+        for top in sitzung['TOPs']:
+            for dict_redner in top['Redner']:
+                for redner in dict_redner:
+                    result += dict_redner[redner]['anzahl_beifaelle']
+    except TypeError as err:
+        print(err)
+        print('Exception abgefangen in count_beifaelle_einer_sitzung()')
+        return result
+
+    return result
+
 
 def remove_speecher_from_list(sitzung, surname):
     for top in sitzung['TOPs']:
@@ -1913,7 +1972,10 @@ def get_sitzungs_dataset_for_excel(sitzung):
     '''
     list_result = []
 
-    global liste_zeilen
+    global list_with_startelement_numbers
+    global list_with_startEnd_numbers
+    global zeitstrahl_counter_beginn
+    global zeitstrahl_counter_ende
 
     for tagesordnungspunkt in sitzung['TOPs']:
 
@@ -1966,7 +2028,15 @@ def get_sitzungs_dataset_for_excel(sitzung):
                     dictionary_result['wahlperiode'] = rede[redner]['wahlperiode']
                     dictionary_result['wortmeldungen'] = rede[redner]['wortmeldungen']
                     dictionary_result['partei'] = party
+                    dictionary_result['Zeile_Rede_Beginn']  = list_with_startelement_numbers[zeitstrahl_counter_beginn]
+                    dictionary_result['Zeile_Rede_Ende'] = list_with_startEnd_numbers[zeitstrahl_counter_ende]
+                    # dictionary_result['Zeile_Wortmeldung']  =
+                    # dictionary_result['Zeile_Beifalltext']  =
+                    # dictionary_result['Zeile_Beifalltext_Uebernahme'] =
+
                     list_result.append(dictionary_result)
+                    zeitstrahl_counter_beginn += 1
+                    zeitstrahl_counter_ende += 2
 
     return list_result
 
@@ -1999,9 +2069,10 @@ def set_globals_null():
     redner_zaehler_fuer_iteration_durch_alle_redner = 0
     aktuelle_sitzungsnummer = ''
 
-while session_counter < 1:
-#while session_counter < len(alle_sitzungsnummern_der_vorhandenen_plenarprotokolle):
-
+#while session_counter < 1:
+while session_counter < len(alle_sitzungsnummern_der_vorhandenen_plenarprotokolle):
+    zeitstrahl_counter_beginn = 0
+    zeitstrahl_counter_ende = 1
     aktuelle_sitzungsnummer = alle_sitzungsnummern_der_vorhandenen_plenarprotokolle[session_counter]
     session_counter += 1
     #print('Sitzungsstruktur vorhalten')
@@ -2021,12 +2092,10 @@ while session_counter < 1:
     # Hole HTML Struktur ENDE
 
     content = get_content()
-    print('Hole Content')
-
+    print('Analysiere Sitzung')
     names_of_entities = split_and_analyse_content(content, cleaned_sortierte_sitzungen)
     start_end_nummern_liste = get_start_and_end_of_a_speech()
     liste_alle_reden = get_all_speeches(start_end_nummern_liste)
-    print('Hole alle Reden einer Sitzung.')
 
     redeliste = clean_speeches(liste_alle_reden)
 
@@ -2038,16 +2107,18 @@ while session_counter < 1:
     print('Ergebniszusammenfassung ', 'Sitzung', aktuelle_sitzungsnummer)
     print('Anzahl Redner: ' + str(anzahl_redner))
     print("Anzahl vorhandene Reden in Redeliste: " + str(len(redeliste)))
+    aktuelle_sitzung['Anzahl_Redner_nach_Bereinigung'] = str(len(redeliste)-1)
 
     set_part_till_first_speech()
-    print('Vereinige die Sitzungsstruktur mit den Reden.')
+    print('Vereinige Sitzungsstruktur mit Reden.')
     merged_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzungen, len(redeliste))
-    print('Setze Sitzungsdaten...')
+    print('Setze Sitzungs-Metadaten.')
     set_metadaten(merged_sitzung['Sitzung ' + aktuelle_sitzungsnummer])
+
     dataset_for_excel = get_sitzungs_dataset_for_excel(merged_sitzung['Sitzung ' + aktuelle_sitzungsnummer])
     set_globals_null()
-    print('Speicher Excel-Sheet')
-    create_protocol_workbook(dataset_for_excel)
-
+    print('Schreibe in Workbook')
+    create_protocol_workbook(dataset_for_excel, content, aktuelle_sitzung)
+print('Speicher xls')
 workbook.close()
 print('Skript beendet')
