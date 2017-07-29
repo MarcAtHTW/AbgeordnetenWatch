@@ -3,7 +3,7 @@ from nltk.corpus import stopwords
 import operator
 from nltk import sent_tokenize, word_tokenize
 import os
-
+import wget
 from os import remove
 from selenium import webdriver
 from bs4 import BeautifulSoup
@@ -25,6 +25,7 @@ indexierte_liste                = []  # Vorhalten von Redeteilen
 start_Element_Rede              = 0
 list_with_startelement_numbers  = []  # enthält Start item aller Redetexte
 list_with_startEnd_numbers      = []  # enthält Start und Ende item aller Redetexte
+liste_mit_Endnummern            = []
 number_of_last_element          = 0
 list_elements_till_first_speech = []  # enthält listenelemente bis zur ersten Rede
 politican_name                  = ""
@@ -33,12 +34,14 @@ liste_zeilen                    = []
 isMatcherAndNameGefunden        = False
 isMatchergefunden               = False
 isNameGefunden                  = False
+zeitstrahl_counter              = 0
+temp_counter                    = 0
+result_index                    = 0
+counter_string                  = 1
 redner_zaehler_fuer_iteration_durch_alle_redner = 0
-aktuelle_sitzungsnummer = ''
+aktuelle_sitzungsnummer         = ''
 deleted_speechers_in_analyse_content = []
-zeitstrahl_counter_beginn              = 0
-zeitstrahl_counter_ende                = 1
-temp_counter = 0
+liste_zeilen_einer_sitzung      = []
 
 '''Globals fuer Excelsheet'''
 row_sitzungsdaten = 1
@@ -59,6 +62,7 @@ row_freq_words_daten = 1
 temp_row_freq_words_daten = 1
 t_row_freq_words_daten = 1
 temp_row_beifalldaten_text = 1
+
 
 workbook = xlsxwriter.Workbook('bundestag_protokolle.xlsx')
 sitzungsdaten = workbook.add_worksheet('Sitzungsdaten')
@@ -164,11 +168,11 @@ def get_content():
         if line.__contains__('ğ'):
             line = line.replace('ğ', 'g')
 
-        if line.__contains__('è'):
-            line = line.replace('è', 'e')
-
-        if line.__contains__('é'):
-            line = line.replace('é', 'e')
+        # if line.__contains__('è'):
+        #     line = line.replace('è', 'e')
+        #
+        # if line.__contains__('é'):
+        #     line = line.replace('é', 'e')
 
             # print(list_element)
         liste_zeilen.append(line)
@@ -745,7 +749,7 @@ def get_start_and_end_of_a_speech():
     #print("Liste mit Startnummern: ", list_with_startelement_numbers)
     #print(len(list_with_startelement_numbers))
     liste_mit_Startnummern_und_End = []
-    liste_mit_Endnummern = []
+    global liste_mit_Endnummern
     i = 0
     x = 1
     while i < len(list_with_startelement_numbers) - 1:
@@ -877,18 +881,17 @@ def lex_div_without_stopwords(liste_speech_word_tokenized):
     return list_seldom_words_without_stopwords, list_anzahl_seldom_words, list_frequently_words_without_stopwords, list_anzahl_frequently_words
 
 
-def get_zeile_of_txt_from_string_in_range(zeile_rede_beginn, zeile_rede_ende, list_sitzungs_zeilen, string):
-
-    result_index = 0
-    counter = 1
+def get_zeile_of_txt_from_string_in_range(string):
+    global liste_zeilen_einer_sitzung
+    global result_index
+    global counter_string
     string = '(' + string + ')'
 
-    for zeile in list_sitzungs_zeilen[zeile_rede_beginn:zeile_rede_ende]:
-
+    for zeile in liste_zeilen_einer_sitzung:
         if zeile == string:
-            result_index = list_sitzungs_zeilen.index(zeile)
-            list_sitzungs_zeilen[result_index] = list_sitzungs_zeilen[result_index] + 'gefunden' + str(counter)
-            counter +=1
+            result_index = liste_zeilen_einer_sitzung.index(zeile)
+            liste_zeilen_einer_sitzung[result_index] = 'gefunden ' + str(counter_string)
+            counter_string +=1
             break
 
     return result_index+1
@@ -1044,29 +1047,32 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
     global beifall_id_row
     global temp_row_beifalltext
     global beifalltext
+    global liste_zeilen_einer_sitzung
+    liste_zeilen_einer_sitzung = list_sitzungs_zeilen
+
     #global beifalldaten
     #global temp_row_beifalldaten_text
     col_beifalltext = 0
     for dict in liste_dictionary_reden_einer_sitzung:
         for key in ['rede_id_sitzungen', 'beifaelle', 'beifall_id']:
             if isinstance(dict[key], list) and dict[key] == dict['beifaelle']:
-                for item in dict[key]:
+                for item in dict['beifaelle']:
                     beifalltext.write(row_beifalltext, col_beifalltext, item)
-                    zeile_rede_beginn = dict['Zeile_Rede_Beginn']
-                    zeile_rede_ende = dict['Zeile_Rede_Ende']
-                    index_beifalltext = get_zeile_of_txt_from_string_in_range(zeile_rede_beginn, zeile_rede_ende,list_sitzungs_zeilen, item)
-                    beifalltext.write(row_beifalltext, col_beifalltext +1, index_beifalltext)
-                row_beifalltext += 1
-            elif isinstance(dict[key], list) and dict[key] == dict['beifall_id']:
+                    row_beifalltext += 1
+            if isinstance(dict[key], list) and dict[key] == dict['beifall_id']:
                 for item in dict[key]:
-                    beifalltext.write(beifall_id_row, col_beifalltext+1, dict['rede_id_sitzungen'] + '_' + str(item))
+                    beifalltext.write(beifall_id_row, col_beifalltext + 1, dict['rede_id_sitzungen'] + '_' + str(item))
                     beifall_id_row += 1
-            if dict[key] == dict['rede_id_sitzungen']:
+            elif dict[key] == dict['rede_id_sitzungen']:
                 k = 0
                 while k < len(dict['beifaelle']):
+                    index_beifalltext = get_zeile_of_txt_from_string_in_range(dict['beifaelle'][k])
+                    beifalltext.write(temp_row_beifalltext, col_beifalltext + 2, index_beifalltext)
+
                     beifalltext.write(temp_row_beifalltext, col_beifalltext, dict[key])
                     k += 1
                     temp_row_beifalltext += 1
+
             col_beifalltext += 1
         col_beifalltext = 0
 
@@ -1236,8 +1242,11 @@ def clean_speeches(alle_Reden_einer_Sitzung):
                     liste_counter_beifall_id.append(counter)
                 beifall_id += 1
             else:
-                counter_wortmeldungen += 1
-                liste_wortmeldungen.append(i)  # Hinzufügen aller Wortmeldungen einer Rede
+                if i.__contains__('['):
+                    counter_wortmeldungen += 1
+                    liste_wortmeldungen.append(i)  # Hinzufügen aller Wortmeldungen einer Rede
+                else:
+                    pass
 
             string_rede = string_rede.replace('(' + i + ')', '')
 
@@ -1288,10 +1297,10 @@ def start_scraping_with_chrome(url):
     chrome_options.add_argument('--no-sandbox')
 
     # Fuer Windows:
-    #chrome = webdriver.Chrome('C:/Python36-32/BrowserDriver/chromedriver.exe', chrome_options=chrome_options)
+    chrome = webdriver.Chrome('C:/Python36-32/BrowserDriver/chromedriver.exe', chrome_options=chrome_options)
 
     #Fuer Linux:
-    chrome = webdriver.Chrome('/usr/bin/chromedriver', chrome_options=chrome_options)
+    #chrome = webdriver.Chrome('/usr/bin/chromedriver', chrome_options=chrome_options)
 
     chrome.get(url)
     return chrome
@@ -1313,7 +1322,11 @@ def get_files_from_server_via_sitzungsnummern(list_sitzungsnummern):
             list_link_txts.append('http://www.bundestag.de' + (link.get('href')))
 
     for url in list_link_txts:
-        os.system('wget -N -P txt_protokolle/'+ ' ' + url)
+        # Linux:
+        #os.system('wget -N -P txt_protokolle/'+ ' ' + url)
+        # Windows:
+        output_directory = 'C:/PycharmProjects/AbgeordnetenWatch/txt_protokolle/'
+        wget.download(url, out=output_directory)
 
 def get_new_zp_topic(topic):
     '''
@@ -1973,9 +1986,8 @@ def get_sitzungs_dataset_for_excel(sitzung):
     list_result = []
 
     global list_with_startelement_numbers
-    global list_with_startEnd_numbers
-    global zeitstrahl_counter_beginn
-    global zeitstrahl_counter_ende
+    global liste_mit_Endnummern
+    global zeitstrahl_counter
 
     for tagesordnungspunkt in sitzung['TOPs']:
 
@@ -2028,15 +2040,15 @@ def get_sitzungs_dataset_for_excel(sitzung):
                     dictionary_result['wahlperiode'] = rede[redner]['wahlperiode']
                     dictionary_result['wortmeldungen'] = rede[redner]['wortmeldungen']
                     dictionary_result['partei'] = party
-                    dictionary_result['Zeile_Rede_Beginn']  = list_with_startelement_numbers[zeitstrahl_counter_beginn]
-                    dictionary_result['Zeile_Rede_Ende'] = list_with_startEnd_numbers[zeitstrahl_counter_ende]
+                    dictionary_result['Zeile_Rede_Beginn']  = list_with_startelement_numbers[zeitstrahl_counter]
+                    dictionary_result['Zeile_Rede_Ende'] = liste_mit_Endnummern[zeitstrahl_counter]
                     # dictionary_result['Zeile_Wortmeldung']  =
                     # dictionary_result['Zeile_Beifalltext']  =
                     # dictionary_result['Zeile_Beifalltext_Uebernahme'] =
 
                     list_result.append(dictionary_result)
-                    zeitstrahl_counter_beginn += 1
-                    zeitstrahl_counter_ende += 2
+                    zeitstrahl_counter += 1
+
 
     return list_result
 
@@ -2069,8 +2081,8 @@ def set_globals_null():
     redner_zaehler_fuer_iteration_durch_alle_redner = 0
     aktuelle_sitzungsnummer = ''
 
-#while session_counter < 1:
-while session_counter < len(alle_sitzungsnummern_der_vorhandenen_plenarprotokolle):
+while session_counter < 1:
+#while session_counter < len(alle_sitzungsnummern_der_vorhandenen_plenarprotokolle):
     zeitstrahl_counter_beginn = 0
     zeitstrahl_counter_ende = 1
     aktuelle_sitzungsnummer = alle_sitzungsnummern_der_vorhandenen_plenarprotokolle[session_counter]
