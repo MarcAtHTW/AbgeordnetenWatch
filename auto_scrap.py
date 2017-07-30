@@ -3,7 +3,7 @@ from nltk.corpus import stopwords
 import operator
 from nltk import sent_tokenize, word_tokenize
 import os
-import wget
+#import wget
 from os import remove
 from selenium import webdriver
 from bs4 import BeautifulSoup
@@ -196,8 +196,8 @@ def get_zeile_of_txt_from_string(string, list_sitzungs_zeilen):
         index = list_sitzungs_zeilen.index(string)
 
     except ValueError as err:
-        print(err)
-        print('Exception abgefangen in get_zeile_of_txt_from_string()')
+        #print(err)
+        #print('Exception abgefangen in get_zeile_of_txt_from_string()')
         return index
 
     return index
@@ -272,8 +272,8 @@ def analyse_content_element(list_element, i, alle_redner_einer_sitzung, sitzunge
         if surname.__contains__('('):
             surname = remove_brackets_from_surname(surname)
     except IndexError as err:
-        print(err)
-        print('Exception abgefangen in analyse_content_element()')
+        #print(err)
+        #print('Exception abgefangen in analyse_content_element()')
         surname = 'Letzer Redner wurd durchlaufen'
 
     if any(m in list_element for m in matchers) and ':' in list_element and '!' not in list_element and '?' not in list_element:
@@ -327,13 +327,13 @@ def analyse_content_element(list_element, i, alle_redner_einer_sitzung, sitzunge
     elif list_element.__contains__(surname) and list_element.__contains__(':') and isMatchergefunden == True and check_if_redner_in_next_5_lines(i, surname) == True and '[' not in list_element:
 
         redner_zaehler_fuer_iteration_durch_alle_redner +=1
-        print('Rednerzaehler wird erhoeht!')
+        #print('Rednerzaehler wird erhoeht!')
         isNameGefunden = True
         #print('setze isMatcherAndNameGefunden auf True')
         #print(list_element)
     elif list_element.__contains__(surname) and list_element.__contains__(':') and isMatchergefunden == False and '[' not in list_element:
         redner_zaehler_fuer_iteration_durch_alle_redner += 1
-        print('Rednerzaehler wird erhoeht!')
+        #print('Rednerzaehler wird erhoeht!')
         isNameGefunden = True
         isMatchergefunden = True
 
@@ -348,22 +348,22 @@ def analyse_content_element(list_element, i, alle_redner_einer_sitzung, sitzunge
 
     if isNameGefunden == True and isMatchergefunden == True:
         isMatcherAndNameGefunden = True
-        print('setze isMatcherAndNameGefunden auf True')
+        #print('setze isMatcherAndNameGefunden auf True')
 
     if isMatcherAndNameGefunden == True:
         isMatchergefunden = False
         isNameGefunden = False
         isMatcherAndNameGefunden = False
-        print('Startpunkt gefunden, setze alles auf False')
+        #print('Startpunkt gefunden, setze alles auf False')
 
         start_Element_Rede = i-1
         list_with_startelement_numbers.append(start_Element_Rede)
         # print("Start_Index_Redetext: ", start_Element_Rede)
-        print('Start-Element der Rede von' + surname + ': ' + str(start_Element_Rede))
-        print('Listen-Element: ' +  str(list_element))
-        print('Laenge Liste Startelemente' + str(len(list_with_startelement_numbers)))
+        #print('Start-Element der Rede von' + surname + ': ' + str(start_Element_Rede))
+        #print('Listen-Element: ' +  str(list_element))
+        #print('Laenge Liste Startelemente' + str(len(list_with_startelement_numbers)))
 
-    print(len(deleted_speechers_in_analyse_content))
+    #print(len(deleted_speechers_in_analyse_content))
 
 
 def check_if_redner_in_next_5_lines(counter, redner_nachname):
@@ -388,7 +388,7 @@ def check_if_redner_in_next_10_lines(counter, redner_nachname):
 
     while i <= lines_to_go:
         wichtiger_index = 0
-        print('Aktuelle Zeile ',i,liste_zeilen[i])
+        #print('Aktuelle Zeile ',i,liste_zeilen[i])
         #print(len(liste_zeilen))
         if redner_nachname in liste_zeilen[i] and liste_zeilen[i].__contains__(':'):
             isFound = True
@@ -696,6 +696,11 @@ def api_abgeordnetenwatch(politican_name):
     lastname = change_umlaute(lastname)
     geschlecht = 'n/a'
 
+    if firstname.__contains__('('):
+        firstname = re.sub(r'\(.*?\)', '', firstname)
+    if lastname.__contains__('('):
+        lastname = re.sub(r'\(.*?\)', '', lastname)
+
     url = 'https://www.abgeordnetenwatch.de/api/profile/' + firstname + '-' + lastname + '/profile.json'
     url2 = 'https://www.abgeordnetenwatch.de/api/profile/' + 'dr-' +firstname + '-' + lastname + '/profile.json'
     url3 = 'https://www.abgeordnetenwatch.de/api/profile/' + 'prof-dr-' +firstname + '-' + lastname + '/profile.json'
@@ -710,7 +715,7 @@ def api_abgeordnetenwatch(politican_name):
 
     except urllib.error.HTTPError as err:
         if err.code == 404:
-            print('exception abgefangen in api_abgeordnetenwatch')
+            #print('exception abgefangen in api_abgeordnetenwatch')
             try:
 
                 with urllib.request.urlopen(url2) as url2:
@@ -733,8 +738,10 @@ def api_abgeordnetenwatch(politican_name):
                     geschlecht = 'Api-Error-Code 404: Seite konnte nicht gefunden werden: ' + "https://www.abgeordnetenwatch.de/api/profile/" + firstname + '-' + lastname + '/profile.json'
 
         else:
-            partei = 'AW-API nicht erreichbar'
-
+            #print('AW-API Fehler')
+            #print(err)
+            error_code = str(err)
+            partei = error_code + " https://www.abgeordnetenwatch.de/api/profile/" + firstname + '-' + lastname + '/profile.json'
 
     return '(' + partei + ')', geschlecht
 
@@ -1214,6 +1221,8 @@ def clean_speeches(alle_Reden_einer_Sitzung):
         liste_beifaelle_extract_partei = []
 
         string_rede = ' '.join(rede)
+        if string_rede.__contains__('schließe die Aussprache'):
+            string_rede =string_rede.split('schließe die Aussprache')[0]
         print(string_rede)
         liste_treffer = re.findall(regex, string_rede)
         liste_parteien = get_all_parties_without_brackets()
@@ -1297,10 +1306,10 @@ def start_scraping_with_chrome(url):
     chrome_options.add_argument('--no-sandbox')
 
     # Fuer Windows:
-    chrome = webdriver.Chrome('C:/Python36-32/BrowserDriver/chromedriver.exe', chrome_options=chrome_options)
+    #chrome = webdriver.Chrome('C:/Python36-32/BrowserDriver/chromedriver.exe', chrome_options=chrome_options)
 
     #Fuer Linux:
-    #chrome = webdriver.Chrome('/usr/bin/chromedriver', chrome_options=chrome_options)
+    chrome = webdriver.Chrome('/usr/bin/chromedriver', chrome_options=chrome_options)
 
     chrome.get(url)
     return chrome
@@ -1323,10 +1332,10 @@ def get_files_from_server_via_sitzungsnummern(list_sitzungsnummern):
 
     for url in list_link_txts:
         # Linux:
-        #os.system('wget -N -P txt_protokolle/'+ ' ' + url)
+        os.system('wget -N -P txt_protokolle/'+ ' ' + url)
         # Windows:
-        output_directory = 'C:/PycharmProjects/AbgeordnetenWatch/txt_protokolle/'
-        wget.download(url, out=output_directory)
+        #output_directory = 'C:/PycharmProjects/AbgeordnetenWatch/txt_protokolle/'
+        #wget.download(url, out=output_directory)
 
 def get_new_zp_topic(topic):
     '''
@@ -1636,7 +1645,7 @@ def sort_reden_eines_tops_in_tagesordnungspunkt(reden_eines_tops, top_counter, c
             except IndexError as err:
                 if isDisplayed == False:
                     isDisplayed = True
-                    print('Exception abgefangen in sort_reden_eines_tops_in_tagesordnungspunkt()')
+                    #print('Exception abgefangen in sort_reden_eines_tops_in_tagesordnungspunkt()')
 
         i += 1
     cleaned_sortierte_sitzungen[aktuelle_sitzungsbezeichnung]['TOPs'][top_counter]['Redner'] = list_sorted_redner_temp
@@ -1706,8 +1715,9 @@ def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung, lenRe
                 reden_eines_tagesordnungspunkts.append(reden.pop(0))
 
             except IndexError as err:
-                print(err)
-                print('Exception abgefangen in merge_sitzungsstruktur_mit_reden()')
+                pass
+                #print(err)
+                #print('Exception abgefangen in merge_sitzungsstruktur_mit_reden()')
 
 
 
@@ -1756,8 +1766,8 @@ def count_wortmeldungen_einer_sitzung(sitzung):
                     result += len(dict_redner[redner]['wortmeldungen'])
 
     except TypeError as err:
-        print(err)
-        print('Exception abgefangen in count_wortmeldungen_einer_sitzung()')
+        #print(err)
+        #print('Exception abgefangen in count_wortmeldungen_einer_sitzung()')
         return 0
 
     return result
@@ -1778,8 +1788,8 @@ def count_beifaelle_einer_sitzung(sitzung):
                 for redner in dict_redner:
                     result += dict_redner[redner]['anzahl_beifaelle']
     except TypeError as err:
-        print(err)
-        print('Exception abgefangen in count_beifaelle_einer_sitzung()')
+        #print(err)
+        #print('Exception abgefangen in count_beifaelle_einer_sitzung()')
         return result
 
     return result
@@ -2040,6 +2050,10 @@ def get_sitzungs_dataset_for_excel(sitzung):
                     dictionary_result['wahlperiode'] = rede[redner]['wahlperiode']
                     dictionary_result['wortmeldungen'] = rede[redner]['wortmeldungen']
                     dictionary_result['partei'] = party
+                    # debug_zeitstrahl_counter = zeitstrahl_counter
+                    # print('Zeitstrahlcounter', zeitstrahl_counter)
+                    # debug_liste_mit_startnummern = list_with_startelement_numbers
+                    # debug_liste_mit_endnummern = liste_mit_Endnummern
                     dictionary_result['Zeile_Rede_Beginn']  = list_with_startelement_numbers[zeitstrahl_counter]
                     dictionary_result['Zeile_Rede_Ende'] = liste_mit_Endnummern[zeitstrahl_counter]
                     # dictionary_result['Zeile_Wortmeldung']  =
@@ -2081,10 +2095,11 @@ def set_globals_null():
     redner_zaehler_fuer_iteration_durch_alle_redner = 0
     aktuelle_sitzungsnummer = ''
 
-while session_counter < 1:
-#while session_counter < len(alle_sitzungsnummern_der_vorhandenen_plenarprotokolle):
+#while session_counter < 1:
+while session_counter < len(alle_sitzungsnummern_der_vorhandenen_plenarprotokolle):
     zeitstrahl_counter_beginn = 0
     zeitstrahl_counter_ende = 1
+    zeitstrahl_counter = 0
     aktuelle_sitzungsnummer = alle_sitzungsnummern_der_vorhandenen_plenarprotokolle[session_counter]
     session_counter += 1
     #print('Sitzungsstruktur vorhalten')
@@ -2114,8 +2129,7 @@ while session_counter < 1:
     aktuelle_sitzung = cleaned_sortierte_sitzungen['Sitzung ' + aktuelle_sitzungsnummer]
     anzahl_redner = count_speecher_from_cleaned_sortierte_sitzung(aktuelle_sitzung)
 
-
-    print('#########################')
+    print('###################################')
     print('Ergebniszusammenfassung ', 'Sitzung', aktuelle_sitzungsnummer)
     print('Anzahl Redner: ' + str(anzahl_redner))
     print("Anzahl vorhandene Reden in Redeliste: " + str(len(redeliste)))
