@@ -16,7 +16,9 @@ import time
 import xlrd
 import csv
 import collections
-
+import progressbar
+import json
+from time import sleep
 
 os.environ['JAVAHOME'] = "C:/Program Files/Java/jdk1.8.0_20/bin/java.exe"
 
@@ -42,6 +44,7 @@ redner_zaehler_fuer_iteration_durch_alle_redner = 0
 aktuelle_sitzungsnummer         = ''
 deleted_speechers_in_analyse_content = []
 liste_zeilen_einer_sitzung      = []
+ergebniszusammenfassung= {}
 
 '''Globals fuer Excelsheet'''
 row_sitzungsdaten = 1
@@ -62,6 +65,7 @@ row_freq_words_daten = 1
 temp_row_freq_words_daten = 1
 t_row_freq_words_daten = 1
 temp_row_beifalldaten_text = 1
+count_deleted_tops = 0
 
 
 workbook = xlsxwriter.Workbook('bundestag_protokolle.xlsx')
@@ -105,7 +109,8 @@ topdaten.write('C1', 'Tagesordnungspunktbezeichnung', bold)
 topdaten.write('D1', 'gefundenes Synonym', bold)
 topdaten.write('E1', 'Top_Einordnung_Kategorie', bold)
 
-redner_rede_daten.write('A1', 'Tagesordnungspunkt', bold)
+#redner_rede_daten.write('A1', 'Tagesordnungspunkt', bold)
+redner_rede_daten.write('A1', 'Tagesordnungspunktbezeichnung', bold)
 redner_rede_daten.write('B1', 'Redner', bold)
 redner_rede_daten.write('C1', 'Geschlecht', bold)
 redner_rede_daten.write('D1', 'Partei', bold)
@@ -224,7 +229,7 @@ def split_and_analyse_content(liste_zeilen, sitzungen):
             indexierte_liste.append(liste_zeilen[counter])
             list_elements_till_first_speech.append(liste_zeilen[counter])  # Teile mit TOP, ZTOP,...
             counter += 1
-    print(list_elements_till_first_speech)
+    #print(list_elements_till_first_speech)
     #list = sent_tokenize(liste_zeilen)
     alle_redner_einer_sitzung = hole_alle_redner_aus_cleaned_sortierte_sitzung(sitzungen)
     list_elements = []
@@ -288,8 +293,7 @@ def analyse_content_element(list_element, i, alle_redner_einer_sitzung, sitzunge
             #if check_if_redner_in_next_5_lines(i, surname_next_speecher) == False:
                 #list_with_startelement_numbers.append(start_Element_Rede)
             #list_with_startelement_numbers.append(start_Element_Rede)
-            print('TRIGGER ########################################################')
-            print(list_element)
+            #print(list_element)
             isMatchergefunden = True
             isNameGefunden = True
             #print('setze isMatchergefunden auf True')
@@ -305,9 +309,9 @@ def analyse_content_element(list_element, i, alle_redner_einer_sitzung, sitzunge
                     isNameGefunden = False
                     start_Element_Rede = wichtiger_index
                     list_with_startelement_numbers.append(start_Element_Rede)
-                    print('Start-Element der Rede von' + surname + ': ' + str(start_Element_Rede))
-                    print('Listen-Element: ' + str(list_element))
-                    print('Laenge Liste Startelemente' + str(len(list_with_startelement_numbers)))
+                    #print('Start-Element der Rede von' + surname + ': ' + str(start_Element_Rede))
+                    #print('Listen-Element: ' + str(list_element))
+                    #print('Laenge Liste Startelemente' + str(len(list_with_startelement_numbers)))
                 elif isMatchergefunden == True and wichtiger_index == 0:
                     speecher_to_delete = (alle_redner_einer_sitzung[redner_zaehler_fuer_iteration_durch_alle_redner-1])
                     remove_speecher_from_list(aktuelle_sitzung, speecher_to_delete)
@@ -915,6 +919,8 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
     # writing in worksheet 'Sitzungsdaten'
     global row_sitzungsdaten
     global sitzungsdaten
+    global count_deleted_tops
+    global ergebniszusammenfassung
     col_sitzungsdaten= 0
     sitzungnummer                                   = liste_dictionary_reden_einer_sitzung[0]['sitzungsnummer']
     sitzungsdatum                                   = liste_dictionary_reden_einer_sitzung[0]['sitzungsdatum']
@@ -922,9 +928,12 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
     anzahl_redner_insgesamt                         = aktuelle_sitzung['Anzahl_Redner_insgesamt']
     anzahl_redner_nach_bereinigung                  = aktuelle_sitzung['Anzahl_Redner_nach_Bereinigung']
     anzahl_tagesordnungspunkte                      = aktuelle_sitzung['Anzahl_Tagesordnungspunkte']
-    anzahl_tagesordnungspunkte_nach_bereinigung     = anzahl_tagesordnungspunkte
+    anzahl_tagesordnungspunkte_nach_bereinigung     = anzahl_tagesordnungspunkte - count_deleted_tops
     anzahl_wortmeldungen                            = count_wortmeldungen_einer_sitzung(aktuelle_sitzung)
     anzahl_beifalle                                 = count_beifaelle_einer_sitzung(aktuelle_sitzung)
+
+    ergebniszusammenfassung[aktuelle_sitzung['Sitzungsnummer']]['anzahl_Redner_nach_Bereinigung'] = aktuelle_sitzung['Anzahl_Redner_nach_Bereinigung']
+    ergebniszusammenfassung[aktuelle_sitzung['Sitzungsnummer']]['anzahl_Tagesordnungspunkte_nach_Bereinigung'] = anzahl_tagesordnungspunkte_nach_bereinigung
 
     sitzungsdaten.write_number(row_sitzungsdaten, col_sitzungsdaten, int(sitzungnummer))
     sitzungsdaten.write(row_sitzungsdaten, col_sitzungsdaten + 1, sitzungsdatum)
@@ -942,6 +951,10 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
     global topdaten
     col_topdaten = 0
     x = 0
+    anzahl_reden_in_liste_dictionary_reden_einer_sitzung = len(liste_dictionary_reden_einer_sitzung)
+    bar = progressbar.ProgressBar(maxval=anzahl_reden_in_liste_dictionary_reden_einer_sitzung, widgets=[ 'Schreibe in Sheet \"Topdaten\":',progressbar.AnimatedMarker(),progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+    bar.start()
+
     for dict in liste_dictionary_reden_einer_sitzung:
 
         # Abgleich Vokabular.xlsx mit tagesordnungspunktbezeichnung
@@ -997,13 +1010,20 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
             row_topdaten += 1
 
         x += 1
+        bar.update(x)
+    bar.finish()
 
     # writing in worksheet 'Redner_Rede'
     global row_redner_rede
     global redner_rede_daten
     col_redner_rede = 0
+    bar = progressbar.ProgressBar(maxval=anzahl_reden_in_liste_dictionary_reden_einer_sitzung,
+                                  widgets=['Schreibe in Sheet \"Redner_Rede\":',progressbar.AnimatedMarker(), progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+    pbar_counter = 0
+    bar.start()
     for dict in liste_dictionary_reden_einer_sitzung:
-        for key in ['tagesordnungspunkt', 'redner', 'geschlecht', 'partei', 'clean_rede', 'Zeile_Rede_Beginn', 'Zeile_Rede_Ende']:
+        pbar_counter +=1
+        for key in ['tagesordnungspunktbezeichnung', 'redner', 'geschlecht', 'partei', 'clean_rede', 'Zeile_Rede_Beginn', 'Zeile_Rede_Ende']:
             redner_rede_daten.write(row_redner_rede, col_redner_rede, dict[key])
             col_redner_rede += 1
         pos_neg, gesamt = sentiment_analyse(dict['clean_rede'])
@@ -1012,7 +1032,8 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
         redner_rede_daten.write(row_redner_rede, col_redner_rede + 2, dict['rede_id_sitzungen'])
         row_redner_rede += 1
         col_redner_rede = 0
-
+        bar.update(pbar_counter)
+    bar.finish()
     # writing in worksheet 'Beifalldaten'
     global row_beifalldaten
     global temp_row_beifalldaten
@@ -1022,7 +1043,12 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
 
     col_beifalldaten = 0
     counter = 1
+    bar = progressbar.ProgressBar(maxval=anzahl_reden_in_liste_dictionary_reden_einer_sitzung,
+                                  widgets=['Schreibe in Sheet \"Beifalldaten\":',progressbar.AnimatedMarker(),progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+    pbar_counter = 0
+    bar.start()
     for dict in liste_dictionary_reden_einer_sitzung:
+        pbar_counter+=1
         for key in ['beifall_id', 'beifaelle_von_partei']:
             if isinstance(dict[key], list) and dict[key] == dict['beifaelle_von_partei']:
                 for item in dict[key]:
@@ -1048,7 +1074,8 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
 
             col_beifalldaten += 1
         col_beifalldaten = 0
-
+        bar.update(pbar_counter)
+    bar.finish()
     # writing in worksheet 'Beifalltext'
     global row_beifalltext
     global beifall_id_row
@@ -1060,7 +1087,12 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
     #global beifalldaten
     #global temp_row_beifalldaten_text
     col_beifalltext = 0
+    bar = progressbar.ProgressBar(maxval=anzahl_reden_in_liste_dictionary_reden_einer_sitzung,
+                                  widgets=['Schreibe in Sheet \"Beifalltext\":',progressbar.AnimatedMarker(), progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+    pbar_counter = 0
+    bar.start()
     for dict in liste_dictionary_reden_einer_sitzung:
+        pbar_counter+=1
         for key in ['rede_id_sitzungen', 'beifaelle', 'beifall_id']:
             if isinstance(dict[key], list) and dict[key] == dict['beifaelle']:
                 for item in dict['beifaelle']:
@@ -1082,7 +1114,8 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
 
             col_beifalltext += 1
         col_beifalltext = 0
-
+        bar.update(pbar_counter)
+    bar.finish()
     # writing in worksheet 'Wortmeldedaten'
     global row_wortmeldedaten
     global temp_row_wortmeldedaten
@@ -1090,7 +1123,12 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
     col_wortmeldedaten = 0
     parteiliste = get_all_parties_without_brackets()
 
+    bar = progressbar.ProgressBar(maxval=anzahl_reden_in_liste_dictionary_reden_einer_sitzung,
+                                  widgets=['Schreibe in Sheet \"Wortmeldedaten\":',progressbar.AnimatedMarker(), progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+    pbar_counter = 0
+    bar.start()
     for dict in liste_dictionary_reden_einer_sitzung:
+        pbar_counter+=1
         liste_wer = []
         liste_text = []
         for key in ['rede_id_sitzungen', 'wortmeldungen']:
@@ -1102,7 +1140,9 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
                     if item.__contains__(':'):
                         for letter in (item[:item.index(':')]):
                             wer += letter
-                        wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 1, wer)
+                        if wer.__contains__('['):
+                            wer_temp_ohne_partei = remove_party_from_fullname(wer)
+                        wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 1, wer_temp_ohne_partei)
 
                         for party in parteiliste:
                             if party in wer:
@@ -1134,15 +1174,20 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
                     temp_row_wortmeldedaten += 1
             col_wortmeldedaten += 1
         col_wortmeldedaten = 0
-
+        bar.update(pbar_counter)
+    bar.finish()
     # writing in worksheet 'seldom_words_daten'
     global row_seldom_words_daten
     global temp_row_seldom_words_daten
     global t_row
     global seldom_words_daten
     col_seldom_words_daten = 0
-
+    bar = progressbar.ProgressBar(maxval=anzahl_reden_in_liste_dictionary_reden_einer_sitzung,
+                                  widgets=['Schreibe in Sheet \"seldom_words_daten\":',progressbar.AnimatedMarker(), progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+    pbar_counter = 0
+    bar.start()
     for dict in liste_dictionary_reden_einer_sitzung:
+        pbar_counter+=1
         for key in ['rede_id_sitzungen', '10_seldom_words', 'number_seldom_words']:
             if isinstance(dict[key], list) and dict[key] == dict['10_seldom_words']:
                 for item in dict[key]:
@@ -1160,6 +1205,8 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
                     temp_row_seldom_words_daten += 1
             col_seldom_words_daten += 1
         col_seldom_words_daten = 0
+        bar.update(pbar_counter)
+    bar.finish()
 
     # writing in worksheet 'freq_words_daten'
     global row_freq_words_daten
@@ -1167,8 +1214,12 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
     global t_row_freq_words_daten
     global freq_words_daten
     col_freq_words_daten = 0
-
+    bar = progressbar.ProgressBar(maxval=anzahl_reden_in_liste_dictionary_reden_einer_sitzung,
+                                  widgets=['Schreibe in Sheet \"freq_words_daten\":',progressbar.AnimatedMarker(), progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+    pbar_counter = 0
+    bar.start()
     for dict in liste_dictionary_reden_einer_sitzung:
+        pbar_counter+=1
         for key in ['rede_id_sitzungen', '10_frequently_words', 'number_frequently_words']:
             if isinstance(dict[key], list) and dict[key] == dict['10_frequently_words']:
                 for item in dict[key]:
@@ -1186,7 +1237,8 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
                     temp_row_freq_words_daten += 1
             col_freq_words_daten += 1
         col_freq_words_daten = 0
-
+        bar.update(pbar_counter)
+    bar.finish()
 
 def clean_speeches(alle_Reden_einer_Sitzung):
     '''
@@ -1223,7 +1275,7 @@ def clean_speeches(alle_Reden_einer_Sitzung):
         string_rede = ' '.join(rede)
         if string_rede.__contains__('schließe die Aussprache'):
             string_rede =string_rede.split('schließe die Aussprache')[0]
-        print(string_rede)
+        #print(string_rede)
         liste_treffer = re.findall(regex, string_rede)
         liste_parteien = get_all_parties_without_brackets()
         liste_beifall_id = []
@@ -1671,30 +1723,7 @@ def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung, lenRe
     aktuelle_sitzungsbezeichnung = 'Sitzung ' + aktuelle_sitzungsnummer
     aktuelle_sitzung = cleaned_sortierte_sitzungen['Sitzung ' + aktuelle_sitzungsnummer]
 
-
-    '''
-    Vorbereitung für die Aufnahme von mehreren Sitzungen.
-
-    for sitzung in sorted(cleaned_sortierte_sitzungen):
-        aktuelle_sitzungsbezeichnung = sitzung
-        while aktuelle_sitzungsbezeichnung == 'Sitzung 229':
-            aktuelle_sitzung = cleaned_sortierte_sitzungen[sitzung]
-
-            i = 0
-            for rede in redeliste:
-
-                rede_id = rede['rede_id']
-
-                if rede_id == aktuelle_sitzung['TOPs'][i]['TOP_ID']:
-                    rede['wahlperiode'] = aktuelle_sitzung['Wahlperiode']
-                    rede['sitzungsdatum'] = aktuelle_sitzung['Sitzungsdatum']
-                    rede['tagesordnungspunktbezeichnung'] = aktuelle_sitzung['TOPs'][i]['Tagesordnungspunkt']
-                    rede['tagesordnungspunkt'] = aktuelle_sitzung['TOPs'][i]['Top_Key']
-                else:
-                    print('###### Rede_ID passt nicht zur TOP_ID in merge_sitzungsstruktur_mit_reden()')
-                redeliste[i] = rede
-                i += 1
-    '''
+    global count_deleted_tops
 
     laenge_der_redeliste = len(redeliste)
     tops = aktuelle_sitzung['TOPs']
@@ -1734,6 +1763,7 @@ def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung, lenRe
                 'Weniger als zwei Redner in Rednerliste des Tagesordnungspunktes "' + aktueller_tagesordnungspunkt + '". Tagesordnungspunkt wird gelöscht.')
             j += 1
             top_counter += 1
+            count_deleted_tops += 1
 
     return final_cleaned_sortierte_sitzung
 
@@ -1810,6 +1840,16 @@ def remove_brackets_from_surname(surname):
         index +=1
     surname = surname[:rm_entry]
     return surname
+
+def remove_party_from_fullname(str_fullname):
+    index = 0
+    for letter in str_fullname:
+        if letter == '[':
+            rm_entry = index
+            break
+        index += 1
+    str_fullname = str_fullname[:rm_entry-1]
+    return str_fullname
 
 def find_last_brackets_in_string(string):
     '''
@@ -1998,7 +2038,23 @@ def get_sitzungs_dataset_for_excel(sitzung):
     global list_with_startelement_numbers
     global liste_mit_Endnummern
     global zeitstrahl_counter
+    global ergebniszusammenfassung
 
+
+    anzahl_redner = count_speecher_from_cleaned_sortierte_sitzung(sitzung)
+    debug_ergebniszusammenfassung = ergebniszusammenfassung
+    ergebniszusammenfassung[sitzung['Sitzungsnummer']] = {}
+    #['Anzahl_Redner_insgesamt']] = sitzung['Anzahl_Redner_insgesamt']
+
+    ergebniszusammenfassung[sitzung['Sitzungsnummer']]['anzahl_Redner_insgesamt'] = anzahl_redner
+    ergebniszusammenfassung[sitzung['Sitzungsnummer']]['anzahl_Redner_nach_Bereinigung'] = sitzung['Anzahl_Redner_nach_Bereinigung']
+    ergebniszusammenfassung[sitzung['Sitzungsnummer']]['anzahl_Tagesordnungspunkte'] = sitzung['Anzahl_Tagesordnungspunkte']
+    ergebniszusammenfassung[sitzung['Sitzungsnummer']]['Wohlperiode'] = sitzung['Wahlperiode']
+    ergebniszusammenfassung[sitzung['Sitzungsnummer']]['Sitzungsdatum'] = sitzung['Sitzungsdatum']
+
+    print('\n')
+    bar = progressbar.ProgressBar(maxval=anzahl_redner, widgets=['Vereinige Sitzungsstruktur mit Reden:',progressbar.AnimatedMarker(), progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+    bar.start()
     for tagesordnungspunkt in sitzung['TOPs']:
 
         for rede in tagesordnungspunkt['Redner']:
@@ -2062,8 +2118,8 @@ def get_sitzungs_dataset_for_excel(sitzung):
 
                     list_result.append(dictionary_result)
                     zeitstrahl_counter += 1
-
-
+                    bar.update(zeitstrahl_counter)
+    bar.finish()
     return list_result
 
 # Hole HTML Struktur START
@@ -2077,7 +2133,26 @@ get_files_from_server_via_sitzungsnummern(alle_sitzungsnummern_der_vorhandenen_p
 
 session_counter = 0
 
+def print_ergebniszusammenfassung():
+    '''
+    global ergebniszusammenfassung
+    #json_ergebniszusammenfassung = json.dumps(ergebniszusammenfassung, ensure_ascii=False)
 
+    print('Zusammenfassung:')
+    for sitzung in ergebniszusammenfassung:
+        print('Sitzung: ' + str(sitzung))
+        print('Anzahl Redner insgesamt: ' + str(ergebniszusammenfassung[sitzung]['anzahl_Redner_insgesamt']))
+        print('Erfolgreich zugeordnete Reden: ' + str(ergebniszusammenfassung[sitzung]['anzahl_Redner_nach_Bereinigung']))
+        print('Anzahl Tagesordnungspunkte insgesamt: ' + str(ergebniszusammenfassung[sitzung]['anzahl_Tagesordnungspunkte']))
+        print('nach Bereinigung: ' + str(ergebniszusammenfassung[sitzung]['anzahl_Tagesordnungspunkte_nach_Bereinigung']))
+        erfolgsquote = float(ergebniszusammenfassung[sitzung]['anzahl_Redner_insgesamt']) / float(ergebniszusammenfassung[sitzung]['anzahl_Redner_nach_Bereinigung'])
+
+    print('erreichte Erfolgsquote:' + str(erfolgsquote.round(2)))
+
+
+
+    '''
+    pass
 def set_globals_null():
     global indexierte_liste, start_Element_Rede, list_with_startelement_numbers, list_with_startEnd_numbers, number_of_last_element, list_elements_till_first_speech, politican_name, party_name, liste_zeilen, isMatcherAndNameGefunden, isMatchergefunden, isNameGefunden, redner_zaehler_fuer_iteration_durch_alle_redner, aktuelle_sitzungsnummer
     indexierte_liste = []  # Vorhalten von Redeteilen
@@ -2095,6 +2170,7 @@ def set_globals_null():
     redner_zaehler_fuer_iteration_durch_alle_redner = 0
     aktuelle_sitzungsnummer = ''
 
+
 #while session_counter < 1:
 while session_counter < len(alle_sitzungsnummern_der_vorhandenen_plenarprotokolle):
     zeitstrahl_counter_beginn = 0
@@ -2111,15 +2187,14 @@ while session_counter < len(alle_sitzungsnummern_der_vorhandenen_plenarprotokoll
     sortierte_sitzungen = sort_topics_to_sitzung(alle_sitzungen_mit_start_und_ende_der_topic)
     cleaned_sortierte_sitzungen = delete_first_and_last_speecher_from_list(sortierte_sitzungen)
 
-    print('Serialisiere gescrapte Sitzungsstruktur - derzeit deaktiv')
+    #print('Serialisiere gescrapte Sitzungsstruktur - derzeit deaktiv')
     serialize_sitzungen(cleaned_sortierte_sitzungen)
     #deserialisierte_cleaned_sortierte_sitzungen = deserialize_sitzunen('scraped_content/serialized_sitzungen_04_07_2017.txt')
-    print('Serialisierung/Deserialisierung beendet.')
-    print('Scraping beendet')
+    #print('Serialisierung/Deserialisierung beendet.')
     # Hole HTML Struktur ENDE
 
     content = get_content()
-    print('Analysiere Sitzung')
+    print('\nAnalysiere Sitzung ' + str(aktuelle_sitzungsnummer))
     names_of_entities = split_and_analyse_content(content, cleaned_sortierte_sitzungen)
     start_end_nummern_liste = get_start_and_end_of_a_speech()
     liste_alle_reden = get_all_speeches(start_end_nummern_liste)
@@ -2129,22 +2204,23 @@ while session_counter < len(alle_sitzungsnummern_der_vorhandenen_plenarprotokoll
     aktuelle_sitzung = cleaned_sortierte_sitzungen['Sitzung ' + aktuelle_sitzungsnummer]
     anzahl_redner = count_speecher_from_cleaned_sortierte_sitzung(aktuelle_sitzung)
 
-    print('###################################')
-    print('Ergebniszusammenfassung ', 'Sitzung', aktuelle_sitzungsnummer)
+    print('\nErgebniszusammenfassung ', 'Sitzung', aktuelle_sitzungsnummer)
     print('Anzahl Redner: ' + str(anzahl_redner))
     print("Anzahl vorhandene Reden in Redeliste: " + str(len(redeliste)))
     aktuelle_sitzung['Anzahl_Redner_nach_Bereinigung'] = str(len(redeliste)-1)
 
     set_part_till_first_speech()
-    print('Vereinige Sitzungsstruktur mit Reden.')
     merged_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzungen, len(redeliste))
-    print('Setze Sitzungs-Metadaten.')
     set_metadaten(merged_sitzung['Sitzung ' + aktuelle_sitzungsnummer])
 
     dataset_for_excel = get_sitzungs_dataset_for_excel(merged_sitzung['Sitzung ' + aktuelle_sitzungsnummer])
     set_globals_null()
-    print('Schreibe in Workbook')
     create_protocol_workbook(dataset_for_excel, content, aktuelle_sitzung)
+
 print('Speicher xls')
+
+
+print(print_ergebniszusammenfassung())
+
 workbook.close()
 print('Skript beendet')
