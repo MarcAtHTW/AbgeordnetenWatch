@@ -153,9 +153,7 @@ freq_words_daten.write('C1', 'number_freq_words_in_speech', bold)
 def get_content():
     '''
     ÄNDERUNG! Wir gehen alle Zeilen der TXT durch und übergeben die Zeilen in die Liste "liste_zeilen"
-
     Holt den Content fuer alle Seiten eines Protokolls.
-
     :rtype string_sitzung: String
     :return string_sitzung: Kompletter Sitzungsinhalt in einer Zeichenkette.
     '''
@@ -213,7 +211,6 @@ def split_and_analyse_content(liste_zeilen, sitzungen):
     ÄNDERUNG
     Seiteninhalte des Protokolls werden zu Sätze, die wiederum zu Listenelemente werden
     entfernen von "\n" und "-" aus Listenelemente.
-
     :type liste_zeilen: list
     :param liste_zeilen: Kompletter Sitzungsinhalt in einer Zeichenkette.
     '''
@@ -248,14 +245,11 @@ def split_and_analyse_content(liste_zeilen, sitzungen):
 def analyse_content_element(list_element, i, alle_redner_einer_sitzung, sitzungen):
     '''
     ÄNDERUNG
-
     Nimmt das listenelement auseinander und prüft, ob ein Wechsel der Redner stattfindet oder ob es sich um ein Redeteil handelt
     + Setzen Startnummer für Rede und Speicherung in Liste
     + Einsatz von StanfordParser
-
     :type list_element: string
     :param list_element: Übergabe aus "def content_to_dict"
-
     :type i: int
     :param i: Nummerierung des Listenelements
     '''
@@ -417,7 +411,6 @@ def check_if_zwischenfrage_in_next_5_lines(counter):
 def set_part_till_first_speech():
     '''
     Nimmt alle Zeilen bis zur ersten Rede auf.
-
     '''
     matchers = ['Beginn:']
     list_zeilen_till_first_speech = []
@@ -433,7 +426,6 @@ def set_part_till_first_speech():
 def get_all_parties():
     '''
     Gibt eine Liste zurück, welche die möglichen Parteien der Sitzungen, in Form von Strings zur Verfügung stellt.
-
     :type list_parties: list
     :return list_parties: Eine Liste der möglichen Parteien mit runden Klammern.
     '''
@@ -457,7 +449,6 @@ def get_all_parties_without_brackets():
     '''
     Gibt eine Liste zurück, welche die möglichen Parteien der Sitzungen, in Form von Strings zur Verfügung stellt.
     Die Parteien werden hier ohne Klammern zur Verfügung gestellt.
-
     :type list_parties: list
     :return list_parties: Eine Liste der möglichen Parteien mit ohne Klammern.
     '''
@@ -480,10 +471,8 @@ def get_all_parties_without_brackets():
 def check_if_party_is_in_zeile(zeile):
     '''
     Überprüft, ob sich eine Partei in der übergebenen Zeile befindet.
-
     :type zeile: String
     :param zeile: Eine Zeile einer Rede.
-
     :rtype found_party: Boolean
     :return found_party: Ergebnis ob eine Partei in der übergebenen Zeile gefunden werden konnte.
     '''
@@ -501,10 +490,8 @@ def check_if_party_is_in_zeile(zeile):
 def get_party(element):
     '''
     Holt den Parteinamen aus dem Rednernamen.
-
     :type element: String
     :param element: Parteiname
-
     :rtype: String
     :return party: Die Partei
     '''
@@ -532,10 +519,8 @@ def get_party(element):
 def get_surname(full_name):
     '''
     Holt den Nachnamen aus dem Vollständigen Namen.
-
     :type full_name: String
     :param full_name: Der vollständige Name eines Redners
-
     :rtype surname: String
     :return surname: Der Nachname
     '''
@@ -548,10 +533,8 @@ def get_surname(full_name):
 def get_index_of_last_whitespace_in_string(string):
     '''
     Identifiziert den Index des zu letzt vorkommenden Leerzeichens in der übergebenen Zeichenkette.
-
     :type string: String
     :param string: Eine Zeichenkette mit Leerzeichen.
-
     :rtype index_of_last_whitespace: Integer
     :return index_of_last_whitespace: Index des letzten Leerzeichens.
     '''
@@ -574,10 +557,8 @@ def get_index_of_last_whitespace_in_string(string):
 def get_firstname(full_name):
     '''
     Holt den Vornamen aus dem Vollständigen Namen.
-
     :type full_name: String
     :param full_name: Der vollständige Name eines Redners.
-
     :rtype firstname: String
     :return firstname: Der Vorname
     '''
@@ -592,7 +573,6 @@ def get_firstname(full_name):
 def set_number(i):
     '''
     Setzt den Index der Startreden.
-
     :type i: int
     :param i: Der Index
     '''
@@ -603,7 +583,6 @@ def set_number(i):
 def get_number():
     '''
     Holt den Index der Startreden.
-
     :rtype number_of_last_element: int
     :return number_of_last_element: Der Index
     '''
@@ -614,7 +593,6 @@ def serialize_sitzungen(dict_cleaned_sortierte_sitzungen):
     '''
     Serialisiert die Sitzungsstuktur. Da nur die letzten 10 Sitzungen auf der Webseite des Bundestages hinterlegt werden,
     speichern wir diese in Dateien.
-
     :type dict_cleaned_sortierte_sitzungen: dict
     :param dict_cleaned_sortierte_sitzungen: Gescrapte Sitzungsstruktur
     '''
@@ -626,10 +604,8 @@ def serialize_sitzungen(dict_cleaned_sortierte_sitzungen):
 def deserialize_sitzunen(path_to_serialized_file):
     '''
     Deserialisiert die gescrapt und gespeicherte Sitzunsstruktur der Bundestags-Webseite.
-
     :type path_to_serialized_file: string
     :param path_to_serialized_file: Pfad zur Serialisierten Datei.
-
     :rtype sitzungen: dict
     :return sitzungen: Die gespeicherte Sitzungsstruktur.
     '''
@@ -643,10 +619,8 @@ def deserialize_sitzunen(path_to_serialized_file):
 def change_umlaute(string):
     '''
     Wandelt die Umlaute einer Zeichenkette um. Beispiel: ü -> ue
-
     :type string: String
     :param string: Der Name eines Redners ohne Umlaute.
-
     :rtype result_string: string
     :return result_string: Der String ohne Umlaute.
     '''
@@ -684,12 +658,9 @@ def change_umlaute(string):
 def api_abgeordnetenwatch(politican_name):
     '''
     Anbindung an API-Abgeordnetenwatch um sich JSON abzugreifen und weitere Daten zur Person zu erhalten.
-
     Unterschied in der URL den Titeln der Redner betreffen dr, prof-dr ..
-
     :type politican_name: String
     :param politican_name: Der Name eines Politikers.
-
     :rtype partei: String
     :return partei: Der Parteiname des übergebenen Politikers,
     '''
@@ -753,7 +724,6 @@ def api_abgeordnetenwatch(politican_name):
 def get_start_and_end_of_a_speech():
     '''
     Bestimmung von Start und Ende der Reden.
-
     :rtype liste_mit_Startnummern_und_End: List
     :return liste_mit_Startnummern_und_End: Liste mit Liste mit Start-und Endnummern
     '''
@@ -787,10 +757,8 @@ def get_start_and_end_of_a_speech():
 def get_all_speeches(liste_mit_Startnummern_und_End):
     '''
     Befüllen der Liste "alle_Reden_einer_Sitzung" mit Reden.
-
     :type liste_mit_Startnummern_und_End; List
     :param liste_mit_Startnummern_und_End: Liste mit der Start- und Endnummer einer Rede.
-
     :rtype alle_Reden_einer_Sitzung: Liste mit allen Reden einer Sitzung.
     :return alle_Reden_einer_Sitzung: Liste mit Reden
     '''
@@ -816,10 +784,8 @@ def get_all_speeches(liste_mit_Startnummern_und_End):
 def speech_to_words_if_word_isalpha(string_speech):
     '''
     Die Rede wird gesäubert indem alle Wörter herausgefiltert werden, hierbei werden Satzzeichen, Zahlen (nicht alphabetisch) entfernt.
-
     :type string_speech: String
     :param string_speech: Eine vollständige Rede.
-
     :rtype liste_speech_word_tokenized: List
     :return liste_speech_word_tokenized: Einzelne Wörter der Rede.
     '''
@@ -833,10 +799,8 @@ def speech_to_words_if_word_isalpha(string_speech):
 def count_seldom_frequently(freq_CleandedSpeech):
     '''
     Ermittlung der Vorkommenshaeufigkeit der Woerter im gesaeuberten RedeText ohne stopwords.
-
     :type freq_CleandedSpeech: FreqDist
     :param freq_CleandedSpeech: Wörterliste
-
     :rtype: Lists
     :return: Listen der am häufigsten und seltensten gebrauchten Wörter einer gesäuberten Rede.
     '''
@@ -861,10 +825,8 @@ def lex_div_without_stopwords(liste_speech_word_tokenized):
     Lexikalische Diversität eines Redners - Vielzahl von Ausdrucksmöglichkeiten
     Die Diversität ist ein Maß für die Sprachvielfalt. Sie ist definiert als Quotient der „verschiedenen Wörter“
     dividiert durch die „Gesamtanzahl von Wörtern“ eines Textes.
-
     :type liste_speech_word_tokenized: List
     :param liste_speech_word_tokenized: Die einzelnen Wörter einer Rede.
-
     :rtype: Lists
     :return: Listen der am häufigsten und seltensten gebrauchten Wörter einer gesäuberten Rede, ohne Stopwörter.
     '''
@@ -910,7 +872,6 @@ def get_zeile_of_txt_from_string_in_range(string):
 def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs_zeilen, aktuelle_sitzung):
     '''
     Erstellt ein Excel-Sheet aus den gesammelten Informationen der Sitzung(en).
-
     :type liste_dictionary_reden_einer_sitzung: List
     :param liste_dictionary_reden_einer_sitzung: Die Liste enthält Dictionaries mit den Reden einer Sitzung.
     '''
@@ -958,7 +919,7 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
     for dict in liste_dictionary_reden_einer_sitzung:
 
         # Abgleich Vokabular.xlsx mit tagesordnungspunktbezeichnung
-        workbook_vokabular = xlrd.open_workbook('Vokabular.xlsx')
+        workbook_vokabular = xlrd.open_workbook('Vokabular_zur_Kategorisierung.xlsx')
         worksheet_blatt1 = workbook_vokabular.sheet_by_name('Blatt1')
         col_synonyms = worksheet_blatt1.col_values(0)  # Spalte mit synonymen
         col_categorie = worksheet_blatt1.col_values(2)  # Spalte mit kategorie
@@ -1243,10 +1204,8 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
 def clean_speeches(alle_Reden_einer_Sitzung):
     '''
     Holt alle Zwischenrufe, Beifälle, Unruhe, etc. aus einer Rede.
-
     :type alle_Reden_einer_Sitzung: List
     :param alle_Reden_einer_Sitzung: Beinhaltet die Reden einer Sitzung in Unterlisten.
-
     :rtype liste_dictionary_reden_einer_sitzung: List
     :return liste_dictionary_reden_einer_sitzung: Beinhaltet die Reden einer Sitzung in Dictionaries.
     '''
@@ -1347,10 +1306,8 @@ def clean_speeches(alle_Reden_einer_Sitzung):
 def start_scraping_with_chrome(url):
     '''
     Scrapt eine Webseite mit dem Google-Chrome-Browser anhand einer übergebenen URL.
-
     :type url: String
     :param url: Die URL der zu scrapendenden Webseite.
-
     :rtype chrome: Selenium-Chrome-Webdriver-Objekt
     :return chrome: Die Chrome-Webbrowser-Session.
     '''
@@ -1369,7 +1326,6 @@ def start_scraping_with_chrome(url):
 def get_files_from_server_via_sitzungsnummern(list_sitzungsnummern):
     '''
     Nimmt eine Liste mit Sitzungsnummern entgegen und lädt die Plenarprotokolle anhand der Sitzungsnummern vom Server herunter
-
     :type list_sitzungsnummern: list
     :param list_sitzungsnummern: Liste mit Sitzungsnummern.
     '''
@@ -1392,10 +1348,8 @@ def get_files_from_server_via_sitzungsnummern(list_sitzungsnummern):
 def get_new_zp_topic(topic):
     '''
     Erstellt eine neue Bezeichnungen für einen Zusatztagespunkt.
-
     :type topic: String
     :param topic: Zusatztagespunktbezeichnung
-
     :rtype new_topic: String
     :return new_topic: Neue Zusatztagespunktbezeichnung
     '''
@@ -1413,13 +1367,10 @@ def get_new_zp_topic(topic):
 def rebuild_topic(topic, whitespaces_to_jump):
     '''
     Nimmt den Tagesordnungspunkt auseinander und gibt den 'TOP X' zurück
-
     :type topic: String
     :param topic: Tagesordnungspunkt (z.B. 'TOP 40 Bundeswehreinsatz im Mittelmeer')
-
     :type whitespaces_to_jump: Int
     :param whitespaces_to_jump: Spaces die es zu überspringen gilt, bis der Tagesordnungspunktname erreicht wurde (meistens 2)
-
     :rtype new_topic: String
     :return new_topic: z.B. 'TOP 40 Bundeswehreinsatz im Mittelmeer' wird übergeben mit whitespaces_to_jump = 2 -> returned 'TOP 40'
     '''
@@ -1446,13 +1397,10 @@ def rebuild_topic(topic, whitespaces_to_jump):
 def get_topic_name_from_topic_number(top, topic):
     '''
     Entfernt die 'TOP X' Nummer aus dem Tagesordnungspunkt und gibt dann nur den/die eigentlichen Namen/Beschreibung zurück
-
     :type top: String
     :param top: z.B.: 'TOP 40'
-
     :type topic: String
     :param topic: z.B. 'TOP 40 Bundeswehreinsatz im Mittelmeer'
-
     :rtype topic_name: String
     :return topic_name: Tagesordnungspunkt-Beschreibung z.B.: 'Bundeswehreinsatz im Mittelmeer'
     '''
@@ -1464,10 +1412,8 @@ def get_topic_name_from_topic_number(top, topic):
 def get_alle_tops_and_alle_sitzungen_from_soup(soup):
     '''
     Holt alle Tagesordnungspunkte und die Metadaten der vorhandenen Sitzungen aus der "Wundervollen Suppe".
-
     :type soup: BeautifulSoup
     :param soup: Das wundervolle Süppchen.
-
     :rtype dict_tops_and_sitzungen: dict
     :return dict_tops_and_sitzungen: Dictionary - Mit allen unbearbeiteten TOPs (Liste); Sitzungsmetadaten (Dictionary)
     '''
@@ -1498,13 +1444,10 @@ def get_alle_sitzungen_mit_start_und_ende_der_topic(alle_tops_list, alle_sitzung
     '''
     Gibt alle Sitzungen zurück samt Topics, deren Rednern, sowie die Sitzungsmetadaten. (Sitzungsnummer, Datum, Wahlperiode)
     Vereint hierbei die unbearbeiteten Topics mit den Sitzungsmetadaten.
-
     :type alle_tops_list: List
     :param alle_tops_list: Die Tgesordnungspunkte
-
     :type alle_sitzungen: List
     :param alle_sitzungen: Die Sitzungsmetadaten
-
     :rtype alle_sitzungen: List
     :return alle_sitzungen: Die erweiterten Sitzungsdaten.
     '''
@@ -1542,10 +1485,8 @@ def get_alle_sitzungen_mit_start_und_ende_der_topic(alle_tops_list, alle_sitzung
 def sort_dict_topics_via_topic_id(dict_topics):
     '''
     Erhält ein Dictionary und sortiert es anhand der Topic-ID in eine Liste.
-
     :type dict_topics: dict
     :param dict_topics: Die Tagesordnungspunkte
-
     :rtype list_sorted_topics: List
     :return list_sorted_topics: Nach der Topic-ID sortierten Tagesordnungspunkte.
     '''
@@ -1569,10 +1510,8 @@ def sort_topics_to_sitzung(alle_sitzungen):
     '''
     Bearbeitet die Tagesordnungspunkte, sortiert die Redner den entsprechenden Tagesordnungspunkten zu. Zuordnung der
     Sitzungs-Metadaten in die entsprechende Sitzung.
-
     :type alle_sitzungen: list
     :param alle_sitzungen: Die Sitzungsstruktur aller Sitzungen.
-
     :rtype dict_sitzungen: dict
     :return dict_sitzungen: Die Sitzungsstruktur aller verfügbaren Sitzungen inklusive der Tagesordnungspunkte und den entsprechenden Rednern.
     '''
@@ -1635,10 +1574,8 @@ def sort_topics_to_sitzung(alle_sitzungen):
 def delete_first_and_last_speecher_from_list(dict_sitzungen):
     '''
     Entfernt den ersten und den letzten Redner aus jedem Tagesordnungspunkt.
-
     :type dict_sitzungen: dict
     :param dict_sitzungen: Die Sitzungsstruktur aller verfügbarer Sitzungen.
-
     :rtype dict_sitzungen: dict
     :return dict_sitzungen: Die gesäuberte Sitzungsstruktur aller verfügbarer Sitzungen
     '''
@@ -1670,19 +1607,14 @@ def sort_reden_eines_tops_in_tagesordnungspunkt(reden_eines_tops, top_counter, c
                                                 aktuelle_sitzungsbezeichnung, lenRedeliste):
     '''
     Sortiert die Reden zu deren entsprechenden Tagesordnungspunkt.
-
     :type reden_eines_tops: list
     :param reden_eines_tops: Die Reden eines Tagesordnungspunktes.
-
     :type top_counter: int
     :param top_counter: Zähler für die Zuordnung der Tagesordnungspunkte.
-
     :type cleaned_sortierte_sitzungen: dict
     :param cleaned_sortierte_sitzungen: Gescrapte Sitzungsstruktur
-
     :type aktuelle_sitzungsbezeichnung: String
     :param aktuelle_sitzungsbezeichnung: Die aktuelle Sitzungsbezeichnung
-
     :rtype cleaned_sortierte_sitzungen: dict
     :return cleaned_sortierte_sitzungen: Die sortierete gescrapte Sitzungsstruktur samt einsortierten Tagesordnungspunkten, Rednern und Reden.
     '''
@@ -1707,16 +1639,12 @@ def sort_reden_eines_tops_in_tagesordnungspunkt(reden_eines_tops, top_counter, c
 def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung, lenRedeliste):
     '''
     Vereint die Sitzungsstruktur mit den Reden.
-
     :type redeliste: list
     :param redeliste: Die Reden der Sitzung.
-
     :type cleaned_sortierte_sitzung
     :param cleaned_sortierte_sitzung: Die gescrapte Sitzungsstruktur.
-
     :type lenRedeliste: int
     :param lenRedeliste: Die Anzahl der gefundenen Reden.
-
     :rtype final_cleaned_sortierte_sitzung: dict
     :return final_cleaned_sortierte_sitzung: Die zusammengefügte, finale, gesäuberte Sitzung.
     '''
@@ -1771,10 +1699,8 @@ def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung, lenRe
 def count_speecher_from_cleaned_sortierte_sitzung(sitzung):
     '''
     Zählt die Redner einer Sitzung.
-
     :type sitzung: dict
     :param sitzung: Eine Parlaments-Sitzung.
-
     :rtype result: int
     :return result: Die Anzahl der Redner einer Sitzung.
     '''
@@ -1805,7 +1731,6 @@ def count_wortmeldungen_einer_sitzung(sitzung):
 def count_beifaelle_einer_sitzung(sitzung):
     '''
     Zählt die Beifälle einer Sitzung.
-
     :param sitzung: Die aktuelle
     :return:
     '''
@@ -1854,13 +1779,10 @@ def remove_party_from_fullname(str_fullname):
 def find_last_brackets_in_string(string):
     '''
     Sicht in einem String nach den letzten runden Klammern und gibt diese samt Inhalt zurück.
-
     :type string: Zeichenkette mit runden Klammern "()"
     :param string: string
-
     :rtype index_of_last_open_bracket: int
     :return index_of_last_open_bracket: Der Index der letzten geöffneten runden Klammer innerhalb einer Zeichenkette.
-
     :rtype index_of_last_closed_bracket: int
     :return index_of_last_closed_bracket: Der Index der letzten geschlossenen runden Klammer innerhalb einer Zeichenkette.
     '''
@@ -1897,7 +1819,6 @@ def find_last_brackets_in_string(string):
 def set_metadaten(sitzung):
     '''
     Setzt die Metadaten einer Sitzung.
-
     :type sitzung: dict
     :param sitzung: Eine Parlaments-Sitzung.
     '''
@@ -1927,10 +1848,8 @@ def set_metadaten(sitzung):
 def mach_alle_buchstaben_klein(list):
     '''
     Wandelt alle Listenelemente um -> toLower()
-
     :type list: list
     :param list: Liste mit Strings
-
     :rtype list_result: list
     :return list_result: Liste mit Strings.
     '''
@@ -1947,10 +1866,8 @@ def mach_alle_buchstaben_klein(list):
 def sentiment_analyse(string_to_analyse):
     '''
     Prüft jedes Wort der Wortmeldungen, anhand eines Sentiment-Wortschatzes, ob Wörter als positiv, oder negativ gerwertet werden können.
-
     :type string_to_analyse: string
     :param string_to_analyse: Die Wortmeldungen zu einer Rede, oder die Rede selbst.
-
     :rtype pos_or_neg: string
     :return pos_or_neg: Gibt "positiv", oder "negativ" zurück.
     '''
@@ -2001,11 +1918,8 @@ def gesamtauswertung_sentiment_wortmeldungen(pos_or_neg):
     '''
     Zählt die positiv und negativ getaggeden Wörter einer Wortmeldung, oder einer Rede und gibt ein Fazit über das
     Gesamtergebnis zurück. Mögliche Werte: positive, negative, nicht definierbar.
-
-
     :type pos_or_neg: String
     :param pos_or_neg: Der zu analyisierende String
-
     :rtype wortmeldung: String
     :return wortmeldung: Das Ergebnis
     '''
@@ -2026,10 +1940,8 @@ def get_sitzungs_dataset_for_excel(sitzung):
     Befüllung der einzelnen Dictionaries mit den extrahierten Daten. Extrahiert die benötigten Informationen aus einer
     Sitzung für die Erstellung des Excelsheets. Hierbei erfolgt eine Überprüfung, ob die Reden zum entsprechenden Redner passen.
     Dies geschieht für jede Rede, als auch für jeden Redner, separiert pro Tagesordnungspunkt.
-
     :type sitzung: dict
     :param sitzung: Eine Parlaments-Sitzung
-
     :rtype list_result: list
     :return list_result: Die Liste mit den Informatinen der Sitzung für das Excelsheet.
     '''
