@@ -2134,25 +2134,29 @@ get_files_from_server_via_sitzungsnummern(alle_sitzungsnummern_der_vorhandenen_p
 session_counter = 0
 
 def print_ergebniszusammenfassung():
-    '''
+
     global ergebniszusammenfassung
     #json_ergebniszusammenfassung = json.dumps(ergebniszusammenfassung, ensure_ascii=False)
 
-    print('Zusammenfassung:')
+    print('\n\n[ - Zusammenfassung - ]')
     for sitzung in ergebniszusammenfassung:
-        print('Sitzung: ' + str(sitzung))
-        print('Anzahl Redner insgesamt: ' + str(ergebniszusammenfassung[sitzung]['anzahl_Redner_insgesamt']))
-        print('Erfolgreich zugeordnete Reden: ' + str(ergebniszusammenfassung[sitzung]['anzahl_Redner_nach_Bereinigung']))
-        print('Anzahl Tagesordnungspunkte insgesamt: ' + str(ergebniszusammenfassung[sitzung]['anzahl_Tagesordnungspunkte']))
-        print('nach Bereinigung: ' + str(ergebniszusammenfassung[sitzung]['anzahl_Tagesordnungspunkte_nach_Bereinigung']))
-        erfolgsquote = float(ergebniszusammenfassung[sitzung]['anzahl_Redner_insgesamt']) / float(ergebniszusammenfassung[sitzung]['anzahl_Redner_nach_Bereinigung'])
+        print('\n| Sitzung: ' + str(sitzung))
+        print('| Anzahl Redner insgesamt: ' + str(ergebniszusammenfassung[sitzung]['anzahl_Redner_insgesamt']))
+        print('| Erfolgreich zugeordnete Reden: ' + str(ergebniszusammenfassung[sitzung]['anzahl_Redner_nach_Bereinigung']))
+        print('| Anzahl Tagesordnungspunkte insgesamt: ' + str(ergebniszusammenfassung[sitzung]['anzahl_Tagesordnungspunkte']))
+        print('| nach Bereinigung: ' + str(ergebniszusammenfassung[sitzung]['anzahl_Tagesordnungspunkte_nach_Bereinigung']))
+        erfolgsquote = float(ergebniszusammenfassung[sitzung]['anzahl_Redner_nach_Bereinigung']) /float(ergebniszusammenfassung[sitzung]['anzahl_Redner_insgesamt'])
+        ergebniszusammenfassung[sitzung]['erfolgsquote'] = erfolgsquote
+        print('| erreichte Erfolgsquote Sitzung ' + str(sitzung) + ': ' + str(erfolgsquote))
 
-    print('erreichte Erfolgsquote:' + str(erfolgsquote.round(2)))
+    avg_erfolgsquote = 0
+    for sitzung in ergebniszusammenfassung:
+        avg_erfolgsquote += ergebniszusammenfassung[sitzung]['erfolgsquote']
+    avg_erfolgsquote = avg_erfolgsquote / len(ergebniszusammenfassung)
+
+    print('\n\n| Durchschnittliche Erfolgsquote aller Sitzungen:', avg_erfolgsquote)
 
 
-
-    '''
-    pass
 def set_globals_null():
     global indexierte_liste, start_Element_Rede, list_with_startelement_numbers, list_with_startEnd_numbers, number_of_last_element, list_elements_till_first_speech, politican_name, party_name, liste_zeilen, isMatcherAndNameGefunden, isMatchergefunden, isNameGefunden, redner_zaehler_fuer_iteration_durch_alle_redner, aktuelle_sitzungsnummer
     indexierte_liste = []  # Vorhalten von Redeteilen
@@ -2205,6 +2209,7 @@ while session_counter < len(alle_sitzungsnummern_der_vorhandenen_plenarprotokoll
     anzahl_redner = count_speecher_from_cleaned_sortierte_sitzung(aktuelle_sitzung)
 
     print('\nErgebniszusammenfassung ', 'Sitzung', aktuelle_sitzungsnummer)
+
     print('Anzahl Redner: ' + str(anzahl_redner))
     print("Anzahl vorhandene Reden in Redeliste: " + str(len(redeliste)))
     aktuelle_sitzung['Anzahl_Redner_nach_Bereinigung'] = str(len(redeliste)-1)
@@ -2217,10 +2222,6 @@ while session_counter < len(alle_sitzungsnummern_der_vorhandenen_plenarprotokoll
     set_globals_null()
     create_protocol_workbook(dataset_for_excel, content, aktuelle_sitzung)
 
-print('Speicher xls')
-
-
-print(print_ergebniszusammenfassung())
+print_ergebniszusammenfassung()
 
 workbook.close()
-print('Skript beendet')
