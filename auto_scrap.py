@@ -16,7 +16,9 @@ import time
 import xlrd
 import csv
 import collections
-
+import progressbar
+import json
+from time import sleep
 
 os.environ['JAVAHOME'] = "C:/Program Files/Java/jdk1.8.0_20/bin/java.exe"
 
@@ -42,6 +44,7 @@ redner_zaehler_fuer_iteration_durch_alle_redner = 0
 aktuelle_sitzungsnummer         = ''
 deleted_speechers_in_analyse_content = []
 liste_zeilen_einer_sitzung      = []
+ergebniszusammenfassung= {}
 
 '''Globals fuer Excelsheet'''
 row_sitzungsdaten = 1
@@ -62,6 +65,7 @@ row_freq_words_daten = 1
 temp_row_freq_words_daten = 1
 t_row_freq_words_daten = 1
 temp_row_beifalldaten_text = 1
+count_deleted_tops = 0
 
 
 workbook = xlsxwriter.Workbook('bundestag_protokolle.xlsx')
@@ -105,7 +109,8 @@ topdaten.write('C1', 'Tagesordnungspunktbezeichnung', bold)
 topdaten.write('D1', 'gefundenes Synonym', bold)
 topdaten.write('E1', 'Top_Einordnung_Kategorie', bold)
 
-redner_rede_daten.write('A1', 'Tagesordnungspunkt', bold)
+#redner_rede_daten.write('A1', 'Tagesordnungspunkt', bold)
+redner_rede_daten.write('A1', 'Tagesordnungspunktbezeichnung', bold)
 redner_rede_daten.write('B1', 'Redner', bold)
 redner_rede_daten.write('C1', 'Geschlecht', bold)
 redner_rede_daten.write('D1', 'Partei', bold)
@@ -148,9 +153,7 @@ freq_words_daten.write('C1', 'number_freq_words_in_speech', bold)
 def get_content():
     '''
     ÄNDERUNG! Wir gehen alle Zeilen der TXT durch und übergeben die Zeilen in die Liste "liste_zeilen"
-
     Holt den Content fuer alle Seiten eines Protokolls.
-
     :rtype string_sitzung: String
     :return string_sitzung: Kompletter Sitzungsinhalt in einer Zeichenkette.
     '''
@@ -196,8 +199,8 @@ def get_zeile_of_txt_from_string(string, list_sitzungs_zeilen):
         index = list_sitzungs_zeilen.index(string)
 
     except ValueError as err:
-        print(err)
-        print('Exception abgefangen in get_zeile_of_txt_from_string()')
+        #print(err)
+        #print('Exception abgefangen in get_zeile_of_txt_from_string()')
         return index
 
     return index
@@ -208,7 +211,6 @@ def split_and_analyse_content(liste_zeilen, sitzungen):
     ÄNDERUNG
     Seiteninhalte des Protokolls werden zu Sätze, die wiederum zu Listenelemente werden
     entfernen von "\n" und "-" aus Listenelemente.
-
     :type liste_zeilen: list
     :param liste_zeilen: Kompletter Sitzungsinhalt in einer Zeichenkette.
     '''
@@ -224,7 +226,7 @@ def split_and_analyse_content(liste_zeilen, sitzungen):
             indexierte_liste.append(liste_zeilen[counter])
             list_elements_till_first_speech.append(liste_zeilen[counter])  # Teile mit TOP, ZTOP,...
             counter += 1
-    print(list_elements_till_first_speech)
+    #print(list_elements_till_first_speech)
     #list = sent_tokenize(liste_zeilen)
     alle_redner_einer_sitzung = hole_alle_redner_aus_cleaned_sortierte_sitzung(sitzungen)
     list_elements = []
@@ -243,14 +245,11 @@ def split_and_analyse_content(liste_zeilen, sitzungen):
 def analyse_content_element(list_element, i, alle_redner_einer_sitzung, sitzungen):
     '''
     ÄNDERUNG
-
     Nimmt das listenelement auseinander und prüft, ob ein Wechsel der Redner stattfindet oder ob es sich um ein Redeteil handelt
     + Setzen Startnummer für Rede und Speicherung in Liste
     + Einsatz von StanfordParser
-
     :type list_element: string
     :param list_element: Übergabe aus "def content_to_dict"
-
     :type i: int
     :param i: Nummerierung des Listenelements
     '''
@@ -272,8 +271,8 @@ def analyse_content_element(list_element, i, alle_redner_einer_sitzung, sitzunge
         if surname.__contains__('('):
             surname = remove_brackets_from_surname(surname)
     except IndexError as err:
-        print(err)
-        print('Exception abgefangen in analyse_content_element()')
+        #print(err)
+        #print('Exception abgefangen in analyse_content_element()')
         surname = 'Letzer Redner wurd durchlaufen'
 
     if any(m in list_element for m in matchers) and ':' in list_element and '!' not in list_element and '?' not in list_element:
@@ -288,8 +287,7 @@ def analyse_content_element(list_element, i, alle_redner_einer_sitzung, sitzunge
             #if check_if_redner_in_next_5_lines(i, surname_next_speecher) == False:
                 #list_with_startelement_numbers.append(start_Element_Rede)
             #list_with_startelement_numbers.append(start_Element_Rede)
-            print('TRIGGER ########################################################')
-            print(list_element)
+            #print(list_element)
             isMatchergefunden = True
             isNameGefunden = True
             #print('setze isMatchergefunden auf True')
@@ -305,9 +303,9 @@ def analyse_content_element(list_element, i, alle_redner_einer_sitzung, sitzunge
                     isNameGefunden = False
                     start_Element_Rede = wichtiger_index
                     list_with_startelement_numbers.append(start_Element_Rede)
-                    print('Start-Element der Rede von' + surname + ': ' + str(start_Element_Rede))
-                    print('Listen-Element: ' + str(list_element))
-                    print('Laenge Liste Startelemente' + str(len(list_with_startelement_numbers)))
+                    #print('Start-Element der Rede von' + surname + ': ' + str(start_Element_Rede))
+                    #print('Listen-Element: ' + str(list_element))
+                    #print('Laenge Liste Startelemente' + str(len(list_with_startelement_numbers)))
                 elif isMatchergefunden == True and wichtiger_index == 0:
                     speecher_to_delete = (alle_redner_einer_sitzung[redner_zaehler_fuer_iteration_durch_alle_redner-1])
                     remove_speecher_from_list(aktuelle_sitzung, speecher_to_delete)
@@ -327,13 +325,13 @@ def analyse_content_element(list_element, i, alle_redner_einer_sitzung, sitzunge
     elif list_element.__contains__(surname) and list_element.__contains__(':') and isMatchergefunden == True and check_if_redner_in_next_5_lines(i, surname) == True and '[' not in list_element:
 
         redner_zaehler_fuer_iteration_durch_alle_redner +=1
-        print('Rednerzaehler wird erhoeht!')
+        #print('Rednerzaehler wird erhoeht!')
         isNameGefunden = True
         #print('setze isMatcherAndNameGefunden auf True')
         #print(list_element)
     elif list_element.__contains__(surname) and list_element.__contains__(':') and isMatchergefunden == False and '[' not in list_element:
         redner_zaehler_fuer_iteration_durch_alle_redner += 1
-        print('Rednerzaehler wird erhoeht!')
+        #print('Rednerzaehler wird erhoeht!')
         isNameGefunden = True
         isMatchergefunden = True
 
@@ -348,22 +346,22 @@ def analyse_content_element(list_element, i, alle_redner_einer_sitzung, sitzunge
 
     if isNameGefunden == True and isMatchergefunden == True:
         isMatcherAndNameGefunden = True
-        print('setze isMatcherAndNameGefunden auf True')
+        #print('setze isMatcherAndNameGefunden auf True')
 
     if isMatcherAndNameGefunden == True:
         isMatchergefunden = False
         isNameGefunden = False
         isMatcherAndNameGefunden = False
-        print('Startpunkt gefunden, setze alles auf False')
+        #print('Startpunkt gefunden, setze alles auf False')
 
         start_Element_Rede = i-1
         list_with_startelement_numbers.append(start_Element_Rede)
         # print("Start_Index_Redetext: ", start_Element_Rede)
-        print('Start-Element der Rede von' + surname + ': ' + str(start_Element_Rede))
-        print('Listen-Element: ' +  str(list_element))
-        print('Laenge Liste Startelemente' + str(len(list_with_startelement_numbers)))
+        #print('Start-Element der Rede von' + surname + ': ' + str(start_Element_Rede))
+        #print('Listen-Element: ' +  str(list_element))
+        #print('Laenge Liste Startelemente' + str(len(list_with_startelement_numbers)))
 
-    print(len(deleted_speechers_in_analyse_content))
+    #print(len(deleted_speechers_in_analyse_content))
 
 
 def check_if_redner_in_next_5_lines(counter, redner_nachname):
@@ -388,7 +386,7 @@ def check_if_redner_in_next_10_lines(counter, redner_nachname):
 
     while i <= lines_to_go:
         wichtiger_index = 0
-        print('Aktuelle Zeile ',i,liste_zeilen[i])
+        #print('Aktuelle Zeile ',i,liste_zeilen[i])
         #print(len(liste_zeilen))
         if redner_nachname in liste_zeilen[i] and liste_zeilen[i].__contains__(':'):
             isFound = True
@@ -413,7 +411,6 @@ def check_if_zwischenfrage_in_next_5_lines(counter):
 def set_part_till_first_speech():
     '''
     Nimmt alle Zeilen bis zur ersten Rede auf.
-
     '''
     matchers = ['Beginn:']
     list_zeilen_till_first_speech = []
@@ -429,7 +426,6 @@ def set_part_till_first_speech():
 def get_all_parties():
     '''
     Gibt eine Liste zurück, welche die möglichen Parteien der Sitzungen, in Form von Strings zur Verfügung stellt.
-
     :type list_parties: list
     :return list_parties: Eine Liste der möglichen Parteien mit runden Klammern.
     '''
@@ -453,7 +449,6 @@ def get_all_parties_without_brackets():
     '''
     Gibt eine Liste zurück, welche die möglichen Parteien der Sitzungen, in Form von Strings zur Verfügung stellt.
     Die Parteien werden hier ohne Klammern zur Verfügung gestellt.
-
     :type list_parties: list
     :return list_parties: Eine Liste der möglichen Parteien mit ohne Klammern.
     '''
@@ -476,10 +471,8 @@ def get_all_parties_without_brackets():
 def check_if_party_is_in_zeile(zeile):
     '''
     Überprüft, ob sich eine Partei in der übergebenen Zeile befindet.
-
     :type zeile: String
     :param zeile: Eine Zeile einer Rede.
-
     :rtype found_party: Boolean
     :return found_party: Ergebnis ob eine Partei in der übergebenen Zeile gefunden werden konnte.
     '''
@@ -497,10 +490,8 @@ def check_if_party_is_in_zeile(zeile):
 def get_party(element):
     '''
     Holt den Parteinamen aus dem Rednernamen.
-
     :type element: String
     :param element: Parteiname
-
     :rtype: String
     :return party: Die Partei
     '''
@@ -528,10 +519,8 @@ def get_party(element):
 def get_surname(full_name):
     '''
     Holt den Nachnamen aus dem Vollständigen Namen.
-
     :type full_name: String
     :param full_name: Der vollständige Name eines Redners
-
     :rtype surname: String
     :return surname: Der Nachname
     '''
@@ -544,10 +533,8 @@ def get_surname(full_name):
 def get_index_of_last_whitespace_in_string(string):
     '''
     Identifiziert den Index des zu letzt vorkommenden Leerzeichens in der übergebenen Zeichenkette.
-
     :type string: String
     :param string: Eine Zeichenkette mit Leerzeichen.
-
     :rtype index_of_last_whitespace: Integer
     :return index_of_last_whitespace: Index des letzten Leerzeichens.
     '''
@@ -570,10 +557,8 @@ def get_index_of_last_whitespace_in_string(string):
 def get_firstname(full_name):
     '''
     Holt den Vornamen aus dem Vollständigen Namen.
-
     :type full_name: String
     :param full_name: Der vollständige Name eines Redners.
-
     :rtype firstname: String
     :return firstname: Der Vorname
     '''
@@ -588,7 +573,6 @@ def get_firstname(full_name):
 def set_number(i):
     '''
     Setzt den Index der Startreden.
-
     :type i: int
     :param i: Der Index
     '''
@@ -599,7 +583,6 @@ def set_number(i):
 def get_number():
     '''
     Holt den Index der Startreden.
-
     :rtype number_of_last_element: int
     :return number_of_last_element: Der Index
     '''
@@ -610,7 +593,6 @@ def serialize_sitzungen(dict_cleaned_sortierte_sitzungen):
     '''
     Serialisiert die Sitzungsstuktur. Da nur die letzten 10 Sitzungen auf der Webseite des Bundestages hinterlegt werden,
     speichern wir diese in Dateien.
-
     :type dict_cleaned_sortierte_sitzungen: dict
     :param dict_cleaned_sortierte_sitzungen: Gescrapte Sitzungsstruktur
     '''
@@ -622,10 +604,8 @@ def serialize_sitzungen(dict_cleaned_sortierte_sitzungen):
 def deserialize_sitzunen(path_to_serialized_file):
     '''
     Deserialisiert die gescrapt und gespeicherte Sitzunsstruktur der Bundestags-Webseite.
-
     :type path_to_serialized_file: string
     :param path_to_serialized_file: Pfad zur Serialisierten Datei.
-
     :rtype sitzungen: dict
     :return sitzungen: Die gespeicherte Sitzungsstruktur.
     '''
@@ -639,10 +619,8 @@ def deserialize_sitzunen(path_to_serialized_file):
 def change_umlaute(string):
     '''
     Wandelt die Umlaute einer Zeichenkette um. Beispiel: ü -> ue
-
     :type string: String
     :param string: Der Name eines Redners ohne Umlaute.
-
     :rtype result_string: string
     :return result_string: Der String ohne Umlaute.
     '''
@@ -680,12 +658,9 @@ def change_umlaute(string):
 def api_abgeordnetenwatch(politican_name):
     '''
     Anbindung an API-Abgeordnetenwatch um sich JSON abzugreifen und weitere Daten zur Person zu erhalten.
-
     Unterschied in der URL den Titeln der Redner betreffen dr, prof-dr ..
-
     :type politican_name: String
     :param politican_name: Der Name eines Politikers.
-
     :rtype partei: String
     :return partei: Der Parteiname des übergebenen Politikers,
     '''
@@ -695,6 +670,11 @@ def api_abgeordnetenwatch(politican_name):
     firstname = change_umlaute(firstname)
     lastname = change_umlaute(lastname)
     geschlecht = 'n/a'
+
+    if firstname.__contains__('('):
+        firstname = re.sub(r'\(.*?\)', '', firstname)
+    if lastname.__contains__('('):
+        lastname = re.sub(r'\(.*?\)', '', lastname)
 
     url = 'https://www.abgeordnetenwatch.de/api/profile/' + firstname + '-' + lastname + '/profile.json'
     url2 = 'https://www.abgeordnetenwatch.de/api/profile/' + 'dr-' +firstname + '-' + lastname + '/profile.json'
@@ -710,7 +690,7 @@ def api_abgeordnetenwatch(politican_name):
 
     except urllib.error.HTTPError as err:
         if err.code == 404:
-            print('exception abgefangen in api_abgeordnetenwatch')
+            #print('exception abgefangen in api_abgeordnetenwatch')
             try:
 
                 with urllib.request.urlopen(url2) as url2:
@@ -733,8 +713,10 @@ def api_abgeordnetenwatch(politican_name):
                     geschlecht = 'Api-Error-Code 404: Seite konnte nicht gefunden werden: ' + "https://www.abgeordnetenwatch.de/api/profile/" + firstname + '-' + lastname + '/profile.json'
 
         else:
-            partei = 'AW-API nicht erreichbar'
-
+            #print('AW-API Fehler')
+            #print(err)
+            error_code = str(err)
+            partei = error_code + " https://www.abgeordnetenwatch.de/api/profile/" + firstname + '-' + lastname + '/profile.json'
 
     return '(' + partei + ')', geschlecht
 
@@ -742,7 +724,6 @@ def api_abgeordnetenwatch(politican_name):
 def get_start_and_end_of_a_speech():
     '''
     Bestimmung von Start und Ende der Reden.
-
     :rtype liste_mit_Startnummern_und_End: List
     :return liste_mit_Startnummern_und_End: Liste mit Liste mit Start-und Endnummern
     '''
@@ -776,10 +757,8 @@ def get_start_and_end_of_a_speech():
 def get_all_speeches(liste_mit_Startnummern_und_End):
     '''
     Befüllen der Liste "alle_Reden_einer_Sitzung" mit Reden.
-
     :type liste_mit_Startnummern_und_End; List
     :param liste_mit_Startnummern_und_End: Liste mit der Start- und Endnummer einer Rede.
-
     :rtype alle_Reden_einer_Sitzung: Liste mit allen Reden einer Sitzung.
     :return alle_Reden_einer_Sitzung: Liste mit Reden
     '''
@@ -805,10 +784,8 @@ def get_all_speeches(liste_mit_Startnummern_und_End):
 def speech_to_words_if_word_isalpha(string_speech):
     '''
     Die Rede wird gesäubert indem alle Wörter herausgefiltert werden, hierbei werden Satzzeichen, Zahlen (nicht alphabetisch) entfernt.
-
     :type string_speech: String
     :param string_speech: Eine vollständige Rede.
-
     :rtype liste_speech_word_tokenized: List
     :return liste_speech_word_tokenized: Einzelne Wörter der Rede.
     '''
@@ -822,10 +799,8 @@ def speech_to_words_if_word_isalpha(string_speech):
 def count_seldom_frequently(freq_CleandedSpeech):
     '''
     Ermittlung der Vorkommenshaeufigkeit der Woerter im gesaeuberten RedeText ohne stopwords.
-
     :type freq_CleandedSpeech: FreqDist
     :param freq_CleandedSpeech: Wörterliste
-
     :rtype: Lists
     :return: Listen der am häufigsten und seltensten gebrauchten Wörter einer gesäuberten Rede.
     '''
@@ -850,10 +825,8 @@ def lex_div_without_stopwords(liste_speech_word_tokenized):
     Lexikalische Diversität eines Redners - Vielzahl von Ausdrucksmöglichkeiten
     Die Diversität ist ein Maß für die Sprachvielfalt. Sie ist definiert als Quotient der „verschiedenen Wörter“
     dividiert durch die „Gesamtanzahl von Wörtern“ eines Textes.
-
     :type liste_speech_word_tokenized: List
     :param liste_speech_word_tokenized: Die einzelnen Wörter einer Rede.
-
     :rtype: Lists
     :return: Listen der am häufigsten und seltensten gebrauchten Wörter einer gesäuberten Rede, ohne Stopwörter.
     '''
@@ -899,7 +872,6 @@ def get_zeile_of_txt_from_string_in_range(string):
 def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs_zeilen, aktuelle_sitzung):
     '''
     Erstellt ein Excel-Sheet aus den gesammelten Informationen der Sitzung(en).
-
     :type liste_dictionary_reden_einer_sitzung: List
     :param liste_dictionary_reden_einer_sitzung: Die Liste enthält Dictionaries mit den Reden einer Sitzung.
     '''
@@ -908,6 +880,8 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
     # writing in worksheet 'Sitzungsdaten'
     global row_sitzungsdaten
     global sitzungsdaten
+    global count_deleted_tops
+    global ergebniszusammenfassung
     col_sitzungsdaten= 0
     sitzungnummer                                   = liste_dictionary_reden_einer_sitzung[0]['sitzungsnummer']
     sitzungsdatum                                   = liste_dictionary_reden_einer_sitzung[0]['sitzungsdatum']
@@ -915,9 +889,12 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
     anzahl_redner_insgesamt                         = aktuelle_sitzung['Anzahl_Redner_insgesamt']
     anzahl_redner_nach_bereinigung                  = aktuelle_sitzung['Anzahl_Redner_nach_Bereinigung']
     anzahl_tagesordnungspunkte                      = aktuelle_sitzung['Anzahl_Tagesordnungspunkte']
-    anzahl_tagesordnungspunkte_nach_bereinigung     = anzahl_tagesordnungspunkte
+    anzahl_tagesordnungspunkte_nach_bereinigung     = anzahl_tagesordnungspunkte - count_deleted_tops
     anzahl_wortmeldungen                            = count_wortmeldungen_einer_sitzung(aktuelle_sitzung)
     anzahl_beifalle                                 = count_beifaelle_einer_sitzung(aktuelle_sitzung)
+
+    ergebniszusammenfassung[aktuelle_sitzung['Sitzungsnummer']]['anzahl_Redner_nach_Bereinigung'] = aktuelle_sitzung['Anzahl_Redner_nach_Bereinigung']
+    ergebniszusammenfassung[aktuelle_sitzung['Sitzungsnummer']]['anzahl_Tagesordnungspunkte_nach_Bereinigung'] = anzahl_tagesordnungspunkte_nach_bereinigung
 
     sitzungsdaten.write_number(row_sitzungsdaten, col_sitzungsdaten, int(sitzungnummer))
     sitzungsdaten.write(row_sitzungsdaten, col_sitzungsdaten + 1, sitzungsdatum)
@@ -935,10 +912,14 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
     global topdaten
     col_topdaten = 0
     x = 0
+    anzahl_reden_in_liste_dictionary_reden_einer_sitzung = len(liste_dictionary_reden_einer_sitzung)
+    bar = progressbar.ProgressBar(maxval=anzahl_reden_in_liste_dictionary_reden_einer_sitzung, widgets=[ 'Schreibe in Sheet \"Topdaten\":',progressbar.AnimatedMarker(),progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+    bar.start()
+
     for dict in liste_dictionary_reden_einer_sitzung:
 
         # Abgleich Vokabular.xlsx mit tagesordnungspunktbezeichnung
-        workbook_vokabular = xlrd.open_workbook('Vokabular.xlsx')
+        workbook_vokabular = xlrd.open_workbook('Vokabular_zur_Kategorisierung.xlsx')
         worksheet_blatt1 = workbook_vokabular.sheet_by_name('Blatt1')
         col_synonyms = worksheet_blatt1.col_values(0)  # Spalte mit synonymen
         col_categorie = worksheet_blatt1.col_values(2)  # Spalte mit kategorie
@@ -990,13 +971,20 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
             row_topdaten += 1
 
         x += 1
+        bar.update(x)
+    bar.finish()
 
     # writing in worksheet 'Redner_Rede'
     global row_redner_rede
     global redner_rede_daten
     col_redner_rede = 0
+    bar = progressbar.ProgressBar(maxval=anzahl_reden_in_liste_dictionary_reden_einer_sitzung,
+                                  widgets=['Schreibe in Sheet \"Redner_Rede\":',progressbar.AnimatedMarker(), progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+    pbar_counter = 0
+    bar.start()
     for dict in liste_dictionary_reden_einer_sitzung:
-        for key in ['tagesordnungspunkt', 'redner', 'geschlecht', 'partei', 'clean_rede', 'Zeile_Rede_Beginn', 'Zeile_Rede_Ende']:
+        pbar_counter +=1
+        for key in ['tagesordnungspunktbezeichnung', 'redner', 'geschlecht', 'partei', 'clean_rede', 'Zeile_Rede_Beginn', 'Zeile_Rede_Ende']:
             redner_rede_daten.write(row_redner_rede, col_redner_rede, dict[key])
             col_redner_rede += 1
         pos_neg, gesamt = sentiment_analyse(dict['clean_rede'])
@@ -1005,7 +993,8 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
         redner_rede_daten.write(row_redner_rede, col_redner_rede + 2, dict['rede_id_sitzungen'])
         row_redner_rede += 1
         col_redner_rede = 0
-
+        bar.update(pbar_counter)
+    bar.finish()
     # writing in worksheet 'Beifalldaten'
     global row_beifalldaten
     global temp_row_beifalldaten
@@ -1015,7 +1004,12 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
 
     col_beifalldaten = 0
     counter = 1
+    bar = progressbar.ProgressBar(maxval=anzahl_reden_in_liste_dictionary_reden_einer_sitzung,
+                                  widgets=['Schreibe in Sheet \"Beifalldaten\":',progressbar.AnimatedMarker(),progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+    pbar_counter = 0
+    bar.start()
     for dict in liste_dictionary_reden_einer_sitzung:
+        pbar_counter+=1
         for key in ['beifall_id', 'beifaelle_von_partei']:
             if isinstance(dict[key], list) and dict[key] == dict['beifaelle_von_partei']:
                 for item in dict[key]:
@@ -1041,7 +1035,8 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
 
             col_beifalldaten += 1
         col_beifalldaten = 0
-
+        bar.update(pbar_counter)
+    bar.finish()
     # writing in worksheet 'Beifalltext'
     global row_beifalltext
     global beifall_id_row
@@ -1053,7 +1048,12 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
     #global beifalldaten
     #global temp_row_beifalldaten_text
     col_beifalltext = 0
+    bar = progressbar.ProgressBar(maxval=anzahl_reden_in_liste_dictionary_reden_einer_sitzung,
+                                  widgets=['Schreibe in Sheet \"Beifalltext\":',progressbar.AnimatedMarker(), progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+    pbar_counter = 0
+    bar.start()
     for dict in liste_dictionary_reden_einer_sitzung:
+        pbar_counter+=1
         for key in ['rede_id_sitzungen', 'beifaelle', 'beifall_id']:
             if isinstance(dict[key], list) and dict[key] == dict['beifaelle']:
                 for item in dict['beifaelle']:
@@ -1075,7 +1075,8 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
 
             col_beifalltext += 1
         col_beifalltext = 0
-
+        bar.update(pbar_counter)
+    bar.finish()
     # writing in worksheet 'Wortmeldedaten'
     global row_wortmeldedaten
     global temp_row_wortmeldedaten
@@ -1083,7 +1084,12 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
     col_wortmeldedaten = 0
     parteiliste = get_all_parties_without_brackets()
 
+    bar = progressbar.ProgressBar(maxval=anzahl_reden_in_liste_dictionary_reden_einer_sitzung,
+                                  widgets=['Schreibe in Sheet \"Wortmeldedaten\":',progressbar.AnimatedMarker(), progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+    pbar_counter = 0
+    bar.start()
     for dict in liste_dictionary_reden_einer_sitzung:
+        pbar_counter+=1
         liste_wer = []
         liste_text = []
         for key in ['rede_id_sitzungen', 'wortmeldungen']:
@@ -1095,7 +1101,9 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
                     if item.__contains__(':'):
                         for letter in (item[:item.index(':')]):
                             wer += letter
-                        wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 1, wer)
+                        if wer.__contains__('['):
+                            wer_temp_ohne_partei = remove_party_from_fullname(wer)
+                        wortmeldedaten.write(row_wortmeldedaten, col_wortmeldedaten + 1, wer_temp_ohne_partei)
 
                         for party in parteiliste:
                             if party in wer:
@@ -1127,15 +1135,20 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
                     temp_row_wortmeldedaten += 1
             col_wortmeldedaten += 1
         col_wortmeldedaten = 0
-
+        bar.update(pbar_counter)
+    bar.finish()
     # writing in worksheet 'seldom_words_daten'
     global row_seldom_words_daten
     global temp_row_seldom_words_daten
     global t_row
     global seldom_words_daten
     col_seldom_words_daten = 0
-
+    bar = progressbar.ProgressBar(maxval=anzahl_reden_in_liste_dictionary_reden_einer_sitzung,
+                                  widgets=['Schreibe in Sheet \"seldom_words_daten\":',progressbar.AnimatedMarker(), progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+    pbar_counter = 0
+    bar.start()
     for dict in liste_dictionary_reden_einer_sitzung:
+        pbar_counter+=1
         for key in ['rede_id_sitzungen', '10_seldom_words', 'number_seldom_words']:
             if isinstance(dict[key], list) and dict[key] == dict['10_seldom_words']:
                 for item in dict[key]:
@@ -1153,6 +1166,8 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
                     temp_row_seldom_words_daten += 1
             col_seldom_words_daten += 1
         col_seldom_words_daten = 0
+        bar.update(pbar_counter)
+    bar.finish()
 
     # writing in worksheet 'freq_words_daten'
     global row_freq_words_daten
@@ -1160,8 +1175,12 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
     global t_row_freq_words_daten
     global freq_words_daten
     col_freq_words_daten = 0
-
+    bar = progressbar.ProgressBar(maxval=anzahl_reden_in_liste_dictionary_reden_einer_sitzung,
+                                  widgets=['Schreibe in Sheet \"freq_words_daten\":',progressbar.AnimatedMarker(), progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+    pbar_counter = 0
+    bar.start()
     for dict in liste_dictionary_reden_einer_sitzung:
+        pbar_counter+=1
         for key in ['rede_id_sitzungen', '10_frequently_words', 'number_frequently_words']:
             if isinstance(dict[key], list) and dict[key] == dict['10_frequently_words']:
                 for item in dict[key]:
@@ -1179,15 +1198,14 @@ def create_protocol_workbook(liste_dictionary_reden_einer_sitzung, list_sitzungs
                     temp_row_freq_words_daten += 1
             col_freq_words_daten += 1
         col_freq_words_daten = 0
-
+        bar.update(pbar_counter)
+    bar.finish()
 
 def clean_speeches(alle_Reden_einer_Sitzung):
     '''
     Holt alle Zwischenrufe, Beifälle, Unruhe, etc. aus einer Rede.
-
     :type alle_Reden_einer_Sitzung: List
     :param alle_Reden_einer_Sitzung: Beinhaltet die Reden einer Sitzung in Unterlisten.
-
     :rtype liste_dictionary_reden_einer_sitzung: List
     :return liste_dictionary_reden_einer_sitzung: Beinhaltet die Reden einer Sitzung in Dictionaries.
     '''
@@ -1214,7 +1232,9 @@ def clean_speeches(alle_Reden_einer_Sitzung):
         liste_beifaelle_extract_partei = []
 
         string_rede = ' '.join(rede)
-        print(string_rede)
+        if string_rede.__contains__('schließe die Aussprache'):
+            string_rede =string_rede.split('schließe die Aussprache')[0]
+        #print(string_rede)
         liste_treffer = re.findall(regex, string_rede)
         liste_parteien = get_all_parties_without_brackets()
         liste_beifall_id = []
@@ -1286,10 +1306,8 @@ def clean_speeches(alle_Reden_einer_Sitzung):
 def start_scraping_with_chrome(url):
     '''
     Scrapt eine Webseite mit dem Google-Chrome-Browser anhand einer übergebenen URL.
-
     :type url: String
     :param url: Die URL der zu scrapendenden Webseite.
-
     :rtype chrome: Selenium-Chrome-Webdriver-Objekt
     :return chrome: Die Chrome-Webbrowser-Session.
     '''
@@ -1308,7 +1326,6 @@ def start_scraping_with_chrome(url):
 def get_files_from_server_via_sitzungsnummern(list_sitzungsnummern):
     '''
     Nimmt eine Liste mit Sitzungsnummern entgegen und lädt die Plenarprotokolle anhand der Sitzungsnummern vom Server herunter
-
     :type list_sitzungsnummern: list
     :param list_sitzungsnummern: Liste mit Sitzungsnummern.
     '''
@@ -1331,10 +1348,8 @@ def get_files_from_server_via_sitzungsnummern(list_sitzungsnummern):
 def get_new_zp_topic(topic):
     '''
     Erstellt eine neue Bezeichnungen für einen Zusatztagespunkt.
-
     :type topic: String
     :param topic: Zusatztagespunktbezeichnung
-
     :rtype new_topic: String
     :return new_topic: Neue Zusatztagespunktbezeichnung
     '''
@@ -1352,13 +1367,10 @@ def get_new_zp_topic(topic):
 def rebuild_topic(topic, whitespaces_to_jump):
     '''
     Nimmt den Tagesordnungspunkt auseinander und gibt den 'TOP X' zurück
-
     :type topic: String
     :param topic: Tagesordnungspunkt (z.B. 'TOP 40 Bundeswehreinsatz im Mittelmeer')
-
     :type whitespaces_to_jump: Int
     :param whitespaces_to_jump: Spaces die es zu überspringen gilt, bis der Tagesordnungspunktname erreicht wurde (meistens 2)
-
     :rtype new_topic: String
     :return new_topic: z.B. 'TOP 40 Bundeswehreinsatz im Mittelmeer' wird übergeben mit whitespaces_to_jump = 2 -> returned 'TOP 40'
     '''
@@ -1385,13 +1397,10 @@ def rebuild_topic(topic, whitespaces_to_jump):
 def get_topic_name_from_topic_number(top, topic):
     '''
     Entfernt die 'TOP X' Nummer aus dem Tagesordnungspunkt und gibt dann nur den/die eigentlichen Namen/Beschreibung zurück
-
     :type top: String
     :param top: z.B.: 'TOP 40'
-
     :type topic: String
     :param topic: z.B. 'TOP 40 Bundeswehreinsatz im Mittelmeer'
-
     :rtype topic_name: String
     :return topic_name: Tagesordnungspunkt-Beschreibung z.B.: 'Bundeswehreinsatz im Mittelmeer'
     '''
@@ -1403,10 +1412,8 @@ def get_topic_name_from_topic_number(top, topic):
 def get_alle_tops_and_alle_sitzungen_from_soup(soup):
     '''
     Holt alle Tagesordnungspunkte und die Metadaten der vorhandenen Sitzungen aus der "Wundervollen Suppe".
-
     :type soup: BeautifulSoup
     :param soup: Das wundervolle Süppchen.
-
     :rtype dict_tops_and_sitzungen: dict
     :return dict_tops_and_sitzungen: Dictionary - Mit allen unbearbeiteten TOPs (Liste); Sitzungsmetadaten (Dictionary)
     '''
@@ -1437,13 +1444,10 @@ def get_alle_sitzungen_mit_start_und_ende_der_topic(alle_tops_list, alle_sitzung
     '''
     Gibt alle Sitzungen zurück samt Topics, deren Rednern, sowie die Sitzungsmetadaten. (Sitzungsnummer, Datum, Wahlperiode)
     Vereint hierbei die unbearbeiteten Topics mit den Sitzungsmetadaten.
-
     :type alle_tops_list: List
     :param alle_tops_list: Die Tgesordnungspunkte
-
     :type alle_sitzungen: List
     :param alle_sitzungen: Die Sitzungsmetadaten
-
     :rtype alle_sitzungen: List
     :return alle_sitzungen: Die erweiterten Sitzungsdaten.
     '''
@@ -1481,10 +1485,8 @@ def get_alle_sitzungen_mit_start_und_ende_der_topic(alle_tops_list, alle_sitzung
 def sort_dict_topics_via_topic_id(dict_topics):
     '''
     Erhält ein Dictionary und sortiert es anhand der Topic-ID in eine Liste.
-
     :type dict_topics: dict
     :param dict_topics: Die Tagesordnungspunkte
-
     :rtype list_sorted_topics: List
     :return list_sorted_topics: Nach der Topic-ID sortierten Tagesordnungspunkte.
     '''
@@ -1508,10 +1510,8 @@ def sort_topics_to_sitzung(alle_sitzungen):
     '''
     Bearbeitet die Tagesordnungspunkte, sortiert die Redner den entsprechenden Tagesordnungspunkten zu. Zuordnung der
     Sitzungs-Metadaten in die entsprechende Sitzung.
-
     :type alle_sitzungen: list
     :param alle_sitzungen: Die Sitzungsstruktur aller Sitzungen.
-
     :rtype dict_sitzungen: dict
     :return dict_sitzungen: Die Sitzungsstruktur aller verfügbaren Sitzungen inklusive der Tagesordnungspunkte und den entsprechenden Rednern.
     '''
@@ -1574,10 +1574,8 @@ def sort_topics_to_sitzung(alle_sitzungen):
 def delete_first_and_last_speecher_from_list(dict_sitzungen):
     '''
     Entfernt den ersten und den letzten Redner aus jedem Tagesordnungspunkt.
-
     :type dict_sitzungen: dict
     :param dict_sitzungen: Die Sitzungsstruktur aller verfügbarer Sitzungen.
-
     :rtype dict_sitzungen: dict
     :return dict_sitzungen: Die gesäuberte Sitzungsstruktur aller verfügbarer Sitzungen
     '''
@@ -1609,19 +1607,14 @@ def sort_reden_eines_tops_in_tagesordnungspunkt(reden_eines_tops, top_counter, c
                                                 aktuelle_sitzungsbezeichnung, lenRedeliste):
     '''
     Sortiert die Reden zu deren entsprechenden Tagesordnungspunkt.
-
     :type reden_eines_tops: list
     :param reden_eines_tops: Die Reden eines Tagesordnungspunktes.
-
     :type top_counter: int
     :param top_counter: Zähler für die Zuordnung der Tagesordnungspunkte.
-
     :type cleaned_sortierte_sitzungen: dict
     :param cleaned_sortierte_sitzungen: Gescrapte Sitzungsstruktur
-
     :type aktuelle_sitzungsbezeichnung: String
     :param aktuelle_sitzungsbezeichnung: Die aktuelle Sitzungsbezeichnung
-
     :rtype cleaned_sortierte_sitzungen: dict
     :return cleaned_sortierte_sitzungen: Die sortierete gescrapte Sitzungsstruktur samt einsortierten Tagesordnungspunkten, Rednern und Reden.
     '''
@@ -1636,7 +1629,7 @@ def sort_reden_eines_tops_in_tagesordnungspunkt(reden_eines_tops, top_counter, c
             except IndexError as err:
                 if isDisplayed == False:
                     isDisplayed = True
-                    print('Exception abgefangen in sort_reden_eines_tops_in_tagesordnungspunkt()')
+                    #print('Exception abgefangen in sort_reden_eines_tops_in_tagesordnungspunkt()')
 
         i += 1
     cleaned_sortierte_sitzungen[aktuelle_sitzungsbezeichnung]['TOPs'][top_counter]['Redner'] = list_sorted_redner_temp
@@ -1646,46 +1639,19 @@ def sort_reden_eines_tops_in_tagesordnungspunkt(reden_eines_tops, top_counter, c
 def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung, lenRedeliste):
     '''
     Vereint die Sitzungsstruktur mit den Reden.
-
     :type redeliste: list
     :param redeliste: Die Reden der Sitzung.
-
     :type cleaned_sortierte_sitzung
     :param cleaned_sortierte_sitzung: Die gescrapte Sitzungsstruktur.
-
     :type lenRedeliste: int
     :param lenRedeliste: Die Anzahl der gefundenen Reden.
-
     :rtype final_cleaned_sortierte_sitzung: dict
     :return final_cleaned_sortierte_sitzung: Die zusammengefügte, finale, gesäuberte Sitzung.
     '''
     aktuelle_sitzungsbezeichnung = 'Sitzung ' + aktuelle_sitzungsnummer
     aktuelle_sitzung = cleaned_sortierte_sitzungen['Sitzung ' + aktuelle_sitzungsnummer]
 
-
-    '''
-    Vorbereitung für die Aufnahme von mehreren Sitzungen.
-
-    for sitzung in sorted(cleaned_sortierte_sitzungen):
-        aktuelle_sitzungsbezeichnung = sitzung
-        while aktuelle_sitzungsbezeichnung == 'Sitzung 229':
-            aktuelle_sitzung = cleaned_sortierte_sitzungen[sitzung]
-
-            i = 0
-            for rede in redeliste:
-
-                rede_id = rede['rede_id']
-
-                if rede_id == aktuelle_sitzung['TOPs'][i]['TOP_ID']:
-                    rede['wahlperiode'] = aktuelle_sitzung['Wahlperiode']
-                    rede['sitzungsdatum'] = aktuelle_sitzung['Sitzungsdatum']
-                    rede['tagesordnungspunktbezeichnung'] = aktuelle_sitzung['TOPs'][i]['Tagesordnungspunkt']
-                    rede['tagesordnungspunkt'] = aktuelle_sitzung['TOPs'][i]['Top_Key']
-                else:
-                    print('###### Rede_ID passt nicht zur TOP_ID in merge_sitzungsstruktur_mit_reden()')
-                redeliste[i] = rede
-                i += 1
-    '''
+    global count_deleted_tops
 
     laenge_der_redeliste = len(redeliste)
     tops = aktuelle_sitzung['TOPs']
@@ -1706,8 +1672,9 @@ def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung, lenRe
                 reden_eines_tagesordnungspunkts.append(reden.pop(0))
 
             except IndexError as err:
-                print(err)
-                print('Exception abgefangen in merge_sitzungsstruktur_mit_reden()')
+                pass
+                #print(err)
+                #print('Exception abgefangen in merge_sitzungsstruktur_mit_reden()')
 
 
 
@@ -1724,6 +1691,7 @@ def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung, lenRe
                 'Weniger als zwei Redner in Rednerliste des Tagesordnungspunktes "' + aktueller_tagesordnungspunkt + '". Tagesordnungspunkt wird gelöscht.')
             j += 1
             top_counter += 1
+            count_deleted_tops += 1
 
     return final_cleaned_sortierte_sitzung
 
@@ -1731,10 +1699,8 @@ def merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzung, lenRe
 def count_speecher_from_cleaned_sortierte_sitzung(sitzung):
     '''
     Zählt die Redner einer Sitzung.
-
     :type sitzung: dict
     :param sitzung: Eine Parlaments-Sitzung.
-
     :rtype result: int
     :return result: Die Anzahl der Redner einer Sitzung.
     '''
@@ -1756,8 +1722,8 @@ def count_wortmeldungen_einer_sitzung(sitzung):
                     result += len(dict_redner[redner]['wortmeldungen'])
 
     except TypeError as err:
-        print(err)
-        print('Exception abgefangen in count_wortmeldungen_einer_sitzung()')
+        #print(err)
+        #print('Exception abgefangen in count_wortmeldungen_einer_sitzung()')
         return 0
 
     return result
@@ -1765,7 +1731,6 @@ def count_wortmeldungen_einer_sitzung(sitzung):
 def count_beifaelle_einer_sitzung(sitzung):
     '''
     Zählt die Beifälle einer Sitzung.
-
     :param sitzung: Die aktuelle
     :return:
     '''
@@ -1778,8 +1743,8 @@ def count_beifaelle_einer_sitzung(sitzung):
                 for redner in dict_redner:
                     result += dict_redner[redner]['anzahl_beifaelle']
     except TypeError as err:
-        print(err)
-        print('Exception abgefangen in count_beifaelle_einer_sitzung()')
+        #print(err)
+        #print('Exception abgefangen in count_beifaelle_einer_sitzung()')
         return result
 
     return result
@@ -1801,16 +1766,23 @@ def remove_brackets_from_surname(surname):
     surname = surname[:rm_entry]
     return surname
 
+def remove_party_from_fullname(str_fullname):
+    index = 0
+    for letter in str_fullname:
+        if letter == '[':
+            rm_entry = index
+            break
+        index += 1
+    str_fullname = str_fullname[:rm_entry-1]
+    return str_fullname
+
 def find_last_brackets_in_string(string):
     '''
     Sicht in einem String nach den letzten runden Klammern und gibt diese samt Inhalt zurück.
-
     :type string: Zeichenkette mit runden Klammern "()"
     :param string: string
-
     :rtype index_of_last_open_bracket: int
     :return index_of_last_open_bracket: Der Index der letzten geöffneten runden Klammer innerhalb einer Zeichenkette.
-
     :rtype index_of_last_closed_bracket: int
     :return index_of_last_closed_bracket: Der Index der letzten geschlossenen runden Klammer innerhalb einer Zeichenkette.
     '''
@@ -1847,7 +1819,6 @@ def find_last_brackets_in_string(string):
 def set_metadaten(sitzung):
     '''
     Setzt die Metadaten einer Sitzung.
-
     :type sitzung: dict
     :param sitzung: Eine Parlaments-Sitzung.
     '''
@@ -1877,10 +1848,8 @@ def set_metadaten(sitzung):
 def mach_alle_buchstaben_klein(list):
     '''
     Wandelt alle Listenelemente um -> toLower()
-
     :type list: list
     :param list: Liste mit Strings
-
     :rtype list_result: list
     :return list_result: Liste mit Strings.
     '''
@@ -1897,10 +1866,8 @@ def mach_alle_buchstaben_klein(list):
 def sentiment_analyse(string_to_analyse):
     '''
     Prüft jedes Wort der Wortmeldungen, anhand eines Sentiment-Wortschatzes, ob Wörter als positiv, oder negativ gerwertet werden können.
-
     :type string_to_analyse: string
     :param string_to_analyse: Die Wortmeldungen zu einer Rede, oder die Rede selbst.
-
     :rtype pos_or_neg: string
     :return pos_or_neg: Gibt "positiv", oder "negativ" zurück.
     '''
@@ -1951,11 +1918,8 @@ def gesamtauswertung_sentiment_wortmeldungen(pos_or_neg):
     '''
     Zählt die positiv und negativ getaggeden Wörter einer Wortmeldung, oder einer Rede und gibt ein Fazit über das
     Gesamtergebnis zurück. Mögliche Werte: positive, negative, nicht definierbar.
-
-
     :type pos_or_neg: String
     :param pos_or_neg: Der zu analyisierende String
-
     :rtype wortmeldung: String
     :return wortmeldung: Das Ergebnis
     '''
@@ -1976,10 +1940,8 @@ def get_sitzungs_dataset_for_excel(sitzung):
     Befüllung der einzelnen Dictionaries mit den extrahierten Daten. Extrahiert die benötigten Informationen aus einer
     Sitzung für die Erstellung des Excelsheets. Hierbei erfolgt eine Überprüfung, ob die Reden zum entsprechenden Redner passen.
     Dies geschieht für jede Rede, als auch für jeden Redner, separiert pro Tagesordnungspunkt.
-
     :type sitzung: dict
     :param sitzung: Eine Parlaments-Sitzung
-
     :rtype list_result: list
     :return list_result: Die Liste mit den Informatinen der Sitzung für das Excelsheet.
     '''
@@ -1988,7 +1950,23 @@ def get_sitzungs_dataset_for_excel(sitzung):
     global list_with_startelement_numbers
     global liste_mit_Endnummern
     global zeitstrahl_counter
+    global ergebniszusammenfassung
 
+
+    anzahl_redner = count_speecher_from_cleaned_sortierte_sitzung(sitzung)
+    debug_ergebniszusammenfassung = ergebniszusammenfassung
+    ergebniszusammenfassung[sitzung['Sitzungsnummer']] = {}
+    #['Anzahl_Redner_insgesamt']] = sitzung['Anzahl_Redner_insgesamt']
+
+    ergebniszusammenfassung[sitzung['Sitzungsnummer']]['anzahl_Redner_insgesamt'] = anzahl_redner
+    ergebniszusammenfassung[sitzung['Sitzungsnummer']]['anzahl_Redner_nach_Bereinigung'] = sitzung['Anzahl_Redner_nach_Bereinigung']
+    ergebniszusammenfassung[sitzung['Sitzungsnummer']]['anzahl_Tagesordnungspunkte'] = sitzung['Anzahl_Tagesordnungspunkte']
+    ergebniszusammenfassung[sitzung['Sitzungsnummer']]['Wohlperiode'] = sitzung['Wahlperiode']
+    ergebniszusammenfassung[sitzung['Sitzungsnummer']]['Sitzungsdatum'] = sitzung['Sitzungsdatum']
+
+    print('\n')
+    bar = progressbar.ProgressBar(maxval=anzahl_redner, widgets=['Vereinige Sitzungsstruktur mit Reden:',progressbar.AnimatedMarker(), progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+    bar.start()
     for tagesordnungspunkt in sitzung['TOPs']:
 
         for rede in tagesordnungspunkt['Redner']:
@@ -2040,6 +2018,10 @@ def get_sitzungs_dataset_for_excel(sitzung):
                     dictionary_result['wahlperiode'] = rede[redner]['wahlperiode']
                     dictionary_result['wortmeldungen'] = rede[redner]['wortmeldungen']
                     dictionary_result['partei'] = party
+                    # debug_zeitstrahl_counter = zeitstrahl_counter
+                    # print('Zeitstrahlcounter', zeitstrahl_counter)
+                    # debug_liste_mit_startnummern = list_with_startelement_numbers
+                    # debug_liste_mit_endnummern = liste_mit_Endnummern
                     dictionary_result['Zeile_Rede_Beginn']  = list_with_startelement_numbers[zeitstrahl_counter]
                     dictionary_result['Zeile_Rede_Ende'] = liste_mit_Endnummern[zeitstrahl_counter]
                     # dictionary_result['Zeile_Wortmeldung']  =
@@ -2048,8 +2030,8 @@ def get_sitzungs_dataset_for_excel(sitzung):
 
                     list_result.append(dictionary_result)
                     zeitstrahl_counter += 1
-
-
+                    bar.update(zeitstrahl_counter)
+    bar.finish()
     return list_result
 
 # Hole HTML Struktur START
@@ -2062,6 +2044,29 @@ alle_tops_und_alle_sitzungen, alle_sitzungsnummern_der_vorhandenen_plenarprotoko
 get_files_from_server_via_sitzungsnummern(alle_sitzungsnummern_der_vorhandenen_plenarprotokolle)
 
 session_counter = 0
+
+def print_ergebniszusammenfassung():
+
+    global ergebniszusammenfassung
+    #json_ergebniszusammenfassung = json.dumps(ergebniszusammenfassung, ensure_ascii=False)
+
+    print('\n\n[ - Zusammenfassung - ]')
+    for sitzung in ergebniszusammenfassung:
+        print('\n| Sitzung: ' + str(sitzung))
+        print('| Anzahl Redner insgesamt: ' + str(ergebniszusammenfassung[sitzung]['anzahl_Redner_insgesamt']))
+        print('| Erfolgreich zugeordnete Reden: ' + str(ergebniszusammenfassung[sitzung]['anzahl_Redner_nach_Bereinigung']))
+        print('| Anzahl Tagesordnungspunkte insgesamt: ' + str(ergebniszusammenfassung[sitzung]['anzahl_Tagesordnungspunkte']))
+        print('| nach Bereinigung: ' + str(ergebniszusammenfassung[sitzung]['anzahl_Tagesordnungspunkte_nach_Bereinigung']))
+        erfolgsquote = float(ergebniszusammenfassung[sitzung]['anzahl_Redner_nach_Bereinigung']) /float(ergebniszusammenfassung[sitzung]['anzahl_Redner_insgesamt'])
+        ergebniszusammenfassung[sitzung]['erfolgsquote'] = erfolgsquote
+        print('| erreichte Erfolgsquote Sitzung ' + str(sitzung) + ': ' + str(round(erfolgsquote,2)*100), '%')
+
+    avg_erfolgsquote = 0
+    for sitzung in ergebniszusammenfassung:
+        avg_erfolgsquote += ergebniszusammenfassung[sitzung]['erfolgsquote']
+    avg_erfolgsquote = avg_erfolgsquote / len(ergebniszusammenfassung)
+
+    print('\n\n| Durchschnittliche Erfolgsquote aller Sitzungen:', round(avg_erfolgsquote,2)*100, '%')
 
 
 def set_globals_null():
@@ -2081,10 +2086,12 @@ def set_globals_null():
     redner_zaehler_fuer_iteration_durch_alle_redner = 0
     aktuelle_sitzungsnummer = ''
 
-while session_counter < 1:
-#while session_counter < len(alle_sitzungsnummern_der_vorhandenen_plenarprotokolle):
+
+#while session_counter < 1:
+while session_counter < len(alle_sitzungsnummern_der_vorhandenen_plenarprotokolle):
     zeitstrahl_counter_beginn = 0
     zeitstrahl_counter_ende = 1
+    zeitstrahl_counter = 0
     aktuelle_sitzungsnummer = alle_sitzungsnummern_der_vorhandenen_plenarprotokolle[session_counter]
     session_counter += 1
     #print('Sitzungsstruktur vorhalten')
@@ -2096,15 +2103,14 @@ while session_counter < 1:
     sortierte_sitzungen = sort_topics_to_sitzung(alle_sitzungen_mit_start_und_ende_der_topic)
     cleaned_sortierte_sitzungen = delete_first_and_last_speecher_from_list(sortierte_sitzungen)
 
-    print('Serialisiere gescrapte Sitzungsstruktur - derzeit deaktiv')
+    #print('Serialisiere gescrapte Sitzungsstruktur - derzeit deaktiv')
     serialize_sitzungen(cleaned_sortierte_sitzungen)
     #deserialisierte_cleaned_sortierte_sitzungen = deserialize_sitzunen('scraped_content/serialized_sitzungen_04_07_2017.txt')
-    print('Serialisierung/Deserialisierung beendet.')
-    print('Scraping beendet')
+    #print('Serialisierung/Deserialisierung beendet.')
     # Hole HTML Struktur ENDE
 
     content = get_content()
-    print('Analysiere Sitzung')
+    print('\nAnalysiere Sitzung ' + str(aktuelle_sitzungsnummer))
     names_of_entities = split_and_analyse_content(content, cleaned_sortierte_sitzungen)
     start_end_nummern_liste = get_start_and_end_of_a_speech()
     liste_alle_reden = get_all_speeches(start_end_nummern_liste)
@@ -2114,23 +2120,20 @@ while session_counter < 1:
     aktuelle_sitzung = cleaned_sortierte_sitzungen['Sitzung ' + aktuelle_sitzungsnummer]
     anzahl_redner = count_speecher_from_cleaned_sortierte_sitzung(aktuelle_sitzung)
 
+    print('\nErgebniszusammenfassung ', 'Sitzung', aktuelle_sitzungsnummer)
 
-    print('#########################')
-    print('Ergebniszusammenfassung ', 'Sitzung', aktuelle_sitzungsnummer)
     print('Anzahl Redner: ' + str(anzahl_redner))
     print("Anzahl vorhandene Reden in Redeliste: " + str(len(redeliste)))
     aktuelle_sitzung['Anzahl_Redner_nach_Bereinigung'] = str(len(redeliste)-1)
 
     set_part_till_first_speech()
-    print('Vereinige Sitzungsstruktur mit Reden.')
     merged_sitzung = merge_sitzungsstruktur_mit_reden(redeliste, cleaned_sortierte_sitzungen, len(redeliste))
-    print('Setze Sitzungs-Metadaten.')
     set_metadaten(merged_sitzung['Sitzung ' + aktuelle_sitzungsnummer])
 
     dataset_for_excel = get_sitzungs_dataset_for_excel(merged_sitzung['Sitzung ' + aktuelle_sitzungsnummer])
     set_globals_null()
-    print('Schreibe in Workbook')
     create_protocol_workbook(dataset_for_excel, content, aktuelle_sitzung)
-print('Speicher xls')
+
+print_ergebniszusammenfassung()
+
 workbook.close()
-print('Skript beendet')
