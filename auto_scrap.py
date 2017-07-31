@@ -2147,14 +2147,14 @@ def print_ergebniszusammenfassung():
         print('| nach Bereinigung: ' + str(ergebniszusammenfassung[sitzung]['anzahl_Tagesordnungspunkte_nach_Bereinigung']))
         erfolgsquote = float(ergebniszusammenfassung[sitzung]['anzahl_Redner_nach_Bereinigung']) /float(ergebniszusammenfassung[sitzung]['anzahl_Redner_insgesamt'])
         ergebniszusammenfassung[sitzung]['erfolgsquote'] = erfolgsquote
-        print('| erreichte Erfolgsquote Sitzung ' + str(sitzung) + ': ' + str(erfolgsquote))
+        print('| erreichte Erfolgsquote Sitzung ' + str(sitzung) + ': ' + str(round(erfolgsquote,2)*100), '%')
 
     avg_erfolgsquote = 0
     for sitzung in ergebniszusammenfassung:
         avg_erfolgsquote += ergebniszusammenfassung[sitzung]['erfolgsquote']
     avg_erfolgsquote = avg_erfolgsquote / len(ergebniszusammenfassung)
 
-    print('\n\n| Durchschnittliche Erfolgsquote aller Sitzungen:', avg_erfolgsquote)
+    print('\n\n| Durchschnittliche Erfolgsquote aller Sitzungen:', round(avg_erfolgsquote,2)*100, '%')
 
 
 def set_globals_null():
